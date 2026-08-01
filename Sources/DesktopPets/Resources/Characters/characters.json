@@ -1,0 +1,42 @@
+[
+  {
+    "id": "person-left",
+    "displayName": "格子衫",
+    "atlasName": null,
+    "palette": {"skin":"#D8A080","hair":"#1E1715","shirt":"#B9A88A","accent":"#5D655E"},
+    "personality": {"speed":0.46,"curiosity":0.70,"sociability":0.62,"courage":0.42,"sleepiness":0.35},
+    "anchor": {"x":0.5,"y":0.08},
+    "collisionBody": {"x":0.15,"y":0.04,"width":0.7,"height":0.72},
+    "animations": {"idle":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":4},"crawl":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":8}}
+  },
+  {
+    "id": "person-center-left",
+    "displayName": "黑背心",
+    "atlasName": null,
+    "palette": {"skin":"#D49A76","hair":"#171313","shirt":"#171717","accent":"#F5F0E8"},
+    "personality": {"speed":0.70,"curiosity":0.72,"sociability":0.80,"courage":0.78,"sleepiness":0.22},
+    "anchor": {"x":0.5,"y":0.08},
+    "collisionBody": {"x":0.15,"y":0.04,"width":0.7,"height":0.72},
+    "animations": {"idle":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":4},"crawl":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":8}}
+  },
+  {
+    "id": "person-center-right",
+    "displayName": "薄荷衫",
+    "atlasName": null,
+    "palette": {"skin":"#D39A7D","hair":"#3A241B","shirt":"#A9D8CF","accent":"#403632"},
+    "personality": {"speed":0.52,"curiosity":0.58,"sociability":0.74,"courage":0.48,"sleepiness":0.42},
+    "anchor": {"x":0.5,"y":0.08},
+    "collisionBody": {"x":0.15,"y":0.04,"width":0.7,"height":0.72},
+    "animations": {"idle":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":4},"crawl":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":8}}
+  },
+  {
+    "id": "person-right",
+    "displayName": "黑外套",
+    "atlasName": null,
+    "palette": {"skin":"#B97D5E","hair":"#151313","shirt":"#272727","accent":"#EFE4DC"},
+    "personality": {"speed":0.62,"curiosity":0.66,"sociability":0.68,"courage":0.66,"sleepiness":0.30},
+    "anchor": {"x":0.5,"y":0.08},
+    "collisionBody": {"x":0.15,"y":0.04,"width":0.7,"height":0.72},
+    "animations": {"idle":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":4},"crawl":{"frames":[{"x":0,"y":0,"width":1,"height":1}],"fps":8}}
+  }
+]

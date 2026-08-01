@@ -8,7 +8,10 @@ let package = Package(
         .executable(name: "DesktopPets", targets: ["DesktopPets"]),
     ],
     targets: [
-        .executableTarget(name: "DesktopPets"),
+        .executableTarget(
+            name: "DesktopPets",
+            resources: [.process("Resources")]
+        ),
         .testTarget(name: "DesktopPetsTests", dependencies: ["DesktopPets"]),
     ]
 )
