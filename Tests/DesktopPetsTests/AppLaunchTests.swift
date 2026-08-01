@@ -16,4 +16,8 @@ final class AppLaunchTests: XCTestCase {
             .invalid("Unknown argument: --surprise")
         )
     }
+
+    func testParsesGeometryProbeMode() {
+        XCTAssertEqual(CommandLineMode.parse(["DesktopPets", "--geometry-probe"]), .geometryProbe)
+    }
 }

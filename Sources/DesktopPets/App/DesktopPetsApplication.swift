@@ -9,6 +9,13 @@ struct SelfTestReport: Codable {
     let windowEnumerationAvailable: Bool
 }
 
+struct GeometryProbeReport: Codable {
+    let status: String
+    let displayCount: Int
+    let acceptedExternalRectangleCount: Int
+    let ownerPIDs: [Int32]
+}
+
 @MainActor
 final class DesktopPetsApplication {
     private let mode: CommandLineMode
@@ -33,6 +40,15 @@ final class DesktopPetsApplication {
                     [.optionOnScreenOnly, .excludeDesktopElements],
                     kCGNullWindowID
                 ) != nil
+            )
+            return printJSON(report)
+        case .geometryProbe:
+            let snapshot = CGWindowGeometryProvider().snapshot()
+            let report = GeometryProbeReport(
+                status: snapshot.displays.isEmpty ? "degraded" : "ok",
+                displayCount: snapshot.displays.count,
+                acceptedExternalRectangleCount: snapshot.obstacles.count,
+                ownerPIDs: snapshot.ownerPIDs.sorted()
             )
             return printJSON(report)
         case let .invalid(message):

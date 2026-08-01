@@ -37,6 +37,10 @@ struct WorldRect: Codable, Equatable, Sendable {
         point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY
     }
 
+    func intersects(_ other: WorldRect) -> Bool {
+        minX < other.maxX && maxX > other.minX && minY < other.maxY && maxY > other.minY
+    }
+
     func clamped(_ point: WorldPoint, margin: Double) -> WorldPoint {
         let safeMargin = max(0, min(margin, min(width, height) / 2))
         return WorldPoint(
