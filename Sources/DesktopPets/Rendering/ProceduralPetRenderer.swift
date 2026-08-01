@@ -65,34 +65,24 @@ enum ProceduralPetRenderer {
             NSBezierPath(roundedRect: NSRect(x: 84, y: 64, width: 18, height: 44), xRadius: 7, yRadius: 7).fill()
         }
 
-        skin.setFill()
-        NSBezierPath(ovalIn: NSRect(x: 105, y: 83, width: 54, height: 58)).fill()
-        hair.setFill()
-        let hairPath = NSBezierPath()
-        hairPath.move(to: CGPoint(x: 106, y: 117))
-        hairPath.curve(to: CGPoint(x: 157, y: 118), controlPoint1: CGPoint(x: 112, y: 145), controlPoint2: CGPoint(x: 150, y: 145))
-        hairPath.line(to: CGPoint(x: 153, y: 132))
-        hairPath.curve(to: CGPoint(x: 110, y: 128), controlPoint1: CGPoint(x: 142, y: 143), controlPoint2: CGPoint(x: 118, y: 141))
-        hairPath.close()
-        hairPath.fill()
-
-        NSColor(hex: "#2A2220").setFill()
-        NSBezierPath(ovalIn: NSRect(x: 120, y: 109, width: 5, height: 5)).fill()
-        NSBezierPath(ovalIn: NSRect(x: 141, y: 109, width: 5, height: 5)).fill()
-        let smile = NSBezierPath()
-        smile.move(to: CGPoint(x: 127, y: 99))
-        smile.curve(to: CGPoint(x: 143, y: 100), controlPoint1: CGPoint(x: 132, y: 95), controlPoint2: CGPoint(x: 139, y: 95))
-        smile.lineWidth = 2
-        smile.stroke()
-
-        if character.id == "person-left" || character.id == "person-center-right" {
-            hair.setStroke()
-            for x in [117.0, 138.0] {
-                let glasses = NSBezierPath(ovalIn: NSRect(x: x, y: 105, width: 14, height: 12))
-                glasses.lineWidth = 1.8
-                glasses.stroke()
-            }
-            let bridge = NSBezierPath(); bridge.move(to: CGPoint(x: 131, y: 111)); bridge.line(to: CGPoint(x: 138, y: 111)); bridge.lineWidth = 1.5; bridge.stroke()
+        let faceRect = NSRect(x: 103, y: 81, width: 58, height: 62)
+        if let face = FaceAssetLoader.image(for: character.id) {
+            NSGraphicsContext.saveGraphicsState()
+            NSBezierPath(ovalIn: faceRect).addClip()
+            drawAspectFill(face, in: faceRect)
+            NSGraphicsContext.restoreGraphicsState()
+            NSColor.white.withAlphaComponent(0.72).setStroke()
+            let border = NSBezierPath(ovalIn: faceRect.insetBy(dx: 0.75, dy: 0.75))
+            border.lineWidth = 1.5
+            border.stroke()
+        } else {
+            skin.setFill()
+            NSBezierPath(ovalIn: faceRect).fill()
+            hair.setFill()
+            NSBezierPath(ovalIn: NSRect(x: 105, y: 116, width: 54, height: 27)).fill()
+            NSColor(hex: "#2A2220").setFill()
+            NSBezierPath(ovalIn: NSRect(x: 120, y: 109, width: 5, height: 5)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 141, y: 109, width: 5, height: 5)).fill()
         }
 
         skin.setFill()
@@ -110,6 +100,24 @@ enum ProceduralPetRenderer {
         path.lineWidth = width
         color.setStroke()
         path.stroke()
+    }
+
+    private static func drawAspectFill(_ image: NSImage, in destination: NSRect) {
+        let sourceSize = image.size
+        guard sourceSize.width > 0, sourceSize.height > 0 else { return }
+        let destinationAspect = destination.width / destination.height
+        let sourceAspect = sourceSize.width / sourceSize.height
+        var source = NSRect(origin: .zero, size: sourceSize)
+        if sourceAspect > destinationAspect {
+            let width = sourceSize.height * destinationAspect
+            source.origin.x = (sourceSize.width - width) / 2
+            source.size.width = width
+        } else {
+            let height = sourceSize.width / destinationAspect
+            source.origin.y = (sourceSize.height - height) / 2
+            source.size.height = height
+        }
+        image.draw(in: destination, from: source, operation: .sourceOver, fraction: 1)
     }
 }
 

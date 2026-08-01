@@ -58,3 +58,5 @@
 - The first behavior test exposed an x-motion cancellation caused by reversing direction after vertical floor clamping. The implementation now reverses only when horizontal clamping occurs; the regression test passes.
 - The procedural renderer produced a transparent 1440×320 Retina PNG containing four separated crawling human figures with distinct clothing cues.
 - Visual inspection: pose, transparency, glasses, plaid shirt, mint shirt, and black/white clothing cues are clear. The procedural faces are not sufficiently recognizable as the four people and are only an operational fallback; production identity-preserving assets remain mandatory.
+- The built-in identity-preserving edit failed twice at the image service network boundary and produced no artifact. Per the image-generation workflow, no unapproved CLI/model fallback was used.
+- A deterministic local extraction from the 6528×4896 source produced four separately reviewed portrait crops. The runtime composite now uses the exact photographed faces/hair/glasses over the stylized crawling bodies; a transparent 1440×320 Retina verification image shows four recognizable separated identities.
