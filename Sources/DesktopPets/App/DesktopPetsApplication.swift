@@ -51,6 +51,17 @@ final class DesktopPetsApplication {
                 ownerPIDs: snapshot.ownerPIDs.sorted()
             )
             return printJSON(report)
+        case let .renderSnapshot(path):
+            do {
+                try ProceduralPetRenderer.renderVerificationSnapshot(
+                    characters: CharacterCatalog.fallback.characters,
+                    url: URL(fileURLWithPath: path)
+                )
+                return printJSON(["status": "ok", "path": path])
+            } catch {
+                FileHandle.standardError.write(Data("Snapshot render failed: \(error)\n".utf8))
+                return EXIT_FAILURE
+            }
         case let .invalid(message):
             FileHandle.standardError.write(Data("\(message)\n".utf8))
             return EXIT_FAILURE

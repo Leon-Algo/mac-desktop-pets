@@ -20,4 +20,11 @@ final class AppLaunchTests: XCTestCase {
     func testParsesGeometryProbeMode() {
         XCTAssertEqual(CommandLineMode.parse(["DesktopPets", "--geometry-probe"]), .geometryProbe)
     }
+
+    func testParsesRenderSnapshotModeWithPath() {
+        XCTAssertEqual(
+            CommandLineMode.parse(["DesktopPets", "--render-snapshot", "/tmp/pets.png"]),
+            .renderSnapshot("/tmp/pets.png")
+        )
+    }
 }

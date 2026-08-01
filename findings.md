@@ -52,3 +52,9 @@
 2. What Mac model/processor and macOS version will be used for testing?
 3. Should pets ignore mouse input by default, or be draggable/clickable?
 4. Is sending the source image to an external image-generation service acceptable, or must all processing remain local?
+
+## Implementation findings — 2026-08-02
+- The live Core Graphics probe returned one display and one accepted external application-window rectangle without ScreenCaptureKit or Accessibility APIs.
+- The first behavior test exposed an x-motion cancellation caused by reversing direction after vertical floor clamping. The implementation now reverses only when horizontal clamping occurs; the regression test passes.
+- The procedural renderer produced a transparent 1440×320 Retina PNG containing four separated crawling human figures with distinct clothing cues.
+- Visual inspection: pose, transparency, glasses, plaid shirt, mint shirt, and black/white clothing cues are clear. The procedural faces are not sufficiently recognizable as the four people and are only an operational fallback; production identity-preserving assets remain mandatory.
