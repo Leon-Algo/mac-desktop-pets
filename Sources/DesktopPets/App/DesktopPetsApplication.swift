@@ -19,6 +19,7 @@ struct GeometryProbeReport: Codable {
 @MainActor
 final class DesktopPetsApplication {
     private let mode: CommandLineMode
+    private var appController: AppController?
 
     init(mode: CommandLineMode) {
         self.mode = mode
@@ -29,6 +30,9 @@ final class DesktopPetsApplication {
         case .normal:
             let app = NSApplication.shared
             app.setActivationPolicy(.accessory)
+            let controller = AppController()
+            appController = controller
+            app.delegate = controller
             app.run()
             return EXIT_SUCCESS
         case .selfTest:
