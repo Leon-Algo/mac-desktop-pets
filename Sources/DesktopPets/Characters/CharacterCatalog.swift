@@ -23,7 +23,7 @@ struct CharacterCatalog: Sendable {
     }
 
     static func loadBundled() throws -> CharacterCatalog {
-        guard let url = Bundle.module.url(forResource: "characters", withExtension: "json") else {
+        guard let url = ResourceBundleLocator.current.url(forResource: "characters", withExtension: "json") else {
             throw CharacterCatalogError.missingBundledCatalog
         }
         return try load(data: Data(contentsOf: url))

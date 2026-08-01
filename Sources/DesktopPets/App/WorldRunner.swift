@@ -4,6 +4,8 @@ import OSLog
 
 @MainActor
 final class WorldRunner: NSObject {
+    static let simulationFramesPerSecond = 20
+    static let geometryRefreshInterval = 1.0
     private var world: PetWorld
     private let geometryProvider: GeometryProvider
     private let windows: PetWindowCoordinator
@@ -32,7 +34,13 @@ final class WorldRunner: NSObject {
         windows.setClickThrough(preferences.clickThrough)
         preferences.petsHidden ? windows.hide() : windows.show()
         lastTick = ProcessInfo.processInfo.systemUptime
-        timer = Timer.scheduledTimer(timeInterval: 1.0 / 30.0, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(
+            timeInterval: 1.0 / Double(Self.simulationFramesPerSecond),
+            target: self,
+            selector: #selector(tick),
+            userInfo: nil,
+            repeats: true
+        )
         RunLoop.main.add(timer!, forMode: .common)
         logger.info("Started four-pet world runner")
     }
@@ -68,7 +76,7 @@ final class WorldRunner: NSObject {
         let now = ProcessInfo.processInfo.systemUptime
         let delta = min(max(now - lastTick, 0), 0.1)
         lastTick = now
-        if now - lastGeometryRefresh >= 0.25 {
+        if now - lastGeometryRefresh >= Self.geometryRefreshInterval {
             let snapshot = geometryProvider.snapshot()
             if !snapshot.displays.isEmpty { obstacleMap = snapshot.obstacleMap }
             lastGeometryRefresh = now

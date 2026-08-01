@@ -79,10 +79,42 @@ struct ObstacleMap: Sendable {
             }
     }
 
+    func crossedClimbableEdge(fromX: Double, toX: Double, atY y: Double) -> ClimbableEdge? {
+        guard fromX.isFinite, toX.isFinite, y.isFinite, fromX != toX else { return nil }
+        let movingRight = toX > fromX
+        return obstacles.compactMap { obstacle -> ClimbableEdge? in
+            guard y >= obstacle.rect.minY, y <= obstacle.rect.maxY else { return nil }
+            let edgeX = movingRight ? obstacle.rect.minX : obstacle.rect.maxX
+            guard movingRight
+                    ? (fromX < edgeX && toX >= edgeX)
+                    : (fromX > edgeX && toX <= edgeX) else { return nil }
+            return ClimbableEdge(
+                obstacleID: obstacle.id,
+                x: edgeX,
+                minY: obstacle.rect.minY,
+                maxY: obstacle.rect.maxY,
+                side: movingRight ? .left : .right
+            )
+        }
+        .min { abs(fromX - $0.x) < abs(fromX - $1.x) }
+    }
+
     func clamped(_ point: WorldPoint, margin: Double) -> WorldPoint {
         guard let display = displays.min(by: {
             $0.squaredDistance(to: point) < $1.squaredDistance(to: point)
         }) else { return point }
         return display.clamped(point, margin: margin)
+    }
+
+    func clampedPetAnchor(_ point: WorldPoint, halfWidth: Double, topClearance: Double) -> WorldPoint {
+        guard let display = displays.min(by: {
+            $0.squaredDistance(to: point) < $1.squaredDistance(to: point)
+        }) else { return point }
+        let safeHalfWidth = max(0, min(halfWidth, display.width / 2))
+        let safeTop = max(0, min(topClearance, display.height))
+        return WorldPoint(
+            x: min(max(point.x, display.minX + safeHalfWidth), display.maxX - safeHalfWidth),
+            y: min(max(point.y, display.minY), display.maxY - safeTop)
+        )
     }
 }

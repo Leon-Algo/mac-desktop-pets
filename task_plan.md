@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 4 — Implementation
+Phase 5 — Verification and handoff complete for the local-development build
 
 ## Phases
 
@@ -31,16 +31,16 @@ Phase 4 — Implementation
 - **Status:** complete
 
 ### Phase 4: Implementation
-- [ ] Prepare and approve character assets
-- [ ] Build the macOS MVP
-- [ ] Add tests and diagnostics
-- **Status:** in_progress
+- [x] Prepare and review character assets
+- [x] Build the macOS MVP
+- [x] Add tests and diagnostics
+- **Status:** complete
 
 ### Phase 5: Verification and handoff
-- [ ] Verify rendering, behaviors, resource use, permissions, packaging, and uninstall behavior
-- [ ] Produce a signed/notarization-ready macOS app build or document local-development signing constraints
-- [ ] Record Windows-porting design notes
-- **Status:** pending
+- [x] Verify rendering, behaviors, resource use, permissions, packaging, and uninstall behavior
+- [x] Produce an ad-hoc signed local app and document Developer ID/notarization constraints
+- [x] Record Windows-porting design notes
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |
@@ -48,7 +48,7 @@ Phase 4 — Implementation
 | macOS first, Windows later | Faster testing on the user's current machine while preserving a cross-platform product path. |
 | No implementation before design approval | The user explicitly requested a scheme and alignment first. |
 | Store project records in `mac-desktop-pets/` | Root planning files belong to a different task and must not be overwritten. |
-| Recommend native Swift/AppKit + SpriteKit | Strongest fit for macOS desktop/window integration and low-overhead 2D pets; portability is preserved at the asset/behavior layer. |
+| Native Swift/AppKit + Core Animation | Strongest fit for macOS desktop/window integration; Core Animation avoided an unnecessary display-link failure and reduced runtime overhead. |
 | Avoid Screen Recording as an MVP requirement | Window geometry should be enough; capturing pixels adds unnecessary privacy and permission costs. |
 | Prototype with placeholder art before finalizing four characters | Retires the highest platform-integration risk before expensive asset production. |
 | Use semi-realistic 2D miniature people | User approved the recommended option and directed implementation using best practices. |
@@ -58,3 +58,6 @@ Phase 4 — Implementation
 | Error | Attempt | Resolution |
 |---|---:|---|
 | Root planning files are for an unrelated project | 1 | Created an isolated project directory and records. |
+| Identity-preserving generation failed at the service boundary | 2 | Used deterministic local face/hair crops over transparent procedural crawling bodies; documented the visual limitation. |
+| SpriteKit display link failed while the display was asleep | 1 | Replaced the static sprite host with Core Animation; regression test proves no display link is required. |
+| Resource bundle placement initially invalidated deep signing | 1 | Packaged the SwiftPM resource bundle under `Contents/Resources` and verified strict deep signing. |

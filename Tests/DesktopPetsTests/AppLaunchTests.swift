@@ -27,4 +27,11 @@ final class AppLaunchTests: XCTestCase {
             .renderSnapshot("/tmp/pets.png")
         )
     }
+
+    func testParsesInspectRunningPID() {
+        XCTAssertEqual(
+            CommandLineMode.parse(["DesktopPets", "--inspect-running", "1234"]),
+            .inspectRunning(1234)
+        )
+    }
 }

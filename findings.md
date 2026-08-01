@@ -47,11 +47,11 @@
 - ScreenCaptureKit shareable content: https://developer.apple.com/documentation/screencapturekit/scshareablecontent
 - Accessibility AXUIElement: https://developer.apple.com/documentation/applicationservices/axuielement_h
 
-## Open questions
-1. Should the character art look like realistic photo cutouts, semi-realistic illustrated miniatures, or deliberately cartoonish chibi figures?
-2. What Mac model/processor and macOS version will be used for testing?
-3. Should pets ignore mouse input by default, or be draggable/clickable?
-4. Is sending the source image to an external image-generation service acceptable, or must all processing remain local?
+## Resolved product choices
+1. The local MVP uses recognizable photo faces with semi-realistic/stylized miniature crawling bodies.
+2. The build supports macOS 13+ and was verified on Apple Silicon macOS 26.5.2.
+3. Pets ignore mouse input by default; the menu can disable click-through.
+4. Runtime assets and processing are local. The attempted built-in identity-preserving generation never produced an uploaded-result artifact, so the shipped assets use deterministic local crops.
 
 ## Implementation findings — 2026-08-02
 - The live Core Graphics probe returned one display and one accepted external application-window rectangle without ScreenCaptureKit or Accessibility APIs.
@@ -60,3 +60,9 @@
 - Visual inspection: pose, transparency, glasses, plaid shirt, mint shirt, and black/white clothing cues are clear. The procedural faces are not sufficiently recognizable as the four people and are only an operational fallback; production identity-preserving assets remain mandatory.
 - The built-in identity-preserving edit failed twice at the image service network boundary and produced no artifact. Per the image-generation workflow, no unapproved CLI/model fallback was used.
 - A deterministic local extraction from the 6528×4896 source produced four separately reviewed portrait crops. The runtime composite now uses the exact photographed faces/hair/glasses over the stylized crawling bodies; a transparent 1440×320 Retina verification image shows four recognizable separated identities.
+- Core Animation replaced SpriteKit for the single-layer procedural figures after an asleep-display run exposed CVDisplayLink startup errors. This removes an unnecessary display-link dependency while retaining pose transforms.
+- The final simulation cadence is 20 Hz with window metadata refreshed at 1 Hz. A release run stabilized around 5–6% CPU and 54 MB RSS on the test host.
+- The final obstacle model supports window-top landing, side-edge crossing detection, turn-or-climb reactions, falls, screen-safe clamping, and exclusion of Dock/menu-bar areas via `visibleFrame`.
+- All 39 tests pass normally and under AddressSanitizer. A strict Swift 6 concurrency release build also passes.
+- The packaged app launches as one menu-bar process with four on-screen pet panels, uses empty entitlements, and passes `codesign --verify --deep --strict` with ad-hoc signing.
+- No Developer ID certificate is installed (`0 valid identities found`), so Gatekeeper correctly rejects the local ad-hoc build for public distribution. Developer ID signing and Apple notarization remain release operations, not functional defects.

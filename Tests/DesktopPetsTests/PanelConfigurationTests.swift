@@ -34,4 +34,8 @@ final class PanelConfigurationTests: XCTestCase {
         coordinator.setClickThrough(false)
         XCTAssertTrue(coordinator.allPanels.allSatisfy { !$0.ignoresMouseEvents })
     }
+
+    func testPetViewDoesNotRequireSpriteKitDisplayLink() {
+        XCTAssertFalse(PetSpriteView.requiresDisplayLink)
+    }
 }

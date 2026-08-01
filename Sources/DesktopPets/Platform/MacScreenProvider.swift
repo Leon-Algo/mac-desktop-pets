@@ -6,10 +6,10 @@ enum MacScreenProvider {
     static func displays() -> [WorldRect] {
         NSScreen.screens.compactMap { screen in
             WorldRect(
-                x: screen.frame.origin.x,
-                y: screen.frame.origin.y,
-                width: screen.frame.width,
-                height: screen.frame.height
+                x: screen.visibleFrame.origin.x,
+                y: screen.visibleFrame.origin.y,
+                width: screen.visibleFrame.width,
+                height: screen.visibleFrame.height
             )
         }
     }

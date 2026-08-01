@@ -42,6 +42,20 @@ final class ObstacleMapTests: XCTestCase {
         XCTAssertEqual(edge?.side, .left)
     }
 
+    func testDetectsWindowSideCrossedByHorizontalCrawl() {
+        let obstacle = Obstacle(id: "window", kind: .window, rect: WorldRect(x: 200, y: 100, width: 300, height: 300)!)
+        let map = ObstacleMap(displays: [display], obstacles: [obstacle])
+
+        let enteringFromLeft = map.crossedClimbableEdge(fromX: 190, toX: 210, atY: 120)
+        let enteringFromRight = map.crossedClimbableEdge(fromX: 510, toX: 490, atY: 120)
+
+        XCTAssertEqual(enteringFromLeft?.x, 200)
+        XCTAssertEqual(enteringFromLeft?.side, .left)
+        XCTAssertEqual(enteringFromRight?.x, 500)
+        XCTAssertEqual(enteringFromRight?.side, .right)
+        XCTAssertNil(map.crossedClimbableEdge(fromX: 190, toX: 210, atY: 50))
+    }
+
     func testClampsPointToNearestOfMultipleDisplays() {
         let second = WorldRect(x: 1200, y: 0, width: 800, height: 600)!
         let map = ObstacleMap(displays: [display, second], obstacles: [])
@@ -49,6 +63,18 @@ final class ObstacleMapTests: XCTestCase {
         XCTAssertEqual(
             map.clamped(WorldPoint(x: 2100, y: 700), margin: 20),
             WorldPoint(x: 1980, y: 580)
+        )
+    }
+
+    func testClampsPetAnchorWithPanelSafeMargins() {
+        let map = ObstacleMap(displays: [display], obstacles: [])
+        XCTAssertEqual(
+            map.clampedPetAnchor(WorldPoint(x: -50, y: 900), halfWidth: 90, topClearance: 140),
+            WorldPoint(x: 90, y: 660)
+        )
+        XCTAssertEqual(
+            map.clampedPetAnchor(WorldPoint(x: 1300, y: -20), halfWidth: 90, topClearance: 140),
+            WorldPoint(x: 1110, y: 0)
         )
     }
 }

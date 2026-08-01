@@ -16,6 +16,12 @@ struct GeometryProbeReport: Codable {
     let ownerPIDs: [Int32]
 }
 
+struct RunningAppReport: Codable {
+    let status: String
+    let pid: Int32
+    let windowCount: Int
+}
+
 @MainActor
 final class DesktopPetsApplication {
     private let mode: CommandLineMode
@@ -66,6 +72,9 @@ final class DesktopPetsApplication {
                 FileHandle.standardError.write(Data("Snapshot render failed: \(error)\n".utf8))
                 return EXIT_FAILURE
             }
+        case let .inspectRunning(pid):
+            let count = CGWindowGeometryProvider.rawWindowCount(ownerPID: pid)
+            return printJSON(RunningAppReport(status: count >= 4 ? "ok" : "degraded", pid: pid, windowCount: count))
         case let .invalid(message):
             FileHandle.standardError.write(Data("\(message)\n".utf8))
             return EXIT_FAILURE

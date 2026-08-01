@@ -16,10 +16,14 @@ final class AppController: NSObject, NSApplicationDelegate {
         statusMenu = StatusMenuController(target: self)
         statusMenu?.refresh(preferences: preferences)
         runner?.start(preferences: preferences)
+        ProcessInfo.processInfo.disableAutomaticTermination("Desktop pets remain active while the menu-bar app is running")
+        ProcessInfo.processInfo.disableSuddenTermination()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         runner?.stop()
+        ProcessInfo.processInfo.enableSuddenTermination()
+        ProcessInfo.processInfo.enableAutomaticTermination("Desktop pets are quitting")
     }
 
     @objc func togglePause(_ sender: Any?) {

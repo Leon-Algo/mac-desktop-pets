@@ -10,4 +10,9 @@ final class FaceAssetTests: XCTestCase {
             XCTAssertGreaterThan(image.size.height, 100)
         }
     }
+
+    func testResourceLocatorFindsCatalogInSwiftPMBundle() {
+        let bundle = ResourceBundleLocator.current
+        XCTAssertNotNil(bundle.url(forResource: "characters", withExtension: "json"))
+    }
 }

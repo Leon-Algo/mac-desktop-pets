@@ -80,7 +80,11 @@ struct PetWorld: Sendable {
                 transition(index, to: .fall)
             } else {
                 let previousX = agents[index].position.x
-                let clamped = obstacles.clamped(agents[index].position, margin: 0)
+                let clamped = obstacles.clampedPetAnchor(
+                    agents[index].position,
+                    halfWidth: 90,
+                    topClearance: 140
+                )
                 if clamped != agents[index].position {
                     agents[index].position = clamped
                     if clamped.x != previousX {
@@ -94,7 +98,24 @@ struct PetWorld: Sendable {
 
     private mutating func updateCrawling(index: Int, dt: Double, obstacles: ObstacleMap) {
         let speed = 55 + agents[index].personality.speed * 80
+        let previousX = agents[index].position.x
         agents[index].position.x += Double(agents[index].facing.rawValue) * speed * dt
+
+        if let edge = obstacles.crossedClimbableEdge(
+            fromX: previousX,
+            toX: agents[index].position.x,
+            atY: agents[index].position.y
+        ) {
+            agents[index].position.x = edge.x
+            agents[index].supportID = edge.obstacleID
+            if random.nextDouble() < agents[index].personality.courage {
+                transition(index, to: .climb)
+            } else {
+                agents[index].facing = agents[index].facing == .right ? .left : .right
+                transition(index, to: .turn)
+            }
+            return
+        }
 
         let probe = WorldPoint(x: agents[index].position.x, y: agents[index].position.y + 2)
         if let support = obstacles.supportingSurface(below: probe, within: 4) {

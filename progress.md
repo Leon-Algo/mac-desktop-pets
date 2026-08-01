@@ -32,8 +32,22 @@
 - Confirmed build host: Apple Silicon, macOS 26.5.2, Xcode 26.5, Swift 6.3.2.
 
 ### Phase 4 — Implementation
-- **Status:** in_progress
+- **Status:** complete
 - Selected inline plan execution because proactive subagent dispatch is not permitted by the active collaboration rules.
 - Completed and committed the SwiftPM application skeleton, geometry model, character manifest contract, deterministic behavior engine, Core Graphics window provider, and transparent panel renderer.
-- Current automated suite: 26 tests before the next integration phase.
+- Completed the native menu-bar lifecycle, four transparent panels, Core Animation renderer, exact face assets, deterministic state machine, live Core Graphics window geometry, preferences, diagnostics, packaging, and Windows adapter notes.
+- Added safe visible-screen bounds and direct window-side collision handling after final review.
+- Current automated suite: 39 tests.
 - Verified a live geometry probe and generated/inspected a transparent four-character procedural preview.
+
+### Phase 5 — Verification and handoff
+- **Status:** complete for local development distribution
+- Normal and AddressSanitizer suites: 39/39 passing.
+- Strict-concurrency Release build: passing.
+- Packaged app: ad-hoc signed and strict deep-signature validation passing.
+- Live smoke: one process, four on-screen pet windows.
+- Live geometry: one display and one accepted external application rectangle on the test session.
+- Runtime sampling: approximately 5–6% CPU and 54 MB RSS after startup.
+- Privacy audit: no screen capture, Accessibility, networking, window-title collection, or nonempty entitlements.
+- Generated and visually inspected a 1440×320 alpha-enabled runtime snapshot.
+- Public Developer ID signing/notarization is unavailable on this machine and is documented rather than claimed.

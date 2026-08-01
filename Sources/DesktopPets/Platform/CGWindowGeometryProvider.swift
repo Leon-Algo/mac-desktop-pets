@@ -45,6 +45,10 @@ enum WindowFilter {
 
 @MainActor
 final class CGWindowGeometryProvider: GeometryProvider {
+    static func rawWindowCount(ownerPID: Int32) -> Int {
+        windowRecords().filter { $0.ownerPID == ownerPID && $0.isOnScreen }.count
+    }
+
     func snapshot() -> GeometrySnapshot {
         let displays = MacScreenProvider.displays()
         let records = Self.windowRecords()
