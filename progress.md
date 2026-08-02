@@ -66,3 +66,11 @@
 - Final automated count after interaction edge-case review: 55/55 normal tests and 55/55 AddressSanitizer tests.
 - Strict-concurrency Release build, ad-hoc signing, four-window smoke, and nine-command packaged interaction self-test all pass.
 - Final review also ensures a click resumes an individually paused pet and double-click group play restores any individually hidden pets.
+
+### Phase 7 — Persistent control center
+- **Status:** written specification review
+- Reproduced the missing menu-bar item with the current packaged process running.
+- Captured normal and full-screen desktop states; no paw item was visible.
+- Ran a same-session minimal `TEST` status-item control experiment; it was also not visible, ruling out simple controller deallocation as the sole cause.
+- User approved the recommended labeled status-item plus independent fallback-control design.
+- Wrote and self-reviewed `docs/superpowers/specs/2026-08-02-persistent-control-center-design.md`; no production code has been changed pending written-spec review.

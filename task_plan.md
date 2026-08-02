@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 6 — Direct pet interaction implementation
+Phase 7 — Persistent control center design
 
 ## Phases
 
@@ -51,6 +51,17 @@ Phase 6 — Direct pet interaction implementation
 - [x] Rebuild, launch, exercise, and package the updated app
 - **Status:** complete
 
+### Phase 7: Persistent control center
+- [x] Reproduce the missing status item in the user's real desktop session
+- [x] Compare against a minimal standalone status item in the same session
+- [x] Obtain approval for a persistent, visible control-center design
+- [x] Write and self-review the persistent control-center specification
+- [ ] Obtain user review of the written specification
+- [ ] Implement status-item lifecycle diagnostics and robust presentation
+- [ ] Add global and per-character control-center commands
+- [ ] Verify visibility after first launch, relaunch, full-screen transitions, and hiding characters
+- **Status:** in_progress
+
 ## Initial Decisions
 | Decision | Rationale |
 |---|---|
@@ -63,6 +74,7 @@ Phase 6 — Direct pet interaction implementation
 | Use semi-realistic 2D miniature people | User approved the recommended option and directed implementation using best practices. |
 | Support macOS 13+ and verify on Apple Silicon macOS 26.5.2 | Matches available APIs while covering a broader practical deployment floor than the test machine. |
 | Shape-aware interaction mode by default | Enables direct pet interaction while transparent panel regions continue passing mouse input to the desktop. |
+| Use a labeled status item plus an independent fallback control | A same-session minimal status item was also suppressed, so a menu-bar-only fix cannot guarantee a stop/restore/quit route. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

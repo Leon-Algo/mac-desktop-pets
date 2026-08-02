@@ -72,3 +72,11 @@
 - Default `clickThrough = true` makes every pet panel ignore mouse events. Turning it off only makes the rectangular panel receive clicks; `PetSpriteView` currently has no mouse handlers.
 - AppKit windows are rectangular at the WindowServer level. Shape-aware pass-through therefore requires dynamically toggling `ignoresMouseEvents` from the rendered alpha mask at the current mouse location, while pinning acceptance during a drag.
 - The approved interaction set is: single-click reaction, double-click group play, drag/release with falling, right-click per-pet commands, and an explicit first-launch explanation of the paw menu.
+
+## Persistent control-center investigation — 2026-08-02
+- The user reported that the paw status item is absent, leaving no obvious global pause/quit/restore path.
+- Reproduced on the live packaged app: process and four pet panels were active, while a full-screen capture of a normal desktop Space showed no paw item in the visible menu bar.
+- Ownership is not the immediate failure: `DesktopPetsApplication` strongly retains `AppController`, which strongly retains `StatusMenuController`, which strongly retains the `NSStatusItem`.
+- The status item is currently icon-only with `NSStatusItem.squareLength`; it does not set a text label, explicit visibility, or any lifecycle telemetry.
+- A separate minimal `TEST` status item launched in the same session was also absent from the visible menu bar. This indicates the environment/menu-bar presentation path can suppress new status items, so merely recreating the same icon-only item is not a reliable fix.
+- Full-screen Spaces also hide the macOS menu bar until it is revealed. The control design needs both a robust status item and an in-app fallback so users cannot become trapped after hiding all pets.
