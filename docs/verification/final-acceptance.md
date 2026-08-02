@@ -17,7 +17,7 @@ Date: 2026-08-02
 | Control commands | PASS | The shared menu exposes global pause/resume, hide/show, recall, four per-character submenus, click-through, fallback visibility, launch at login, diagnostics, and quit. Pet context menus add recall-all, open-total-station, and quit. The app refuses to hide the last usable control while all pets are hidden or full click-through is enabled. |
 | First-run guidance | PASS | Guidance is non-modal and names both `🐾 桌宠` and `🐾 总台`; launch no longer changes activation policy to surface an alert. |
 | Live launch | PASS | Packaged inspection precisely matched four 180×160 pet windows plus the named 96×38 fallback and returned `status: ok`, `windowCount: 5`, `petWindowCount: 4`, and `fallbackControlPresent: true`. |
-| Relaunch reliability | PASS | Automatic-termination protection is installed before the AppKit event loop; three consecutive ordinary Finder-style launches each produced the exact four-pet-plus-fallback window set. |
+| Relaunch reliability | PASS | Three consecutive ordinary Finder-style launches each produced the exact four-pet-plus-fallback window set. Early lifecycle protection remains as defensive hardening. |
 | Live recovery | PASS | Real menu input hid all pets while preserving the fallback, recalled four panels, proved resume motion and pause stability from window coordinates, and terminated the process through Quit. |
 | Stability | PASS | 73/73 normal tests and 73/73 AddressSanitizer tests pass, including an accelerated 30-minute simulation. |
 | Swift concurrency | PASS | Release build with `-strict-concurrency=complete` succeeds. |
