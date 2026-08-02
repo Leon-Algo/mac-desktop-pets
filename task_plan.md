@@ -75,7 +75,7 @@ Phase 9 — Adjustable pet sizes in progress
 - [x] Select the three-preset design with 50% default
 - [x] Inspect rendering, hit-testing, world geometry, preferences, and packaged diagnostics
 - [x] Write and self-review the design specification
-- [ ] Write the detailed TDD implementation plan
+- [x] Write the detailed TDD implementation plan
 - [ ] Implement preferences and shared menu controls
 - [ ] Implement scale-aware panels, hit testing, and world bounds
 - [ ] Update packaged inspection and run full release verification
