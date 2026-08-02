@@ -22,4 +22,12 @@ enum ControlCenterVisibilityPolicy {
     static func nextGlobalHidden(globalHidden: Bool, characters: [PetControlState]) -> Bool {
         !isGloballyHidden(globalHidden: globalHidden, characters: characters)
     }
+
+    static func canHideFallback(
+        clickThrough: Bool,
+        globalHidden: Bool,
+        characters: [PetControlState]
+    ) -> Bool {
+        !clickThrough && !isGloballyHidden(globalHidden: globalHidden, characters: characters)
+    }
 }

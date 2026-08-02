@@ -22,6 +22,10 @@ final class AppController: NSObject, NSApplicationDelegate {
             controlCenterPanel = ControlCenterPanelController(menu: menu)
         }
         statusMenu?.onFallbackRequired = { [weak self] in self?.showControlCenter() }
+        statusMenu?.onStatusContextChanged = { [weak self] in
+            self?.controlCenterPanel?.repositionOnCurrentScreen()
+            self?.refreshMenuOnly()
+        }
         runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
         runner?.onUICommand = { [weak self] command in self?.handle(command) }
         refreshControls()
@@ -98,9 +102,11 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     @objc func toggleControlCenter(_ sender: Any?) {
-        if ControlCenterVisibilityPolicy.mustShowFallback(
+        let states = runner?.controlSnapshot ?? []
+        if !ControlCenterVisibilityPolicy.canHideFallback(
+            clickThrough: preferences.clickThrough,
             globalHidden: preferences.petsHidden,
-            characters: runner?.controlSnapshot ?? []
+            characters: states
         ) {
             showControlCenter()
         } else {
@@ -146,7 +152,12 @@ final class AppController: NSObject, NSApplicationDelegate {
         statusMenu?.refresh(
             preferences: preferences,
             characters: states,
-            isFallbackVisible: controlCenterPanel?.isVisible ?? false
+            isFallbackVisible: controlCenterPanel?.isVisible ?? false,
+            canHideFallback: ControlCenterVisibilityPolicy.canHideFallback(
+                clickThrough: preferences.clickThrough,
+                globalHidden: preferences.petsHidden,
+                characters: states
+            )
         )
     }
 
@@ -169,10 +180,16 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func refreshMenuOnly() {
+        let states = runner?.controlSnapshot ?? []
         statusMenu?.refresh(
             preferences: preferences,
-            characters: runner?.controlSnapshot ?? [],
-            isFallbackVisible: controlCenterPanel?.isVisible ?? false
+            characters: states,
+            isFallbackVisible: controlCenterPanel?.isVisible ?? false,
+            canHideFallback: ControlCenterVisibilityPolicy.canHideFallback(
+                clickThrough: preferences.clickThrough,
+                globalHidden: preferences.petsHidden,
+                characters: states
+            )
         )
     }
 

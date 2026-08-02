@@ -63,6 +63,41 @@ final class ControlCenterStateTests: XCTestCase {
         XCTAssertFalse(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: false, characters: oneVisible))
         XCTAssertFalse(ControlCenterVisibilityPolicy.nextGlobalHidden(globalHidden: false, characters: hidden))
         XCTAssertTrue(ControlCenterVisibilityPolicy.nextGlobalHidden(globalHidden: false, characters: oneVisible))
+        XCTAssertFalse(ControlCenterVisibilityPolicy.canHideFallback(clickThrough: true, globalHidden: false, characters: oneVisible))
+        XCTAssertFalse(ControlCenterVisibilityPolicy.canHideFallback(clickThrough: false, globalHidden: false, characters: hidden))
+        XCTAssertTrue(ControlCenterVisibilityPolicy.canHideFallback(clickThrough: false, globalHidden: false, characters: oneVisible))
+    }
+
+    @MainActor
+    func testGlobalHiddenStateAppearsInEveryCharacterSnapshot() {
+        let runner = WorldRunner(
+            characters: CharacterCatalog.fallback.characters,
+            geometryProvider: ControlCenterFixedGeometryProvider()
+        )
+
+        runner.setHidden(true)
+        XCTAssertTrue(runner.controlSnapshot.allSatisfy(\.isHidden))
+
+        runner.setHidden(false)
+        XCTAssertTrue(runner.controlSnapshot.allSatisfy { !$0.isHidden })
+        runner.stop()
+    }
+
+    @MainActor
+    func testStartingHiddenPublishesHiddenControlSnapshot() {
+        let runner = WorldRunner(
+            characters: CharacterCatalog.fallback.characters,
+            geometryProvider: ControlCenterFixedGeometryProvider()
+        )
+        var publishedStates: [[PetControlState]] = []
+        runner.onControlStateChange = { publishedStates.append($0) }
+        var preferences = AppPreferences.defaults
+        preferences.petsHidden = true
+
+        runner.start(preferences: preferences)
+
+        XCTAssertTrue(publishedStates.last?.allSatisfy(\.isHidden) == true)
+        runner.stop()
     }
 }
 

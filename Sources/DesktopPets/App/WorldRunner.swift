@@ -40,6 +40,7 @@ final class WorldRunner: NSObject {
     func start(preferences: AppPreferences) {
         world.setPaused(preferences.paused)
         fullyClickThrough = preferences.clickThrough
+        hiddenPetIDs = preferences.petsHidden ? Set(characters.map(\.id)) : []
         preferences.petsHidden ? windows.hide() : windows.show()
         lastTick = ProcessInfo.processInfo.systemUptime
         timer = Timer.scheduledTimer(
@@ -51,6 +52,7 @@ final class WorldRunner: NSObject {
         )
         RunLoop.main.add(timer!, forMode: .common)
         logger.info("Started four-pet world runner")
+        notifyControlStateChanged()
     }
 
     func stop() {
@@ -62,6 +64,7 @@ final class WorldRunner: NSObject {
     func setPaused(_ paused: Bool) { world.setPaused(paused) }
     func setHidden(_ hidden: Bool) {
         if hidden {
+            hiddenPetIDs = Set(characters.map(\.id))
             windows.hide()
         } else {
             hiddenPetIDs.removeAll()

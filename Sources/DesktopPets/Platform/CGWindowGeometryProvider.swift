@@ -49,6 +49,24 @@ final class CGWindowGeometryProvider: GeometryProvider {
         windowRecords().filter { $0.ownerPID == ownerPID && $0.isOnScreen }.count
     }
 
+    static func runningWindowDescriptors(ownerPID: Int32) -> [RunningWindowDescriptor] {
+        guard let info = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements],
+            kCGNullWindowID
+        ) as? [[String: Any]] else { return [] }
+        return info.compactMap { dictionary in
+            guard (dictionary[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == ownerPID,
+                  let boundsDictionary = dictionary[kCGWindowBounds as String] as? NSDictionary else { return nil }
+            var rect = CGRect.zero
+            guard CGRectMakeWithDictionaryRepresentation(boundsDictionary, &rect) else { return nil }
+            return RunningWindowDescriptor(
+                name: dictionary[kCGWindowName as String] as? String ?? "",
+                width: rect.width,
+                height: rect.height
+            )
+        }
+    }
+
     func snapshot() -> GeometrySnapshot {
         let displays = MacScreenProvider.displays()
         let records = Self.windowRecords()

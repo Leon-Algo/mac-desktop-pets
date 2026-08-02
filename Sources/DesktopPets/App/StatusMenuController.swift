@@ -8,7 +8,9 @@ final class StatusMenuController: NSObject {
     private weak var target: AppController?
     private var healthPolicy = StatusItemHealthPolicy()
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "ControlCenter")
+    private var pendingHealthCheck: DispatchWorkItem?
     var onFallbackRequired: (() -> Void)?
+    var onStatusContextChanged: (() -> Void)?
 
     var statusButtonTitle: String { statusItem.button?.title ?? "" }
 
@@ -20,7 +22,12 @@ final class StatusMenuController: NSObject {
         observeStatusContext()
     }
 
-    func refresh(preferences: AppPreferences, characters: [PetControlState], isFallbackVisible: Bool = false) {
+    func refresh(
+        preferences: AppPreferences,
+        characters: [PetControlState],
+        isFallbackVisible: Bool = false,
+        canHideFallback: Bool = true
+    ) {
         controlMenu.removeAllItems()
         var effectivePreferences = preferences
         effectivePreferences.petsHidden = ControlCenterVisibilityPolicy.isGloballyHidden(
@@ -45,10 +52,13 @@ final class StatusMenuController: NSObject {
         controlMenu.addItem(.separator())
 
         addItem(state.clickThroughTitle, action: #selector(AppController.toggleClickThrough(_:)))
-        addItem(
-            isFallbackVisible ? "隐藏备用总台" : "显示备用总台",
+        let fallbackItem = addItem(
+            isFallbackVisible
+                ? (canHideFallback ? "隐藏备用总台" : "备用总台保持显示")
+                : "显示备用总台",
             action: #selector(AppController.toggleControlCenter(_:))
         )
+        fallbackItem.isEnabled = !isFallbackVisible || canHideFallback
         let launch = addItem("登录时启动", action: #selector(AppController.toggleLaunchAtLogin(_:)))
         launch.state = preferences.launchAtLogin ? .on : .off
         controlMenu.addItem(.separator())
@@ -136,9 +146,15 @@ final class StatusMenuController: NSObject {
     }
 
     @objc private func statusContextChanged(_ notification: Notification) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.checkHealth()
-        }
+        handleStatusContextChange()
+    }
+
+    func handleStatusContextChange() {
+        onStatusContextChanged?()
+        pendingHealthCheck?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.checkHealth() }
+        pendingHealthCheck = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
     }
 
     private func characterMenu(for character: PetControlState) -> NSMenu {

@@ -70,6 +70,10 @@ final class ControlCenterPanelController: NSObject {
         panel.setFrame(Self.frame(in: visibleFrame), display: true)
     }
 
+    func repositionOnCurrentScreen() {
+        reposition(on: NSScreen.main ?? NSScreen.screens.first)
+    }
+
     func show(openingMenu: Bool = false) {
         reposition(on: NSScreen.main)
         panel.orderFrontRegardless()

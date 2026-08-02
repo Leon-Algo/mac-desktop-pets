@@ -73,6 +73,34 @@ final class CommandRoutingTests: XCTestCase {
 
         XCTAssertTrue(controller.controlMenu.items.map(\.title).contains("显示宠物"))
     }
+
+    @MainActor
+    func testFallbackHideCommandIsDisabledDuringFullClickThrough() {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(
+            preferences: AppPreferences(paused: false, petsHidden: false, clickThrough: true, launchAtLogin: false),
+            characters: CharacterCatalog.fallback.characters.map {
+                PetControlState(id: $0.id, displayName: $0.displayName, isHidden: false, isPaused: false)
+            },
+            isFallbackVisible: true,
+            canHideFallback: false
+        )
+
+        let item = controller.controlMenu.items.first { $0.title == "备用总台保持显示" }
+        XCTAssertNotNil(item)
+        XCTAssertFalse(item?.isEnabled ?? true)
+    }
+
+    @MainActor
+    func testStatusContextChangeNotifiesFallbackOwner() {
+        let controller = StatusMenuController(target: AppController())
+        var changeCount = 0
+        controller.onStatusContextChanged = { changeCount += 1 }
+
+        controller.handleStatusContextChange()
+
+        XCTAssertEqual(changeCount, 1)
+    }
 }
 
 @MainActor

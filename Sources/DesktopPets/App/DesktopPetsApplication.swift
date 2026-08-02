@@ -20,16 +20,29 @@ struct RunningAppReport: Codable, Equatable {
     let status: String
     let pid: Int32
     let windowCount: Int
+    let petWindowCount: Int
     let fallbackControlPresent: Bool
 }
 
+struct RunningWindowDescriptor: Equatable, Sendable {
+    let name: String
+    let width: Double
+    let height: Double
+}
+
 enum RunningAppInspection {
-    static func evaluate(pid: Int32, windowCount: Int) -> RunningAppReport {
-        let fallbackControlPresent = windowCount >= 5
+    static func evaluate(pid: Int32, windows: [RunningWindowDescriptor]) -> RunningAppReport {
+        let fallbackControlPresent = windows.contains {
+            $0.name == "桌面伙伴总台" && abs($0.width - 96) <= 1 && abs($0.height - 38) <= 1
+        }
+        let petWindowCount = windows.filter {
+            abs($0.width - 180) <= 1 && abs($0.height - 160) <= 1
+        }.count
         return RunningAppReport(
-            status: fallbackControlPresent ? "ok" : "degraded",
+            status: fallbackControlPresent && petWindowCount == 4 ? "ok" : "degraded",
             pid: pid,
-            windowCount: windowCount,
+            windowCount: windows.count,
+            petWindowCount: petWindowCount,
             fallbackControlPresent: fallbackControlPresent
         )
     }
@@ -124,8 +137,8 @@ final class DesktopPetsApplication {
                 return EXIT_FAILURE
             }
         case let .inspectRunning(pid):
-            let count = CGWindowGeometryProvider.rawWindowCount(ownerPID: pid)
-            return printJSON(RunningAppInspection.evaluate(pid: pid, windowCount: count))
+            let windows = CGWindowGeometryProvider.runningWindowDescriptors(ownerPID: pid)
+            return printJSON(RunningAppInspection.evaluate(pid: pid, windows: windows))
         case let .invalid(message):
             FileHandle.standardError.write(Data("\(message)\n".utf8))
             return EXIT_FAILURE
