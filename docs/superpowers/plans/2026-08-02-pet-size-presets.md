@@ -110,11 +110,11 @@ Commit scale-aware panels, views, runner routing, and tests.
 - Produces: `PetWorld.setScale(_ preset: PetScalePreset, obstacles: ObstacleMap)` and derived half-width/top-clearance values; live enlargement clamps immediately even while paused.
 - Consumes: `WorldRunner.start(preferences:)` and `WorldRunner.setScale(_:)`.
 
-- [ ] **Step 1: Write world RED tests**
+- [x] **Step 1: Write world RED tests**
 
 Set the world to `.quarter`, drag a pet beyond a 1200×800 display, and assert its anchor clamps to `x = 22.5` and `y = 765`; compare `.original` at `x = 90` and `y = 660`.
 
-- [ ] **Step 2: Verify world RED**
+- [x] **Step 2: Verify world RED**
 
 Run the focused world test and confirm scale-aware bounds are missing.
 
@@ -154,14 +154,14 @@ Run `swift test --filter AppLaunchTests/testRunningInspectionRequiresIndependent
 
 Count windows matching each `PetScalePreset.panelSize`; require one preset count to equal four, report all supported pet windows in `petWindowCount`, and keep exact fallback matching.
 
-- [ ] **Step 4: Verify full safety suite**
+- [x] **Step 4: Verify full safety suite**
 
 Run `swift test`, `swift test --sanitize=address`, and `swift build -c release -Xswiftc -strict-concurrency=complete`.
 
-- [ ] **Step 5: Package and run**
+- [x] **Step 5: Package and run**
 
 Run `./Scripts/smoke-test.sh`, strict codesign verification, and `./script/build_and_run.sh`. Require four 90×80 pet windows, one fallback, and a healthy running report; leave the final app running.
 
-- [ ] **Step 6: Record evidence and finish**
+- [x] **Step 6: Record evidence and finish**
 
 Update acceptance/planning records, run `git diff --check`, commit, and require `git status --short` to be empty.

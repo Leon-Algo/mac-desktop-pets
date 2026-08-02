@@ -105,11 +105,13 @@
 - Task 1: added persistent 25% / 50% / 100% presets, defaulted new and migrated settings to 50%, and exposed the shared checked `人物大小` menu.
 - Task 2: resized AppKit panels, sprite layers, ground offsets, and alpha hit regions together; focused geometry tests cover all three presets.
 - Task 3: scaled screen-edge safety clearances and immediate world clamping with the selected preset; all seven `PetWorldTests` pass.
-- **Status:** in_progress
 - Selected global 25%, 50%, and 100% presets with a 50% default; continuous and per-person sizing are out of scope.
 - Added a backward-compatible Codable preset model. Legacy preference JSON keeps all booleans and gains the 50% size; all three presets round-trip.
 - Added the shared `人物大小` submenu with exactly one checked preset and validated represented values.
-- Preference and command-routing slices pass their focused tests; rendering/world integration remains in progress.
+- Preference and command-routing slices pass their focused tests.
 - Added live panel and Core Animation resizing for all three presets. The content view and normalized alpha hit region now match the actual panel footprint, and the ground offset scales with the visible character.
 - AppKit's unavoidable 0.5-point horizontal quantization at the odd 45-point width is documented and covered by the panel test.
-- Panel and runner control-state suites pass; world-bound integration remains in progress.
+- Packaged inspection now accepts exactly four uniformly sized pet windows at any supported preset and rejects mixed sizes.
+- Final verification: 80/80 normal tests, 80/80 AddressSanitizer tests, strict Swift concurrency Release build, packaged smoke, nine-command interaction self-test, and strict deep signing all pass.
+- The ordinary app launch is left running at the default 50% preset with four 90×80 pet windows and the 96×38 fallback controller.
+- **Status:** complete

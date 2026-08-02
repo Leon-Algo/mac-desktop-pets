@@ -76,10 +76,10 @@ Phase 9 — Adjustable pet sizes in progress
 - [x] Inspect rendering, hit-testing, world geometry, preferences, and packaged diagnostics
 - [x] Write and self-review the design specification
 - [x] Write the detailed TDD implementation plan
-- [ ] Implement preferences and shared menu controls
-- [ ] Implement scale-aware panels, hit testing, and world bounds
-- [ ] Update packaged inspection and run full release verification
-- **Status:** in_progress
+- [x] Implement preferences and shared menu controls
+- [x] Implement scale-aware panels, hit testing, and world bounds
+- [x] Update packaged inspection and run full release verification
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |
