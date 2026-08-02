@@ -285,9 +285,14 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         panel.message = "选择一张头像照片，应用会在本机裁切并保存副本。"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            let filename = try onImportAvatar?(Data(contentsOf: url))
-            if let filename { model.updateSelected { $0.avatarSource = .imported(filename: filename) } }
-            refreshPreview()
+            let crop = try AvatarCropWindowController(imageData: Data(contentsOf: url))
+            crop.onUse = { [weak self] normalizedData in
+                guard let self else { return }
+                let filename = try self.onImportAvatar?(normalizedData)
+                if let filename { self.model.updateSelected { $0.avatarSource = .imported(filename: filename) } }
+                self.refreshEditor()
+            }
+            crop.runModal()
         } catch {
             errorLabel.stringValue = "头像导入失败：\(error.localizedDescription)"
         }

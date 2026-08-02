@@ -44,7 +44,8 @@
 - Visible native-window QA confirmed the complete dark-mode layout and all controls. Real `+`/Cancel interaction exposed and fixed new-row selection; visual QA also exposed and fixed misleading legacy-avatar source copy.
 - The verification launch preserves the user's actual four-person roster and leaves the final settings window available for acceptance.
 - **Status:** implementation_complete
-- Final fresh verification: 117/117 normal tests, 117/117 AddressSanitizer tests, strict-concurrency Release, fresh packaging, strict deep signing, dynamic smoke, and packaged `[1,4,8]` self-test all pass.
+- Spec gap closed before handoff: local avatar import now opens a crop editor with preview, 1–3× zoom, horizontal position, vertical position, Use, and Cancel.
+- Final acceptance scope is 119 normal and AddressSanitizer tests plus strict-concurrency Release, packaging, signing, dynamic smoke, and packaged `[1,4,8]` self-test.
 - **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.

@@ -6,7 +6,7 @@ Date: 2026-08-03
 
 | Area | Result | Evidence |
 |---|---|---|
-| Configurable roster | PASS | The native `人物设置…` window supports 1–8 ordered characters, add/delete limits, names, full previews, 12 procedural avatars, imported local images, three clothing styles, six palettes, five personality templates, five advanced sliders, Save/Cancel, and current-avatar source labels. |
+| Configurable roster | PASS | The native `人物设置…` window supports 1–8 ordered characters, add/delete limits, names, full previews, 12 procedural avatars, imported local images with zoom/position cropping, three clothing styles, six palettes, five personality templates, five advanced sliders, Save/Cancel, and current-avatar source labels. |
 | Four safe defaults and legacy migration | PASS | New installs receive four non-identifiable procedural defaults; existing installs migrate the original four local identities, names, exact palettes, personalities, and clothing cues without replacement. |
 | Transparent desktop rendering | PASS | Each configured character owns one borderless nonactivating panel; tests and packaged self-test cover 1, 4, and 8 panels. |
 | Monkey-like human crawling | PASS | All figures use quadrupedal human poses with animated stride/tilt transforms; no literal animal anatomy is added. |
@@ -23,7 +23,7 @@ Date: 2026-08-03
 | Live launch | PASS | Ordinary launch returned `status: ok`, `windowCount: 5`, `petWindowCount: 4`, and `fallbackControlPresent: true`. Diagnostics accept 1–8 uniformly sized pets across all size presets and Stage Manager scaling while rejecting mixed sets. |
 | Relaunch reliability | PASS | Three consecutive ordinary Finder-style launches each produced the exact four-pet-plus-fallback window set. Early lifecycle protection remains as defensive hardening. |
 | Live recovery | PASS | Real menu input hid all pets while preserving the fallback, recalled four panels, proved resume motion and pause stability from window coordinates, and terminated the process through Quit. |
-| Stability | PASS | 117/117 normal tests and 117/117 AddressSanitizer tests pass. Coverage includes roster validation/storage, avatar normalization, editor behavior, native controls, runtime replacement, 1/4/8 panels, actions, migration, and Stage Manager inspection. |
+| Stability | PASS | 119/119 normal tests and 119/119 AddressSanitizer tests pass. Coverage includes roster validation/storage, avatar normalization/cropping, editor behavior, native controls, runtime replacement, 1/4/8 panels, actions, migration, and Stage Manager inspection. |
 | Swift concurrency | PASS | Release build with `-strict-concurrency=complete` succeeds. |
 | Resource use | PASS | Release sampling stabilized around 5–6% CPU and 54 MB RSS on the Apple Silicon test host. |
 | Privacy | PASS | Imported avatars are normalized locally under Application Support and never uploaded. Runtime obstacle detection remains geometry-only with no networking or nonempty entitlements. See `privacy-audit.md`. |

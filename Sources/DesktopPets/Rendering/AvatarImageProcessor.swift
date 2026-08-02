@@ -11,7 +11,12 @@ enum AvatarImageProcessorError: Error, Equatable {
 enum AvatarImageProcessor {
     static let pixelSize = 512
 
-    static func normalizedPNG(from data: Data) throws -> Data {
+    static func normalizedPNG(
+        from data: Data,
+        zoom: Double = 1,
+        offsetX: Double = 0,
+        offsetY: Double = 0
+    ) throws -> Data {
         guard let image = NSImage(data: data), image.size.width > 0, image.size.height > 0 else {
             throw AvatarImageProcessorError.undecodableImage
         }
@@ -33,15 +38,18 @@ enum AvatarImageProcessor {
         NSColor.clear.setFill()
         NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize).fill()
         let sourceSize = image.size
-        let sourceAspect = sourceSize.width / sourceSize.height
-        var source = NSRect(origin: .zero, size: sourceSize)
-        if sourceAspect > 1 {
-            source.size.width = sourceSize.height
-            source.origin.x = (sourceSize.width - source.size.width) / 2
-        } else {
-            source.size.height = sourceSize.width
-            source.origin.y = (sourceSize.height - source.size.height) / 2
-        }
+        let safeZoom = min(max(zoom, 1), 3)
+        let cropSide = min(sourceSize.width, sourceSize.height) / safeZoom
+        let centeredX = (sourceSize.width - cropSide) / 2
+        let centeredY = (sourceSize.height - cropSide) / 2
+        let maxShiftX = max(0, (sourceSize.width - cropSide) / 2)
+        let maxShiftY = max(0, (sourceSize.height - cropSide) / 2)
+        let source = NSRect(
+            x: centeredX + min(max(offsetX, -1), 1) * maxShiftX,
+            y: centeredY + min(max(offsetY, -1), 1) * maxShiftY,
+            width: cropSide,
+            height: cropSide
+        )
         image.draw(
             in: NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize),
             from: source,

@@ -46,4 +46,17 @@ final class CharacterSettingsWindowTests: XCTestCase {
         let controller = CharacterSettingsWindowController(roster: legacy)
         XCTAssertEqual(controller.avatarPopUp.titleOfSelectedItem, "当前：原头像")
     }
+
+    func testAvatarCropEditorProvidesZoomPositionPreviewAndActions() throws {
+        let source = NSImage(size: NSSize(width: 120, height: 80))
+        source.lockFocus(); NSColor.systemOrange.setFill(); NSRect(x: 0, y: 0, width: 120, height: 80).fill(); source.unlockFocus()
+        let editor = try AvatarCropWindowController(imageData: XCTUnwrap(source.tiffRepresentation))
+
+        XCTAssertEqual(editor.window?.title, "调整头像")
+        XCTAssertEqual(editor.zoomSlider.minValue, 1)
+        XCTAssertEqual(editor.zoomSlider.maxValue, 3)
+        XCTAssertNotNil(editor.previewImageView.image)
+        XCTAssertEqual(editor.useButton.title, "使用这个头像")
+        XCTAssertEqual(editor.cancelButton.title, "取消")
+    }
 }
