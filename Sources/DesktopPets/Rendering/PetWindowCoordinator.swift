@@ -7,11 +7,12 @@ final class PetWindowCoordinator {
     private var entries: [String: (panel: PetPanel, view: PetSpriteView)] = [:]
     private let orderedIdentifiers: [String]
 
-    init(characters: [CharacterManifest]) {
+    init(characters: [CharacterManifest], interactionHandler: ((PetInteraction) -> Void)? = nil) {
         orderedIdentifiers = characters.map(\.id)
         for character in characters {
             let panel = PetPanel(identifier: character.id, size: Self.panelSize)
             let view = PetSpriteView(frame: NSRect(origin: .zero, size: Self.panelSize), character: character)
+            view.interactionHandler = interactionHandler
             panel.contentView = view
             entries[character.id] = (panel, view)
         }
@@ -38,6 +39,22 @@ final class PetWindowCoordinator {
         allPanels.forEach { $0.ignoresMouseEvents = enabled }
     }
 
+    func updateMouseAcceptance(at screenPoint: CGPoint, fullyClickThrough: Bool) {
+        for identifier in orderedIdentifiers {
+            guard let entry = entries[identifier] else { continue }
+            if entry.view.isDraggingPet {
+                entry.panel.ignoresMouseEvents = false
+                continue
+            }
+            guard !fullyClickThrough, entry.panel.isVisible else {
+                entry.panel.ignoresMouseEvents = true
+                continue
+            }
+            let windowPoint = entry.panel.convertPoint(fromScreen: screenPoint)
+            entry.panel.ignoresMouseEvents = !entry.view.containsVisiblePet(at: windowPoint)
+        }
+    }
+
     func show() {
         allPanels.forEach { $0.orderFrontRegardless() }
     }
@@ -45,4 +62,7 @@ final class PetWindowCoordinator {
     func hide() {
         allPanels.forEach { $0.orderOut(nil) }
     }
+
+    func show(identifier: String) { entries[identifier]?.panel.orderFrontRegardless() }
+    func hide(identifier: String) { entries[identifier]?.panel.orderOut(nil) }
 }

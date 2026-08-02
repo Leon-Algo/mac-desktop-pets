@@ -29,10 +29,10 @@ final class PanelConfigurationTests: XCTestCase {
         XCTAssertEqual(frame.minY, 230, accuracy: 0.001)
     }
 
-    func testClickThroughCanBeToggledForEveryPanel() {
+    func testFullClickThroughOverrideIgnoresMouseForEveryPanel() {
         let coordinator = PetWindowCoordinator(characters: CharacterCatalog.fallback.characters)
-        coordinator.setClickThrough(false)
-        XCTAssertTrue(coordinator.allPanels.allSatisfy { !$0.ignoresMouseEvents })
+        coordinator.updateMouseAcceptance(at: CGPoint(x: 0, y: 0), fullyClickThrough: true)
+        XCTAssertTrue(coordinator.allPanels.allSatisfy(\.ignoresMouseEvents))
     }
 
     func testPetViewDoesNotRequireSpriteKitDisplayLink() {
