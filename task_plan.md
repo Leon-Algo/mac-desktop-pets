@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 8 — Compact menu-bar item complete
+Phase 9 — Adjustable pet sizes in progress
 
 ## Phases
 
@@ -71,6 +71,16 @@ Phase 8 — Compact menu-bar item complete
 - [x] Run full automated, package, signing, and live-launch verification
 - **Status:** complete
 
+### Phase 9: Adjustable pet sizes
+- [x] Select the three-preset design with 50% default
+- [x] Inspect rendering, hit-testing, world geometry, preferences, and packaged diagnostics
+- [x] Write and self-review the design specification
+- [ ] Write the detailed TDD implementation plan
+- [ ] Implement preferences and shared menu controls
+- [ ] Implement scale-aware panels, hit testing, and world bounds
+- [ ] Update packaged inspection and run full release verification
+- **Status:** in_progress
+
 ## Initial Decisions
 | Decision | Rationale |
 |---|---|
@@ -85,6 +95,7 @@ Phase 8 — Compact menu-bar item complete
 | Shape-aware interaction mode by default | Enables direct pet interaction while transparent panel regions continue passing mouse input to the desktop. |
 | Use a labeled status item plus an independent fallback control | A same-session minimal status item was also suppressed, so a menu-bar-only fix cannot guarantee a stop/restore/quit route. |
 | Use a square single-paw native status item | The user prioritized minimizing menu-bar width on a notched display; tooltip, accessibility text, and the independent fallback preserve discoverability. |
+| Use global 25%, 50%, and 100% pet-size presets with 50% default | Presets cover compact and original layouts while keeping rendering, collision, persistence, and testing deterministic. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

@@ -84,3 +84,11 @@
 - The launch-visible `🐾 总台` was captured at the top-right in both ordinary and full-screen desktop states. Its shared menu rendered global controls, `四人管理`, click-through, launch-at-login, diagnostics, and quit.
 - Live input acceptance proved: hide-all removes the four pet windows but leaves the fallback; recall restores four windows; resume changes window positions over 1.5 seconds; pause keeps all positions identical; quit removes the process.
 - A final review found that individually hiding all four characters must affect the global show/hide label. The effective visibility policy now changes the label to `显示宠物` and makes the next global click restore everyone.
+# 2026-08-02 — Pet size presets
+
+- Current pet panels and rendered canvases are fixed at 180×160 points.
+- Pose positions represent the feet/ground anchor; panel origin currently subtracts a fixed 20-point ground offset.
+- `PetSpriteView` uses a normalized alpha mask, so resized layer bounds can preserve accurate click-through without regenerating the identity image.
+- `PetWorld` clamps against fixed 90-point half-width and 140-point top clearance; these must become scale-aware to prevent small pets retaining oversized invisible boundaries.
+- Packaged inspection currently recognizes only four 180×160 windows and must accept the active supported preset.
+- Preferences use synthesized Codable without a size field, so explicit backward-compatible decoding is required for upgrades.
