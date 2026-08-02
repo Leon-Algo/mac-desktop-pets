@@ -96,6 +96,16 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertTrue(report.fallbackControlPresent)
     }
 
+    func testRunningInspectionAcceptsOneAndEightUniformPetWindows() {
+        for count in [1, 8] {
+            let windows = (0..<count).map { _ in RunningWindowDescriptor(name: "", width: 90, height: 80) }
+                + [RunningWindowDescriptor(name: "桌面伙伴总台", width: 96, height: 38)]
+            let report = RunningAppInspection.evaluate(pid: 42, windows: windows)
+            XCTAssertEqual(report.status, "ok")
+            XCTAssertEqual(report.petWindowCount, count)
+        }
+    }
+
     func testRunningInspectionRejectsUnrelatedFifthWindowWithoutFallbackControl() {
         let invalid = [
             RunningWindowDescriptor(name: "", width: 180, height: 160),

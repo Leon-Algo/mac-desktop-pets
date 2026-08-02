@@ -96,4 +96,5 @@ struct CharacterProfile: Codable, Equatable, Sendable {
     var outfit: OutfitPreset
     var personalityPreset: PersonalityPreset
     var personality: Personality
+    var paletteOverride: CharacterPalette? = nil
 }

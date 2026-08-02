@@ -130,6 +130,8 @@ Phase 10 — Discoverable action center complete
 | Settings actions `moveUp:`/`moveDown:` collided with `NSResponder` | 1 | Renamed selectors to `moveCharacterUp:` and `moveCharacterDown:` so they remain ordinary target-action handlers instead of accidental overrides. |
 | Settings test hung after `NSPopUpButton.performClick` | 1 | `performClick` opens a real popup menu event loop in headless XCTest; terminated the exact test PIDs and invoked the controller's existing target action directly after selecting the item. |
 | Headless settings test still hung on `NSButton.performClick` | 2 | Isolated AppKit click animation/event dispatch as the remaining wait; tests now invoke the same bound target-action methods directly and inspect button enabled state separately. |
+| Dynamic inspector accepted a mixed-size set as one valid pet | 1 | The matcher used `compactMap` and validated only the matching subset; now every unnamed pet window must match the same preset and compositor factor. |
+| Full-test log extraction assigned zsh read-only variable `status` | 1 | Switched to the task-specific variable `test_exit_code`; no product code or test execution was affected. |
 
 ## Phase 11 — “叫爸爸”动作替换
 - [x] Write and review the focused behavior-change design

@@ -100,10 +100,10 @@
 **Interfaces:**
 - Produces: roster save/apply, atomic runner replacement, stable-ID hidden/pause restoration, count-neutral menu copy, and 1–8 window inspection.
 
-- [ ] Write failing tests for 1/4/8 runners, old-window shutdown, stable state restoration, all-person group action, dynamic inspection, and neutral labels.
-- [ ] Run focused tests to observe RED.
-- [ ] Implement controlled runner replacement and remove fixed-four runtime assumptions.
-- [ ] Run focused tests and commit.
+- [x] Write failing tests for 1/4/8 runners, old-window shutdown, stable state restoration, all-person group action, dynamic inspection, and neutral labels.
+- [x] Run focused tests to observe RED.
+- [x] Implement controlled runner replacement and remove fixed-four runtime assumptions.
+- [x] Run focused tests and commit.
 
 ### Task 6: Package acceptance and documentation
 

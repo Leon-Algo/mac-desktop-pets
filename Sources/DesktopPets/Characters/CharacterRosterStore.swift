@@ -30,6 +30,8 @@ final class CharacterRosterStore {
         return valid
     }
 
+    var hasStoredRoster: Bool { fileManager.fileExists(atPath: rosterURL.path) }
+
     func save(_ roster: CharacterRoster) throws {
         let valid = try roster.validated()
         try ensureDirectories()

@@ -93,6 +93,8 @@ struct PreferencesStore {
         defaults.set(data, forKey: Self.storageKey)
     }
 
+    var hasStoredPreferences: Bool { defaults.data(forKey: Self.storageKey) != nil }
+
     var shouldShowControlHint: Bool {
         !defaults.bool(forKey: Self.controlHintKey)
     }

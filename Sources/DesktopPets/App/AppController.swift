@@ -19,7 +19,12 @@ final class AppController: NSObject, NSApplicationDelegate {
             forceVisibleValue: ProcessInfo.processInfo.environment["DESKTOP_PETS_FORCE_VISIBLE"]
         )
         let catalog = (try? CharacterCatalog.loadBundled()) ?? .fallback
-        runner = WorldRunner(characters: catalog.characters, geometryProvider: CGWindowGeometryProvider())
+        let fallbackRoster = preferenceStore.hasStoredPreferences
+            ? CharacterRoster.legacy(from: catalog.characters)
+            : .default
+        roster = rosterStore.load(fallback: fallbackRoster)
+        if !rosterStore.hasStoredRoster { try? rosterStore.save(roster) }
+        runner = makeRunner(characters: roster.manifests)
         statusMenu = StatusMenuController(target: self)
         if let menu = statusMenu?.controlMenu {
             controlCenterPanel = ControlCenterPanelController(menu: menu)
@@ -29,8 +34,7 @@ final class AppController: NSObject, NSApplicationDelegate {
             self?.controlCenterPanel?.repositionOnCurrentScreen()
             self?.refreshMenuOnly()
         }
-        runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
-        runner?.onUICommand = { [weak self] command in self?.handle(command) }
+        wireRunnerCallbacks()
         refreshControls()
         runner?.start(preferences: preferences)
         controlCenterPanel?.show()
@@ -159,13 +163,34 @@ final class AppController: NSObject, NSApplicationDelegate {
             }
             controller.onSave = { [weak self] saved in
                 guard let self else { return }
-                try self.rosterStore.save(saved)
-                self.roster = saved
-                try self.rosterStore.removeUnreferencedAvatars(roster: saved)
+                try self.applyRoster(saved)
             }
             characterSettings = controller
         }
         characterSettings?.present(roster: roster)
+    }
+
+    func applyRoster(_ candidate: CharacterRoster) throws {
+        let valid = try candidate.validated()
+        try rosterStore.save(valid)
+        let previousState = runner?.controlSnapshot ?? []
+        runner?.stop()
+        roster = valid
+        runner = makeRunner(characters: valid.manifests)
+        wireRunnerCallbacks()
+        runner?.start(preferences: preferences)
+        runner?.restoreControlState(previousState, restorePause: !preferences.paused)
+        try rosterStore.removeUnreferencedAvatars(roster: valid)
+        refreshControls()
+    }
+
+    private func makeRunner(characters: [CharacterManifest]) -> WorldRunner {
+        WorldRunner(characters: characters, geometryProvider: CGWindowGeometryProvider())
+    }
+
+    private func wireRunnerCallbacks() {
+        runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
+        runner?.onUICommand = { [weak self] command in self?.handle(command) }
     }
 
     private func persistAndRefresh() {

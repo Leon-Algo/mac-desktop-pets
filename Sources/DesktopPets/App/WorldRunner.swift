@@ -56,7 +56,7 @@ final class WorldRunner: NSObject {
             repeats: true
         )
         RunLoop.main.add(timer!, forMode: .common)
-        logger.info("Started four-pet world runner")
+        logger.info("Started world runner with \(self.characters.count) characters")
         notifyControlStateChanged()
     }
 
@@ -122,6 +122,21 @@ final class WorldRunner: NSObject {
                 isPaused: world.isPaused(id: $0.id)
             )
         }
+    }
+
+    func restoreControlState(_ states: [PetControlState], restorePause: Bool = true) {
+        let prior = Dictionary(uniqueKeysWithValues: states.map { ($0.id, $0) })
+        for character in characters {
+            guard let state = prior[character.id] else { continue }
+            if state.isHidden {
+                hiddenPetIDs.insert(character.id)
+                windows.hide(identifier: character.id)
+            }
+            if restorePause, state.isPaused, !world.isPaused(id: character.id) {
+                _ = world.handle(.togglePause(id: character.id), obstacles: obstacleMap)
+            }
+        }
+        notifyControlStateChanged()
     }
 
     func handle(_ interaction: PetInteraction) {

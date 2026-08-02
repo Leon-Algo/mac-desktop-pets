@@ -36,7 +36,7 @@ enum RunningAppInspection {
             $0.name == "桌面伙伴总台" && abs($0.width - 96) <= 1 && abs($0.height - 38) <= 1
         }
         let unnamed = windows.filter { $0.name.isEmpty }
-        var hasFourUniformPets = false
+        var uniformPetCount = 0
         for preset in PetScalePreset.allCases {
             let factors = unnamed.compactMap { descriptor -> Double? in
                 let factor = descriptor.width / preset.panelSize.width
@@ -44,9 +44,10 @@ enum RunningAppInspection {
                       abs(descriptor.height - preset.panelSize.height * factor) <= 2 else { return nil }
                 return factor
             }
-            guard factors.count == 4,
+            guard (1...CharacterRoster.maximumCount).contains(unnamed.count),
+                  factors.count == unnamed.count,
                   (factors.max() ?? 0) - (factors.min() ?? 0) <= 0.03 else { continue }
-            hasFourUniformPets = true
+            uniformPetCount = factors.count
             let factor = factors.reduce(0, +) / Double(factors.count)
             if windows.contains(where: {
                 $0.name == "桌面伙伴总台"
@@ -57,14 +58,14 @@ enum RunningAppInspection {
             }
             break
         }
-        let petWindowCount = hasFourUniformPets ? 4 : PetScalePreset.allCases.reduce(0) { count, preset in
+        let petWindowCount = uniformPetCount > 0 ? uniformPetCount : PetScalePreset.allCases.reduce(0) { count, preset in
             count + unnamed.filter {
                 abs($0.width - preset.panelSize.width) <= 1
                     && abs($0.height - preset.panelSize.height) <= 1
             }.count
         }
         return RunningAppReport(
-            status: fallbackControlPresent && hasFourUniformPets && petWindowCount == 4 ? "ok" : "degraded",
+            status: fallbackControlPresent && uniformPetCount > 0 ? "ok" : "degraded",
             pid: pid,
             windowCount: windows.count,
             petWindowCount: petWindowCount,

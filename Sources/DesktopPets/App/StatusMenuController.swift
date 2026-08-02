@@ -37,7 +37,7 @@ final class StatusMenuController: NSObject {
         let state = MenuState(preferences: effectivePreferences)
         addItem(state.pauseTitle, action: #selector(AppController.togglePause(_:)), key: "p")
         addItem(state.visibilityTitle, action: #selector(AppController.toggleVisibility(_:)), key: "h")
-        addItem("召回四人", action: #selector(AppController.recallPets(_:)), key: "r")
+        addItem("召回全部人物", action: #selector(AppController.recallPets(_:)), key: "r")
         controlMenu.addItem(.separator())
 
         let actionCenterItem = NSMenuItem(title: "动作中心", action: nil, keyEquivalent: "")
@@ -54,8 +54,8 @@ final class StatusMenuController: NSObject {
         actionCenterItem.submenu = actionCenterMenu
         controlMenu.addItem(actionCenterItem)
 
-        let peopleItem = NSMenuItem(title: "四人管理", action: nil, keyEquivalent: "")
-        let peopleMenu = NSMenu(title: "四人管理")
+        let peopleItem = NSMenuItem(title: "人物管理", action: nil, keyEquivalent: "")
+        let peopleMenu = NSMenu(title: "人物管理")
         for character in characters {
             let item = NSMenuItem(title: character.displayName, action: nil, keyEquivalent: "")
             item.submenu = characterMenu(for: character)

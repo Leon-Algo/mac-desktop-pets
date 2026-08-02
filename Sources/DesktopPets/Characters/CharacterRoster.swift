@@ -61,7 +61,7 @@ struct CharacterRoster: Codable, Equatable, Sendable {
                 id: profile.id,
                 displayName: profile.displayName,
                 atlasName: nil,
-                palette: profile.outfit.palette,
+                palette: profile.paletteOverride ?? profile.outfit.palette,
                 personality: profile.personality,
                 anchor: NormalizedPoint(x: 0.5, y: 0.08),
                 collisionBody: FrameRect(x: 0.15, y: 0.04, width: 0.7, height: 0.72),
@@ -88,5 +88,20 @@ struct CharacterRoster: Codable, Equatable, Sendable {
             personalityPreset: personality,
             personality: personality.personality
         )
+    }
+
+    static func legacy(from manifests: [CharacterManifest]) -> CharacterRoster {
+        CharacterRoster(version: currentVersion, profiles: manifests.prefix(maximumCount).enumerated().map { index, manifest in
+            CharacterProfile(
+                id: manifest.id,
+                displayName: manifest.displayName,
+                avatarSource: .legacyBundled(identifier: manifest.id),
+                bodyStyle: manifest.id == "person-left" ? .plaid : (manifest.id == "person-right" ? .jacket : .plain),
+                outfit: OutfitPreset.allCases[index % OutfitPreset.allCases.count],
+                personalityPreset: .curious,
+                personality: manifest.personality,
+                paletteOverride: manifest.palette
+            )
+        })
     }
 }
