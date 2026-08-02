@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 9 — Adjustable pet sizes in progress
+Phase 10 — Discoverable action center in progress
 
 ## Phases
 
@@ -81,6 +81,17 @@ Phase 9 — Adjustable pet sizes in progress
 - [x] Update packaged inspection and run full release verification
 - **Status:** complete
 
+### Phase 10: Discoverable action center
+- [x] Confirm the recommended action-center direction and obtain authorization to proceed
+- [x] Inspect current world states, rendering transforms, menus, panels, and command routing
+- [x] Write and self-review the action-center design specification
+- [ ] Write the detailed TDD implementation plan
+- [ ] Implement the action catalog and deterministic action commands
+- [ ] Implement discoverable action menus and transient feedback bubbles
+- [ ] Add the first four clearly differentiated manual actions
+- [ ] Run full automated, package, signing, and live-launch verification
+- **Status:** in_progress
+
 ## Initial Decisions
 | Decision | Rationale |
 |---|---|
@@ -96,6 +107,7 @@ Phase 9 — Adjustable pet sizes in progress
 | Use a labeled status item plus an independent fallback control | A same-session minimal status item was also suppressed, so a menu-bar-only fix cannot guarantee a stop/restore/quit route. |
 | Use a square single-paw native status item | The user prioritized minimizing menu-bar width on a notched display; tooltip, accessibility text, and the independent fallback preserve discoverability. |
 | Use global 25%, 50%, and 100% pet-size presets with 50% default | Presets cover compact and original layouts while keeping rendering, collision, persistence, and testing deterministic. |
+| Make actions understandable before expanding their count | A catalog with names, explanations, scope, duration, and deterministic routing prevents opaque state names and creates a stable extension point. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

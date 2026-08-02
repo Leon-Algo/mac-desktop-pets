@@ -115,3 +115,10 @@
 - Final verification: 80/80 normal tests, 80/80 AddressSanitizer tests, strict Swift concurrency Release build, packaged smoke, nine-command interaction self-test, and strict deep signing all pass.
 - The ordinary app launch is left running at the default 50% preset with four 90×80 pet windows and the 96×38 fallback controller.
 - **Status:** complete
+
+### Phase 10 — Discoverable action center
+
+- Created `feature/action-center-v2` from the accepted `main` milestone.
+- Began context inspection: existing menus expose only `做个动作`, while the world already has deterministic state transitions suitable for a typed action layer.
+- Completed the approved written design for a typed catalog, nested native menus, four individual actions, group play, and non-modal feedback bubbles. Self-review found no placeholders, contradictions, or unresolved scope decisions.
+- **Status:** in_progress

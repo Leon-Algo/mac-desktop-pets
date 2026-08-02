@@ -93,3 +93,15 @@
 - Packaged inspection currently recognizes only four 180×160 windows and must accept the active supported preset.
 - Preferences use synthesized Codable without a size field, so explicit backward-compatible decoding is required for upgrades.
 - AppKit quantizes the origin of the odd-width 45-point quarter-size panel to a whole point, creating at most 0.5 point of horizontal anchor variance.
+
+# Phase 10 action-center findings (2026-08-02)
+
+- The current behavior engine exposes 11 low-level `PetState` cases, but the user-facing menu collapses all of them into the ambiguous command `做个动作`.
+- `PetWorld.handle` already provides deterministic per-character and group routing, so a typed manual-action catalog can be added without replacing autonomous behavior.
+- The shared `StatusMenuController` and each pet context menu already carry character IDs through `representedObject`; action commands should carry a small typed payload containing both character ID and action ID.
+- AppKit menus are the existing native UI surface. The smallest bridge is to add nested action submenus and keep catalog/world state in pure Swift value types.
+- New action visuals should reuse Core Animation transforms and existing procedural character rendering; no new dependency or sprite framework is needed.
+- Each character is currently rendered as one composited bitmap layer, so the first action set must use whole-character transforms and physics. True limb-specific waving would require a later segmented-rig asset pipeline.
+- The first release action set will therefore use four visually separable and reliable commands: `打招呼`, `原地跳`, `翻个跟头`, and `趴下睡觉`; the existing group gather/play command remains available as `四人集合玩耍`.
+- Feedback should be a non-modal `CATextLayer` bubble owned by each `PetSpriteView`, with a generation token so a newer message cannot be dismissed by an older timer.
+- Manual commands use typed IDs and outcomes. Per-person pause is cleared on a direct command, while global pause rejects the command with a visible explanation instead of silently changing the global setting.
