@@ -8,11 +8,13 @@ final class WorldRunner: NSObject {
     static let geometryRefreshInterval = 1.0
     private var world: PetWorld
     private let geometryProvider: GeometryProvider
-    private let windows: PetWindowCoordinator
+    private var windows: PetWindowCoordinator!
     private var obstacleMap: ObstacleMap
     private var timer: Timer?
     private var lastTick = ProcessInfo.processInfo.systemUptime
     private var lastGeometryRefresh = 0.0
+    private var fullyClickThrough = false
+    private var hiddenPetIDs: Set<String> = []
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "world")
 
     init(characters: [CharacterManifest], geometryProvider: GeometryProvider) {
@@ -24,14 +26,16 @@ final class WorldRunner: NSObject {
         obstacleMap = snapshot.displays.isEmpty
             ? ObstacleMap(displays: [fallback], obstacles: [])
             : snapshot.obstacleMap
-        windows = PetWindowCoordinator(characters: characters)
         super.init()
+        windows = PetWindowCoordinator(characters: characters) { [weak self] interaction in
+            self?.handle(interaction)
+        }
         windows.apply(poses: world.poses)
     }
 
     func start(preferences: AppPreferences) {
         world.setPaused(preferences.paused)
-        windows.setClickThrough(preferences.clickThrough)
+        fullyClickThrough = preferences.clickThrough
         preferences.petsHidden ? windows.hide() : windows.show()
         lastTick = ProcessInfo.processInfo.systemUptime
         timer = Timer.scheduledTimer(
@@ -52,12 +56,24 @@ final class WorldRunner: NSObject {
     }
 
     func setPaused(_ paused: Bool) { world.setPaused(paused) }
-    func setHidden(_ hidden: Bool) { hidden ? windows.hide() : windows.show() }
-    func setClickThrough(_ enabled: Bool) { windows.setClickThrough(enabled) }
+    func setHidden(_ hidden: Bool) {
+        if hidden {
+            windows.hide()
+        } else {
+            hiddenPetIDs.removeAll()
+            windows.show()
+        }
+    }
+
+    func setClickThrough(_ enabled: Bool) {
+        fullyClickThrough = enabled
+        windows.updateMouseAcceptance(at: NSEvent.mouseLocation, fullyClickThrough: enabled)
+    }
 
     func recall() {
         let display = obstacleMap.displays.first ?? WorldRect(x: 0, y: 0, width: 1440, height: 900)!
         world.recall(to: display)
+        hiddenPetIDs.removeAll()
         windows.apply(poses: world.poses)
         windows.show()
     }
@@ -69,7 +85,26 @@ final class WorldRunner: NSObject {
             "displayCount": obstacleMap.displays.count,
             "obstacleCount": obstacleMap.obstacles.count,
             "states": world.poses.map { $0.state.rawValue },
+            "interactionMode": fullyClickThrough ? "full-pass-through" : "shape-aware",
+            "hiddenPetCount": hiddenPetIDs.count,
         ]
+    }
+
+    private func handle(_ interaction: PetInteraction) {
+        let result = world.handle(interaction, obstacles: obstacleMap)
+        switch result {
+        case let .hide(id):
+            hiddenPetIDs.insert(id)
+            windows.hide(identifier: id)
+        case let .show(id):
+            hiddenPetIDs.remove(id)
+            windows.show(identifier: id)
+        case .handled, .pauseChanged:
+            break
+        case .ignored:
+            logger.warning("Ignored interaction for unknown pet")
+        }
+        windows.apply(poses: world.poses)
     }
 
     @objc private func tick() {
@@ -83,5 +118,6 @@ final class WorldRunner: NSObject {
         }
         world.step(deltaTime: delta, obstacles: obstacleMap)
         windows.apply(poses: world.poses)
+        windows.updateMouseAcceptance(at: NSEvent.mouseLocation, fullyClickThrough: fullyClickThrough)
     }
 }

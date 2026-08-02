@@ -71,3 +71,4 @@ Phase 6 — Direct pet interaction implementation
 | Identity-preserving generation failed at the service boundary | 2 | Used deterministic local face/hair crops over transparent procedural crawling bodies; documented the visual limitation. |
 | SpriteKit display link failed while the display was asleep | 1 | Replaced the static sprite host with Core Animation; regression test proves no display link is required. |
 | Resource bundle placement initially invalidated deep signing | 1 | Packaged the SwiftPM resource bundle under `Contents/Resources` and verified strict deep signing. |
+| Menu-label test configured interactive mode while expecting full pass-through copy | 1 | Corrected the fixture to `clickThrough: true`; production wording already matched the approved state model. |

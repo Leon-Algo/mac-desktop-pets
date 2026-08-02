@@ -57,3 +57,4 @@
 - User reported that stop/quit controls were difficult to discover and pets could not be clicked.
 - Confirmed the existing cause: default full-window click-through plus no view mouse-event routing.
 - User approved the recommended single-click, double-click, drag/release, right-click, and first-launch guidance design.
+- Added deterministic interaction commands and shape-aware panel input. One menu-copy test initially used the wrong boolean fixture; corrected it before continuing.

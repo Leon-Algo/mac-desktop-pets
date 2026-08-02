@@ -2,10 +2,10 @@ import XCTest
 @testable import DesktopPets
 
 final class PreferencesTests: XCTestCase {
-    func testDefaultsAreNonBlockingAndVisible() {
+    func testDefaultsEnableShapeAwareInteractionAndRemainVisible() {
         let defaults = makeDefaults()
         let store = PreferencesStore(defaults: defaults)
-        XCTAssertEqual(store.load(), AppPreferences(paused: false, petsHidden: false, clickThrough: true, launchAtLogin: false))
+        XCTAssertEqual(store.load(), AppPreferences(paused: false, petsHidden: false, clickThrough: false, launchAtLogin: false))
     }
 
     func testRoundTripsPreferences() {
@@ -20,6 +20,15 @@ final class PreferencesTests: XCTestCase {
         let defaults = makeDefaults()
         defaults.set(Data("broken".utf8), forKey: PreferencesStore.storageKey)
         XCTAssertEqual(PreferencesStore(defaults: defaults).load(), .defaults)
+    }
+
+    func testControlHintIsShownOnlyOnce() {
+        let store = PreferencesStore(defaults: makeDefaults())
+        XCTAssertTrue(store.shouldShowControlHint)
+
+        store.markControlHintShown()
+
+        XCTAssertFalse(store.shouldShowControlHint)
     }
 
     private func makeDefaults() -> UserDefaults {

@@ -38,4 +38,16 @@ final class PanelConfigurationTests: XCTestCase {
     func testPetViewDoesNotRequireSpriteKitDisplayLink() {
         XCTAssertFalse(PetSpriteView.requiresDisplayLink)
     }
+
+    func testGlobalShowRestoresIndividuallyHiddenPet() {
+        let coordinator = PetWindowCoordinator(characters: CharacterCatalog.fallback.characters)
+        coordinator.show()
+        coordinator.hide(identifier: "person-left")
+        XCTAssertFalse(coordinator.allPanels.first { $0.petIdentifier == "person-left" }!.isVisible)
+
+        coordinator.show()
+
+        XCTAssertTrue(coordinator.allPanels.allSatisfy(\.isVisible))
+        coordinator.hide()
+    }
 }

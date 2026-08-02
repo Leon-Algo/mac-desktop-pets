@@ -18,6 +18,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         runner?.start(preferences: preferences)
         ProcessInfo.processInfo.disableAutomaticTermination("Desktop pets remain active while the menu-bar app is running")
         ProcessInfo.processInfo.disableSuddenTermination()
+        showControlHintIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -86,5 +87,16 @@ final class AppController: NSObject, NSApplicationDelegate {
         alert.informativeText = message
         alert.addButton(withTitle: "好")
         alert.runModal()
+    }
+
+    private func showControlHintIfNeeded() {
+        guard preferenceStore.shouldShowControlHint else { return }
+        preferenceStore.markControlHintShown()
+        DispatchQueue.main.async { [weak self] in
+            self?.showAlert(
+                title: "桌面伙伴已经启动",
+                message: "点击人物可以互动，双击会召集大家，拖动可以把人物放到别处，右键可打开单人操作。\n\n暂停、隐藏和完全退出位于屏幕顶部菜单栏的爪印图标中。"
+            )
+        }
     }
 }
