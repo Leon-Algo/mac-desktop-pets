@@ -49,6 +49,22 @@ final class StatusMenuController: NSObject {
         }
         peopleItem.submenu = peopleMenu
         controlMenu.addItem(peopleItem)
+
+        let sizeItem = NSMenuItem(title: "人物大小", action: nil, keyEquivalent: "")
+        let sizeMenu = NSMenu(title: "人物大小")
+        for preset in PetScalePreset.allCases {
+            let item = NSMenuItem(
+                title: preset.menuTitle,
+                action: #selector(AppController.setPetScale(_:)),
+                keyEquivalent: ""
+            )
+            item.target = target
+            item.representedObject = preset.rawValue
+            item.state = preferences.petScale == preset ? .on : .off
+            sizeMenu.addItem(item)
+        }
+        sizeItem.submenu = sizeMenu
+        controlMenu.addItem(sizeItem)
         controlMenu.addItem(.separator())
 
         addItem(state.clickThroughTitle, action: #selector(AppController.toggleClickThrough(_:)))

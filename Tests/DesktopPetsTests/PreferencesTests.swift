@@ -5,15 +5,49 @@ final class PreferencesTests: XCTestCase {
     func testDefaultsEnableShapeAwareInteractionAndRemainVisible() {
         let defaults = makeDefaults()
         let store = PreferencesStore(defaults: defaults)
-        XCTAssertEqual(store.load(), AppPreferences(paused: false, petsHidden: false, clickThrough: false, launchAtLogin: false))
+        XCTAssertEqual(
+            store.load(),
+            AppPreferences(
+                paused: false,
+                petsHidden: false,
+                clickThrough: false,
+                launchAtLogin: false,
+                petScale: .half
+            )
+        )
     }
 
     func testRoundTripsPreferences() {
         let defaults = makeDefaults()
         let store = PreferencesStore(defaults: defaults)
-        let expected = AppPreferences(paused: true, petsHidden: true, clickThrough: false, launchAtLogin: false)
-        store.save(expected)
-        XCTAssertEqual(store.load(), expected)
+        for preset in PetScalePreset.allCases {
+            let expected = AppPreferences(
+                paused: true,
+                petsHidden: true,
+                clickThrough: false,
+                launchAtLogin: false,
+                petScale: preset
+            )
+            store.save(expected)
+            XCTAssertEqual(store.load(), expected)
+        }
+    }
+
+    func testLegacyPreferencesMigrateToHalfSizeWithoutLosingState() throws {
+        let defaults = makeDefaults()
+        let legacy = Data(#"{"paused":true,"petsHidden":false,"clickThrough":true,"launchAtLogin":true}"#.utf8)
+        defaults.set(legacy, forKey: PreferencesStore.storageKey)
+
+        XCTAssertEqual(
+            PreferencesStore(defaults: defaults).load(),
+            AppPreferences(
+                paused: true,
+                petsHidden: false,
+                clickThrough: true,
+                launchAtLogin: true,
+                petScale: .half
+            )
+        )
     }
 
     func testCorruptPreferencesRecoverToDefaults() {

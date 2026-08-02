@@ -99,3 +99,10 @@
 - GREEN: both construction paths now use `NSStatusItem.squareLength` and display only `🐾`; tooltip, accessibility label, shared menu, and fallback behavior remain unchanged.
 - RED/GREEN: first-run guidance now accurately describes the compact menu-bar `🐾` icon.
 - Final verification: 74/74 normal tests, 74/74 AddressSanitizer tests, strict Swift 6 concurrency Release build, exact four-pet-plus-fallback packaged smoke, nine-command interaction self-test, and strict deep signing all pass.
+
+### Phase 9 — Adjustable pet sizes
+- **Status:** in_progress
+- Selected global 25%, 50%, and 100% presets with a 50% default; continuous and per-person sizing are out of scope.
+- Added a backward-compatible Codable preset model. Legacy preference JSON keeps all booleans and gains the 50% size; all three presets round-trip.
+- Added the shared `人物大小` submenu with exactly one checked preset and validated represented values.
+- Preference and command-routing slices pass their focused tests; rendering/world integration remains in progress.

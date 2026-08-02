@@ -72,6 +72,13 @@ final class AppController: NSObject, NSApplicationDelegate {
         persistAndRefresh()
     }
 
+    @objc func setPetScale(_ sender: Any?) {
+        guard let rawValue = (sender as? NSMenuItem)?.representedObject as? String,
+              let preset = PetScalePreset(rawValue: rawValue) else { return }
+        preferences.petScale = preset
+        persistAndRefresh()
+    }
+
     @objc func toggleLaunchAtLogin(_ sender: Any?) {
         do {
             if preferences.launchAtLogin {

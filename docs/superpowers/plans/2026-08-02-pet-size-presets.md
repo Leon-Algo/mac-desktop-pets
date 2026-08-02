@@ -33,35 +33,35 @@
 - Produces: `AppPreferences.petScale: PetScalePreset`, defaulting and migrating to `.half`.
 - Produces: `@objc AppController.setPetScale(_:)` using an `NSMenuItem.representedObject` raw value.
 
-- [ ] **Step 1: Write preference RED tests**
+- [x] **Step 1: Write preference RED tests**
 
 Assert defaults use `.half`, every case round-trips, and legacy JSON without `petScale` decodes with `.half` while preserving all legacy booleans.
 
-- [ ] **Step 2: Verify preference RED**
+- [x] **Step 2: Verify preference RED**
 
 Run `swift test --filter PreferencesTests` and confirm failures are caused by the absent preset model and preference field.
 
-- [ ] **Step 3: Implement model and migration**
+- [x] **Step 3: Implement model and migration**
 
 Add the enum and an explicit `AppPreferences` initializer plus `init(from:)` using `decodeIfPresent(PetScalePreset.self, forKey: .petScale) ?? .half`. Keep synthesized encoding.
 
-- [ ] **Step 4: Verify preference GREEN**
+- [x] **Step 4: Verify preference GREEN**
 
 Run `swift test --filter PreferencesTests` and require all preference tests to pass.
 
-- [ ] **Step 5: Write menu RED test**
+- [x] **Step 5: Write menu RED test**
 
 Refresh with `.half`, locate the `人物大小` submenu, assert titles `25%（最小）`, `50%（推荐）`, `100%（原样）`, and assert only 50% is checked.
 
-- [ ] **Step 6: Verify menu RED**
+- [x] **Step 6: Verify menu RED**
 
 Run the focused command-routing test and confirm the submenu is absent.
 
-- [ ] **Step 7: Implement menu and command routing**
+- [x] **Step 7: Implement menu and command routing**
 
 Build the three-item submenu from `PetScalePreset.allCases`, store `rawValue` in each represented object, check the active item, and have `AppController.setPetScale(_:)` persist and forward the valid preset to `WorldRunner`.
 
-- [ ] **Step 8: Verify menu GREEN and commit**
+- [x] **Step 8: Verify menu GREEN and commit**
 
 Run `swift test --filter PreferencesTests` and `swift test --filter CommandRoutingTests`, then commit the model/menu slice.
 

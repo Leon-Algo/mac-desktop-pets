@@ -112,6 +112,22 @@ final class CommandRoutingTests: XCTestCase {
         XCTAssertEqual(controller.statusButtonTitle, "🐾")
         XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
     }
+
+    @MainActor
+    func testSharedMenuOffersThreePetSizesAndChecksCurrentPreset() throws {
+        let controller = StatusMenuController(target: AppController())
+        var preferences = AppPreferences.defaults
+        preferences.petScale = .half
+
+        controller.refresh(preferences: preferences, characters: [])
+
+        let sizeMenu = try XCTUnwrap(
+            controller.controlMenu.items.first { $0.title == "人物大小" }?.submenu
+        )
+        XCTAssertEqual(sizeMenu.items.map(\.title), ["25%（最小）", "50%（推荐）", "100%（原样）"])
+        XCTAssertEqual(sizeMenu.items.map(\.state), [.off, .on, .off])
+        XCTAssertEqual(sizeMenu.items.map { $0.representedObject as? String }, ["quarter", "half", "original"])
+    }
 }
 
 @MainActor

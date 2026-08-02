@@ -1,12 +1,76 @@
 import Foundation
 
+enum PetScalePreset: String, Codable, CaseIterable, Sendable {
+    case quarter
+    case half
+    case original
+
+    var factor: Double {
+        switch self {
+        case .quarter: 0.25
+        case .half: 0.5
+        case .original: 1.0
+        }
+    }
+
+    var menuTitle: String {
+        switch self {
+        case .quarter: "25%（最小）"
+        case .half: "50%（推荐）"
+        case .original: "100%（原样）"
+        }
+    }
+
+    var panelSize: CGSize {
+        CGSize(width: 180 * factor, height: 160 * factor)
+    }
+}
+
 struct AppPreferences: Codable, Equatable, Sendable {
     var paused: Bool
     var petsHidden: Bool
     var clickThrough: Bool
     var launchAtLogin: Bool
+    var petScale: PetScalePreset
 
-    static let defaults = AppPreferences(paused: false, petsHidden: false, clickThrough: false, launchAtLogin: false)
+    init(
+        paused: Bool,
+        petsHidden: Bool,
+        clickThrough: Bool,
+        launchAtLogin: Bool,
+        petScale: PetScalePreset = .half
+    ) {
+        self.paused = paused
+        self.petsHidden = petsHidden
+        self.clickThrough = clickThrough
+        self.launchAtLogin = launchAtLogin
+        self.petScale = petScale
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case paused
+        case petsHidden
+        case clickThrough
+        case launchAtLogin
+        case petScale
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        paused = try container.decode(Bool.self, forKey: .paused)
+        petsHidden = try container.decode(Bool.self, forKey: .petsHidden)
+        clickThrough = try container.decode(Bool.self, forKey: .clickThrough)
+        launchAtLogin = try container.decode(Bool.self, forKey: .launchAtLogin)
+        petScale = try container.decodeIfPresent(PetScalePreset.self, forKey: .petScale) ?? .half
+    }
+
+    static let defaults = AppPreferences(
+        paused: false,
+        petsHidden: false,
+        clickThrough: false,
+        launchAtLogin: false,
+        petScale: .half
+    )
 }
 
 struct PreferencesStore {
