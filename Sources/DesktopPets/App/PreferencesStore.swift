@@ -45,3 +45,9 @@ struct MenuState: Equatable, Sendable {
     var visibilityTitle: String { preferences.petsHidden ? "显示宠物" : "隐藏宠物" }
     var clickThroughTitle: String { preferences.clickThrough ? "启用人物交互" : "完全点击穿透" }
 }
+
+enum ControlHintPolicy {
+    static func shouldShow(storedHintNeeded: Bool, suppressionValue: String?) -> Bool {
+        storedHintNeeded && suppressionValue != "1"
+    }
+}

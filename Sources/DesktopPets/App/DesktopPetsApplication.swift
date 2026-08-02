@@ -22,6 +22,42 @@ struct RunningAppReport: Codable {
     let windowCount: Int
 }
 
+struct InteractionSelfTestReport: Codable, Equatable {
+    let status: String
+    let commandCount: Int
+    let petCount: Int
+    let allFinite: Bool
+}
+
+enum InteractionSelfTest {
+    static func run() -> InteractionSelfTestReport {
+        let display = WorldRect(x: 0, y: 0, width: 1200, height: 800)!
+        let map = ObstacleMap(displays: [display], obstacles: [])
+        var world = PetWorld(characters: CharacterCatalog.fallback.characters, display: display, seed: 0x1A2B3C)
+        let commands: [PetInteraction] = [
+            .react(id: "person-left"),
+            .gatherAndPlay(leaderID: "person-center-left"),
+            .beginDrag(id: "person-center-right", position: WorldPoint(x: 700, y: 500)),
+            .drag(id: "person-center-right", position: WorldPoint(x: 720, y: 520)),
+            .release(id: "person-center-right", position: WorldPoint(x: 720, y: 520)),
+            .togglePause(id: "person-right"),
+            .togglePause(id: "person-right"),
+            .recall(id: "person-left"),
+            .hide(id: "person-right"),
+        ]
+        let results = commands.map { world.handle($0, obstacles: map) }
+        world.step(deltaTime: 1.0 / 60.0, obstacles: map)
+        let allFinite = world.poses.allSatisfy { $0.position.isFinite }
+        let allHandled = !results.contains(.ignored)
+        return InteractionSelfTestReport(
+            status: allHandled && allFinite && world.poses.count == 4 ? "ok" : "degraded",
+            commandCount: commands.count,
+            petCount: world.poses.count,
+            allFinite: allFinite
+        )
+    }
+}
+
 @MainActor
 final class DesktopPetsApplication {
     private let mode: CommandLineMode
@@ -61,6 +97,8 @@ final class DesktopPetsApplication {
                 ownerPIDs: snapshot.ownerPIDs.sorted()
             )
             return printJSON(report)
+        case .interactionSelfTest:
+            return printJSON(InteractionSelfTest.run())
         case let .renderSnapshot(path):
             do {
                 try ProceduralPetRenderer.renderVerificationSnapshot(

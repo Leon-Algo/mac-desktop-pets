@@ -29,11 +29,11 @@
 - Produces `PetInteraction` cases for react, group play, drag, release, toggle pause, recall, and hide.
 - Produces `PetWorld.handle(_:obstacles:) -> PetInteractionResult`.
 
-- [ ] Write failing tests for reaction, group gathering, per-pet pause, recall, drag, release, and unknown identifiers.
-- [ ] Run `swift test --filter PetInteractionTests` and confirm failures are caused by missing interaction APIs.
-- [ ] Implement minimal deterministic world mutations and result values.
-- [ ] Run the targeted and full suites.
-- [ ] Commit the independently tested domain behavior.
+- [x] Write failing tests for reaction, group gathering, per-pet pause, recall, drag, release, and unknown identifiers.
+- [x] Run `swift test --filter PetInteractionTests` and confirm failures are caused by missing interaction APIs.
+- [x] Implement minimal deterministic world mutations and result values.
+- [x] Run the targeted and full suites.
+- [x] Commit the independently tested domain behavior.
 
 ### Task 2: Shape-aware panel hit testing and click routing
 
@@ -49,11 +49,11 @@
 - Produces `PetAlphaMask.containsOpaquePixel(normalizedPoint:) -> Bool`.
 - Produces coordinator callback `(PetInteraction) -> Void` and `updateMouseAcceptance(at:fullyClickThrough:)`.
 
-- [ ] Write failing tests for transparent/opaque mask locations, delayed-single cancellation, double-click routing, and full pass-through override.
-- [ ] Run the targeted tests and confirm the expected failures.
-- [ ] Implement alpha-mask lookup, click delay/cancellation, drag lifecycle, and context-menu actions.
-- [ ] Connect views and panels through one coordinator callback without global monitors.
-- [ ] Run the targeted and full suites, then commit.
+- [x] Write failing tests for transparent/opaque mask locations, delayed-single cancellation, double-click routing, and full pass-through override.
+- [x] Run the targeted tests and confirm the expected failures.
+- [x] Implement alpha-mask lookup, click delay/cancellation, drag lifecycle, and context-menu actions.
+- [x] Connect views and panels through one coordinator callback without global monitors.
+- [x] Run the targeted and full suites, then commit.
 
 ### Task 3: Runner routing, per-pet visibility, and discoverability
 
@@ -69,10 +69,10 @@
 - Consumes coordinator interaction callbacks.
 - Produces one-time control hint and interactive-mode defaults.
 
-- [ ] Write failing tests for the new default, one-time hint persistence, global restore semantics, and menu wording.
-- [ ] Run targeted tests and confirm expected failures.
-- [ ] Route world/panel results, preserve dragging acceptance, and display the first-launch paw-menu hint once.
-- [ ] Run targeted and full suites, then commit.
+- [x] Write failing tests for the new default, one-time hint persistence, global restore semantics, and menu wording.
+- [x] Run targeted tests and confirm expected failures.
+- [x] Route world/panel results, preserve dragging acceptance, and display the first-launch paw-menu hint once.
+- [x] Run targeted and full suites, then commit.
 
 ### Task 4: Diagnostic self-test and packaged runtime verification
 
@@ -86,8 +86,8 @@
 **Interfaces:**
 - Produces `--interaction-self-test` JSON confirming every interaction command preserves four finite pet states.
 
-- [ ] Write the failing command-line parsing and report tests.
-- [ ] Implement the self-test using the real world and interaction router.
-- [ ] Run normal tests, AddressSanitizer, strict-concurrency Release build, packaging, signature checks, smoke test, and interaction self-test.
-- [ ] Update acceptance evidence and planning records.
-- [ ] Commit the verified interaction release.
+- [x] Write the failing command-line parsing and report tests.
+- [x] Implement the self-test using the real world and interaction router.
+- [x] Run normal tests, AddressSanitizer, strict-concurrency Release build, packaging, signature checks, smoke test, and interaction self-test.
+- [x] Update acceptance evidence and planning records.
+- [x] Commit the verified interaction release.

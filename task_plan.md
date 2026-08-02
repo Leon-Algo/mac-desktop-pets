@@ -45,11 +45,11 @@ Phase 6 — Direct pet interaction implementation
 ### Phase 6: Direct pet interaction
 - [x] Confirm interaction design with the user
 - [x] Record the design and implementation plan
-- [ ] Implement shape-aware mouse acceptance and interaction routing with TDD
-- [ ] Implement click, double-click, drag/release, and per-pet context commands
-- [ ] Add discoverable stop/quit guidance
-- [ ] Rebuild, launch, exercise, and package the updated app
-- **Status:** in_progress
+- [x] Implement shape-aware mouse acceptance and interaction routing with TDD
+- [x] Implement click, double-click, drag/release, and per-pet context commands
+- [x] Add discoverable stop/quit guidance
+- [x] Rebuild, launch, exercise, and package the updated app
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |
@@ -72,3 +72,5 @@ Phase 6 — Direct pet interaction implementation
 | SpriteKit display link failed while the display was asleep | 1 | Replaced the static sprite host with Core Animation; regression test proves no display link is required. |
 | Resource bundle placement initially invalidated deep signing | 1 | Packaged the SwiftPM resource bundle under `Contents/Resources` and verified strict deep signing. |
 | Menu-label test configured interactive mode while expecting full pass-through copy | 1 | Corrected the fixture to `clickThrough: true`; production wording already matched the approved state model. |
+| Smoke launch consumed the real first-run control hint and created a fifth alert window | 1 | Added a tested verification-only environment switch; automated launches now suppress the hint without persisting the shown flag. |
+| First-run hint was marked shown but not presented by the accessory app | 2 | Activation alone was insufficient; temporarily use regular activation policy for modal alerts, then restore accessory policy after dismissal. |

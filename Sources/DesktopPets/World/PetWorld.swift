@@ -49,10 +49,13 @@ struct PetWorld: Sendable {
         switch interaction {
         case let .react(id):
             guard let index = index(for: id) else { return .ignored }
+            pausedAgentIDs.remove(id)
             transition(index, to: .greet)
             return .handled
         case let .gatherAndPlay(leaderID):
             guard let leaderIndex = index(for: leaderID) else { return .ignored }
+            pausedAgentIDs.removeAll()
+            draggingAgentIDs.removeAll()
             let leaderPosition = obstacles.clampedPetAnchor(
                 agents[leaderIndex].position,
                 halfWidth: 90,
@@ -76,6 +79,7 @@ struct PetWorld: Sendable {
             return .handled
         case let .beginDrag(id, position), let .drag(id, position):
             guard let index = index(for: id) else { return .ignored }
+            pausedAgentIDs.remove(id)
             agents[index].position = obstacles.clampedPetAnchor(position, halfWidth: 90, topClearance: 140)
             agents[index].velocity = WorldVector(dx: 0, dy: 0)
             draggingAgentIDs.insert(id)

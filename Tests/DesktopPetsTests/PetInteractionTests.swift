@@ -53,6 +53,18 @@ final class PetInteractionTests: XCTestCase {
         XCTAssertEqual(world.handle(.togglePause(id: id), obstacles: map), .pauseChanged(id: id, paused: false))
     }
 
+    func testDirectReactionResumesIndividuallyPausedPet() throws {
+        var world = makeWorld()
+        let id = "person-right"
+        _ = world.handle(.togglePause(id: id), obstacles: map)
+
+        XCTAssertEqual(world.handle(.react(id: id), obstacles: map), .handled)
+        let before = try XCTUnwrap(world.poses.first { $0.id == id })
+        world.step(deltaTime: 0.2, obstacles: map)
+
+        XCTAssertNotEqual(world.poses.first { $0.id == id }, before)
+    }
+
     func testRecallRestoresOnePetToSafeVisibleFloor() throws {
         let character = CharacterCatalog.fallback.characters[0]
         let agent = PetAgent(id: character.id, personality: character.personality, position: WorldPoint(x: 950, y: 650), state: .sleep)
@@ -76,5 +88,38 @@ final class PetInteractionTests: XCTestCase {
 
     private func makeWorld() -> PetWorld {
         PetWorld(characters: CharacterCatalog.fallback.characters, display: display, seed: 11)
+    }
+}
+
+@MainActor
+final class WorldRunnerInteractionTests: XCTestCase {
+    func testGroupPlayRestoresIndividuallyHiddenPets() {
+        let display = WorldRect(x: 0, y: 0, width: 1000, height: 700)!
+        let runner = WorldRunner(
+            characters: CharacterCatalog.fallback.characters,
+            geometryProvider: FixedGeometryProvider(display: display)
+        )
+        runner.start(preferences: .defaults)
+        runner.handle(.hide(id: "person-left"))
+        XCTAssertEqual(runner.diagnostics["hiddenPetCount"] as? Int, 1)
+
+        runner.handle(.gatherAndPlay(leaderID: "person-center-left"))
+
+        XCTAssertEqual(runner.diagnostics["hiddenPetCount"] as? Int, 0)
+        XCTAssertEqual(runner.diagnostics["visiblePanelCount"] as? Int, 4)
+        runner.stop()
+    }
+}
+
+@MainActor
+private final class FixedGeometryProvider: GeometryProvider {
+    private let display: WorldRect
+
+    init(display: WorldRect) {
+        self.display = display
+    }
+
+    func snapshot() -> GeometrySnapshot {
+        GeometrySnapshot(displays: [display], obstacles: [], ownerPIDs: [], capturedAt: Date())
     }
 }

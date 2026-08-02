@@ -10,6 +10,7 @@ PASS for the local macOS build.
 - The filter reads window number, owner PID/name, layer, alpha, bounds, and on-screen state. Owner names are used only in memory to exclude system surfaces; they are not persisted or included in user-facing diagnostics.
 - No window titles or pixels are read, stored, or transmitted.
 - No ScreenCaptureKit, display-image capture, Accessibility `AXUIElement`, `URLSession`, Network framework, or socket implementation exists in source.
+- Direct interaction uses AppKit mouse events delivered to the pet panels and a 20 Hz `NSEvent.mouseLocation` sample for alpha-mask routing. It installs no global event monitor or mouse hook and requires no Input Monitoring permission.
 - The app bundle contains an empty entitlement dictionary and no Screen Recording, camera, microphone, or Accessibility usage descriptions.
 - Character assets are bundled locally. The original full photograph is not included.
 - Preferences contain only pause, visibility, click-through, and launch-at-login booleans.

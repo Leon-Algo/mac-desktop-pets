@@ -31,6 +31,12 @@ final class PreferencesTests: XCTestCase {
         XCTAssertFalse(store.shouldShowControlHint)
     }
 
+    func testAutomatedLaunchCanSuppressHintWithoutMarkingItShown() {
+        XCTAssertFalse(ControlHintPolicy.shouldShow(storedHintNeeded: true, suppressionValue: "1"))
+        XCTAssertTrue(ControlHintPolicy.shouldShow(storedHintNeeded: true, suppressionValue: nil))
+        XCTAssertFalse(ControlHintPolicy.shouldShow(storedHintNeeded: false, suppressionValue: nil))
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suite = "DesktopPetsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

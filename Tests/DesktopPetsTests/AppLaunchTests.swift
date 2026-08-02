@@ -34,4 +34,18 @@ final class AppLaunchTests: XCTestCase {
             .inspectRunning(1234)
         )
     }
+
+    func testParsesInteractionSelfTestMode() {
+        XCTAssertEqual(CommandLineMode.parse(["DesktopPets", "--interaction-self-test"]), .interactionSelfTest)
+    }
+
+    @MainActor
+    func testInteractionSelfTestExercisesCommandsAndPreservesFourFinitePets() {
+        let report = InteractionSelfTest.run()
+
+        XCTAssertEqual(report.status, "ok")
+        XCTAssertEqual(report.commandCount, 9)
+        XCTAssertEqual(report.petCount, 4)
+        XCTAssertTrue(report.allFinite)
+    }
 }

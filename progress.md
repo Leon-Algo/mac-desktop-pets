@@ -53,8 +53,16 @@
 - Public Developer ID signing/notarization is unavailable on this machine and is documented rather than claimed.
 
 ### Phase 6 — Direct pet interaction
-- **Status:** in_progress
+- **Status:** complete
 - User reported that stop/quit controls were difficult to discover and pets could not be clicked.
 - Confirmed the existing cause: default full-window click-through plus no view mouse-event routing.
 - User approved the recommended single-click, double-click, drag/release, right-click, and first-launch guidance design.
 - Added deterministic interaction commands and shape-aware panel input. One menu-copy test initially used the wrong boolean fixture; corrected it before continuing.
+- Packaged smoke exposed a first-run preference side effect. Added a tested verification-only suppression policy and cleared the test-created hint flag so the user's next manual launch still shows guidance.
+- Foreground UI inspection then showed the accessory app could mark the hint as shown without surfacing it. Added explicit application activation before `NSAlert.runModal()` and scheduled a fresh live-window check.
+- Activation alone did not surface the modal from an accessory app. The second targeted fix temporarily switches to regular activation policy for the alert and restores accessory mode after dismissal.
+- Computer Use confirmed the final first-run dialog is visible, focused, readable, and exposes its “好” button. The dialog was dismissed and the test-created hint flag was cleared for the user's next launch.
+- Direct UI coordinate automation could not target the moving nonactivating panels reliably; event delivery is instead covered at the click interpreter, alpha mask, coordinator, world-command, and packaged interaction-self-test layers.
+- Final automated count after interaction edge-case review: 55/55 normal tests and 55/55 AddressSanitizer tests.
+- Strict-concurrency Release build, ad-hoc signing, four-window smoke, and nine-command packaged interaction self-test all pass.
+- Final review also ensures a click resumes an individually paused pet and double-click group play restores any individually hidden pets.

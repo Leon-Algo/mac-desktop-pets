@@ -4,6 +4,7 @@ enum CommandLineMode: Equatable {
     case normal
     case selfTest
     case geometryProbe
+    case interactionSelfTest
     case renderSnapshot(String)
     case inspectRunning(Int32)
     case invalid(String)
@@ -15,6 +16,8 @@ enum CommandLineMode: Equatable {
             return .selfTest
         case "--geometry-probe":
             return .geometryProbe
+        case "--interaction-self-test":
+            return .interactionSelfTest
         case "--render-snapshot":
             guard arguments.count > 2 else { return .invalid("--render-snapshot requires an output path") }
             return .renderSnapshot(arguments[2])

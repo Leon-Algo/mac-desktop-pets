@@ -90,7 +90,11 @@ final class WorldRunner: NSObject {
         ]
     }
 
-    private func handle(_ interaction: PetInteraction) {
+    func handle(_ interaction: PetInteraction) {
+        if case .gatherAndPlay = interaction {
+            hiddenPetIDs.removeAll()
+            windows.show()
+        }
         let result = world.handle(interaction, obstacles: obstacleMap)
         switch result {
         case let .hide(id):

@@ -86,11 +86,22 @@ final class AppController: NSObject, NSApplicationDelegate {
         alert.messageText = title
         alert.informativeText = message
         alert.addButton(withTitle: "好")
+        let previousPolicy = NSApplication.shared.activationPolicy()
+        if previousPolicy != .regular {
+            NSApplication.shared.setActivationPolicy(.regular)
+        }
+        NSApplication.shared.activate(ignoringOtherApps: true)
         alert.runModal()
+        if previousPolicy != .regular {
+            NSApplication.shared.setActivationPolicy(previousPolicy)
+        }
     }
 
     private func showControlHintIfNeeded() {
-        guard preferenceStore.shouldShowControlHint else { return }
+        guard ControlHintPolicy.shouldShow(
+            storedHintNeeded: preferenceStore.shouldShowControlHint,
+            suppressionValue: ProcessInfo.processInfo.environment["DESKTOP_PETS_SUPPRESS_CONTROL_HINT"]
+        ) else { return }
         preferenceStore.markControlHintShown()
         DispatchQueue.main.async { [weak self] in
             self?.showAlert(

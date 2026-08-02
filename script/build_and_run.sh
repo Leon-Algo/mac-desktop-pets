@@ -15,6 +15,10 @@ open_app() {
   /usr/bin/open -n "$APP_BUNDLE"
 }
 
+open_app_for_verification() {
+  /usr/bin/open -n --env DESKTOP_PETS_SUPPRESS_CONTROL_HINT=1 "$APP_BUNDLE"
+}
+
 case "$MODE" in
   run)
     open_app
@@ -31,7 +35,7 @@ case "$MODE" in
     /usr/bin/log stream --info --style compact --predicate "subsystem == \"$BUNDLE_ID\""
     ;;
   --verify|verify)
-    open_app
+    open_app_for_verification
     REPORT=""
     for _ in {1..20}; do
       sleep 0.5

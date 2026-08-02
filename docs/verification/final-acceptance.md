@@ -13,8 +13,10 @@ Date: 2026-08-02
 | Screen boundaries | PASS | Visible-screen bounds exclude Dock/menu bar; safe anchor margins prevent panel clipping. |
 | Window obstacles | PASS | Live probe accepted an external window rectangle. Tests cover top landing, side-edge detection, turn/climb reaction geometry, filtering, coordinate conversion, and long-run invariants. |
 | Menu-bar lifecycle | PASS | App launches as an accessory/menu-bar process; commands implement pause/resume, hide/show, recall, click-through, launch at login, diagnostics, and quit. |
+| Direct interaction | PASS | Shape-aware alpha-mask routing keeps transparent pixels click-through. Single click, double click, drag/release, and right-click commands are covered by click, view, coordinator, and world tests. |
+| First-run guidance | PASS | A real foreground launch displayed and focused the control dialog explaining direct interaction and the paw-menu pause/quit path; automated smoke suppresses it without consuming the user's flag. |
 | Live launch | PASS | Packaged Release app remained alive with exactly four on-screen pet windows (`status: ok`, `windowCount: 4`). |
-| Stability | PASS | 39/39 normal tests and 39/39 AddressSanitizer tests pass, including an accelerated 30-minute simulation. |
+| Stability | PASS | 55/55 normal tests and 55/55 AddressSanitizer tests pass, including an accelerated 30-minute simulation. |
 | Swift concurrency | PASS | Release build with `-strict-concurrency=complete` succeeds. |
 | Resource use | PASS | Release sampling stabilized around 5–6% CPU and 54 MB RSS on the Apple Silicon test host. |
 | Privacy | PASS | Geometry-only inspection; no capture, Accessibility, networking, titles, or nonempty entitlements. See `privacy-audit.md`. |
@@ -31,3 +33,11 @@ The app uses the exact photographed faces, hair, and glasses over clean procedur
 - Runtime preview: `docs/verification/runtime-snapshot.png`
 - Character review: `docs/verification/character-asset-review.md`
 - Windows boundary: `docs/WINDOWS_PORT.md`
+
+## Interaction controls
+
+- Single click: the selected person greets.
+- Double click: all four gather around the selected person and play.
+- Drag/release: move a person and let platform physics resume on release.
+- Right click: reaction, per-person pause/resume, recall, or hide.
+- Paw menu: global pause/resume, hide/show, recall, full click-through, diagnostics, and Quit.
