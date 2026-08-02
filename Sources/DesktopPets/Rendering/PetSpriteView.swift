@@ -8,10 +8,18 @@ final class PetSpriteView: NSView {
     var interactionHandler: ((PetInteraction) -> Void)?
     private(set) var isDraggingPet = false
     private let petLayer = CALayer()
+    private let feedbackBackgroundLayer = CALayer()
+    private let feedbackTextLayer = CATextLayer()
     private let alphaMask: PetAlphaMask
     private var clickInterpreter = ClickInterpreter()
     private var pendingSingleClick: DispatchWorkItem?
     private var renderScale: CGFloat = 1
+    private var feedbackState = FeedbackBubbleState()
+    private var pendingFeedbackDismissal: DispatchWorkItem?
+
+    var currentPetTransform: CGAffineTransform { petLayer.affineTransform() }
+    var activeFeedbackText: String? { feedbackState.message }
+    var feedbackFontSize: CGFloat { feedbackTextLayer.fontSize }
 
     init(frame frameRect: NSRect, character: CharacterManifest) {
         petIdentifier = character.id
@@ -28,6 +36,17 @@ final class PetSpriteView: NSView {
         petLayer.anchorPoint = CGPoint(x: 0.5, y: 0.12)
         petLayer.position = CGPoint(x: frameRect.width / 2, y: 20)
         layer?.addSublayer(petLayer)
+        feedbackBackgroundLayer.backgroundColor = NSColor.black.withAlphaComponent(0.78).cgColor
+        feedbackBackgroundLayer.cornerRadius = 7
+        feedbackBackgroundLayer.isHidden = true
+        feedbackTextLayer.alignmentMode = .center
+        feedbackTextLayer.foregroundColor = NSColor.white.cgColor
+        feedbackTextLayer.fontSize = 11
+        feedbackTextLayer.contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+        feedbackTextLayer.isHidden = true
+        layer?.addSublayer(feedbackBackgroundLayer)
+        layer?.addSublayer(feedbackTextLayer)
+        layoutFeedbackLayers()
     }
 
     required init?(coder: NSCoder) {
@@ -43,6 +62,7 @@ final class PetSpriteView: NSView {
         frame = NSRect(origin: .zero, size: size)
         petLayer.bounds = CGRect(origin: .zero, size: size)
         petLayer.position = CGPoint(x: size.width / 2, y: 20 * factor)
+        layoutFeedbackLayers()
     }
 
     func containsVisiblePet(at point: CGPoint) -> Bool {
@@ -146,6 +166,7 @@ final class PetSpriteView: NSView {
         case .fall: angle = direction * -0.12
         case .sleep: angle = direction * -0.05; opacity = 0.88
         case .play, .greet: angle = stride * 0.08
+        case .roll: angle = direction * pose.phase * 2 * .pi
         default: break
         }
         let transform = CGAffineTransform(
@@ -157,10 +178,36 @@ final class PetSpriteView: NSView {
         petLayer.setAffineTransform(transform)
         petLayer.position = CGPoint(
             x: bounds.midX,
-            y: 20 * renderScale + max(0, stride) * 4 * renderScale
+            y: 20 * renderScale + (pose.state == .roll
+                ? sin(pose.phase * .pi) * 8 * renderScale
+                : max(0, stride) * 4 * renderScale)
         )
         petLayer.opacity = opacity
         CATransaction.commit()
+    }
+
+    func showFeedback(message: String, duration: Double) {
+        pendingFeedbackDismissal?.cancel()
+        let generation = feedbackState.show(message: message)
+        feedbackTextLayer.string = message
+        feedbackTextLayer.isHidden = false
+        feedbackBackgroundLayer.isHidden = false
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.feedbackState.dismiss(generation: generation)
+            guard self.feedbackState.message == nil else { return }
+            self.feedbackTextLayer.isHidden = true
+            self.feedbackBackgroundLayer.isHidden = true
+        }
+        pendingFeedbackDismissal = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(duration, 0), execute: work)
+    }
+
+    private func layoutFeedbackLayers() {
+        let width = max(40, bounds.width - 4)
+        let frame = CGRect(x: (bounds.width - width) / 2, y: max(2, bounds.height - 23), width: width, height: 20)
+        feedbackBackgroundLayer.frame = frame
+        feedbackTextLayer.frame = frame.insetBy(dx: 3, dy: 3)
     }
 
     private func screenPosition(for event: NSEvent) -> WorldPoint {

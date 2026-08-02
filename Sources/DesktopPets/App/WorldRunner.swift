@@ -109,6 +109,7 @@ final class WorldRunner: NSObject {
             "interactionMode": fullyClickThrough ? "full-pass-through" : "shape-aware",
             "hiddenPetCount": hiddenPetIDs.count,
             "petScale": scalePreset.rawValue,
+            "activeFeedbackCount": windows.activeFeedbackCount,
         ]
     }
 
@@ -149,8 +150,21 @@ final class WorldRunner: NSObject {
         case let .show(id):
             hiddenPetIDs.remove(id)
             windows.show(identifier: id)
-        case .handled, .pauseChanged, .action:
+        case .handled, .pauseChanged:
             break
+        case let .action(outcome):
+            switch outcome {
+            case let .performed(affectedIDs, feedback, duration):
+                for id in affectedIDs {
+                    hiddenPetIDs.remove(id)
+                    windows.show(identifier: id)
+                    windows.showFeedback(for: id, message: feedback, duration: duration)
+                }
+            case let .unavailable(targetID, feedback, duration):
+                if let targetID {
+                    windows.showFeedback(for: targetID, message: feedback, duration: duration)
+                }
+            }
         case .ignored:
             logger.warning("Ignored interaction for unknown pet")
         }

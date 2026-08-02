@@ -90,4 +90,28 @@ final class PetViewInteractionTests: XCTestCase {
         view.performContextAction(actions.items[0])
         XCTAssertEqual(received, .performAction(PetActionRequest(actionID: .wave, targetID: "person-left")))
     }
+
+    @MainActor
+    func testRollUsesDistinctHalfTurnAndFeedbackStaysReadableAtQuarterScale() {
+        let view = PetSpriteView(
+            frame: NSRect(x: 0, y: 0, width: 180, height: 160),
+            character: CharacterCatalog.fallback.characters[0]
+        )
+        view.apply(PetPose(
+            id: "person-left",
+            position: WorldPoint(x: 0, y: 0),
+            state: .roll,
+            facing: .right,
+            phase: 0.5,
+            supportID: nil
+        ))
+        XCTAssertEqual(abs(view.currentPetTransform.a), 1, accuracy: 0.08)
+        XCTAssertEqual(view.currentPetTransform.d, -1, accuracy: 0.08)
+
+        view.setRenderScale(0.25)
+        view.showFeedback(message: "第一条", duration: 10)
+        view.showFeedback(message: "第二条", duration: 10)
+        XCTAssertEqual(view.activeFeedbackText, "第二条")
+        XCTAssertGreaterThanOrEqual(view.feedbackFontSize, 11)
+    }
 }

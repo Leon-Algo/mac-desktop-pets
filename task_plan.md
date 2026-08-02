@@ -123,3 +123,4 @@ Phase 10 — Discoverable action center in progress
 | Computer Use could read pet windows but returned `AXError.notImplemented` for the nonactivating fallback panel | 1 | Added an accessible panel title, then used the screenshot workflow plus Core Graphics input on the read-only resolved panel coordinates for live menu acceptance. |
 | AppKit quantized the 45-point-wide quarter-size panel origin to a whole point | 1 | Kept the exact 45×40 size and accepted the unavoidable maximum 0.5-point horizontal anchor variance. |
 | Manual sleep expiry test tried to advance 4.1 seconds in one call | 1 | The world intentionally caps one `step` call to 1 second; advanced five deterministic 0.9-second steps instead. |
+| First Task 4 patch referenced a nonexistent standalone runner test file | 1 | Located `WorldRunnerInteractionTests` inside `PetInteractionTests.swift` and reapplied the complete test patch to the real file. |

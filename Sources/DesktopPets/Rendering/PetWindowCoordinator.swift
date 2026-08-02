@@ -23,6 +23,7 @@ final class PetWindowCoordinator {
     var allPanels: [PetPanel] { orderedIdentifiers.compactMap { entries[$0]?.panel } }
 
     func frame(for identifier: String) -> NSRect? { entries[identifier]?.panel.frame }
+    var activeFeedbackCount: Int { entries.values.filter { $0.view.activeFeedbackText != nil }.count }
 
     func setScale(_ preset: PetScalePreset) {
         scalePreset = preset
@@ -74,4 +75,12 @@ final class PetWindowCoordinator {
 
     func show(identifier: String) { entries[identifier]?.panel.orderFrontRegardless() }
     func hide(identifier: String) { entries[identifier]?.panel.orderOut(nil) }
+
+    func showFeedback(for identifier: String, message: String, duration: Double) {
+        entries[identifier]?.view.showFeedback(message: message, duration: duration)
+    }
+
+    func feedback(for identifier: String) -> String? {
+        entries[identifier]?.view.activeFeedbackText
+    }
 }

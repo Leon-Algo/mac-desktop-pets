@@ -194,7 +194,7 @@ Commit with `feat: add discoverable desktop pet action menus`.
 - Consumes: `PetActionOutcome` from `PetInteractionResult.action`.
 - Produces: `PetSpriteView.showFeedback(message:duration:)`, `activeFeedbackText`, and `PetWindowCoordinator.showFeedback(for:message:duration:)`.
 
-- [ ] **Step 1: Write rendering and feedback RED tests**
+- [x] **Step 1: Write rendering and feedback RED tests**
 
 Verify:
 
@@ -204,29 +204,29 @@ Verify:
 - feedback font remains at least 11 points after `setRenderScale(0.25)`;
 - the coordinator exposes feedback only for the requested identifier.
 
-- [ ] **Step 2: Run rendering RED**
+- [x] **Step 2: Run rendering RED**
 
 Run `swift test --filter PetViewInteractionTests` and `swift test --filter PanelConfigurationTests/testCoordinatorRoutesFeedbackToOnePet`. Expected: missing feedback APIs and no roll transform.
 
-- [ ] **Step 3: Implement Core Animation presentation**
+- [x] **Step 3: Implement Core Animation presentation**
 
 Add a rounded bubble background layer and centered `CATextLayer` above `petLayer`. Use system font size 11 or larger, a high-contrast dynamic background, and fixed readable sizing independent of `renderScale`. Update its position when the panel size changes. `showFeedback` uses `FeedbackBubbleState`, cancels/replaces a pending `DispatchWorkItem`, and dismisses only the matching generation.
 
 For `.roll`, rotate by `direction * phase * 2 * .pi` and add a small sinusoidal vertical bounce. Keep existing transforms for all other states.
 
-- [ ] **Step 4: Write runner RED tests**
+- [x] **Step 4: Write runner RED tests**
 
 Hide one person, issue its wave request, and assert hidden count returns to zero, its panel becomes visible, and the coordinator reports `嗨！`. Issue group play after hiding two people and assert all panels visible and all affected feedback is present. Issue a command during global pause and assert the pause explanation is shown without state change.
 
-- [ ] **Step 5: Implement outcome bridging**
+- [x] **Step 5: Implement outcome bridging**
 
 In `WorldRunner.handle`, process `.action` results. For performed outcomes, remove affected IDs from `hiddenPetIDs`, show their panels, apply poses, and forward feedback/duration. For unavailable outcomes with a target, show that panel's feedback without altering visibility preferences. Extend diagnostics with `activeFeedbackCount`.
 
-- [ ] **Step 6: Verify rendering/runner GREEN**
+- [x] **Step 6: Verify rendering/runner GREEN**
 
 Run the three modified suites and then `swift test`.
 
-- [ ] **Step 7: Commit presentation slice**
+- [x] **Step 7: Commit presentation slice**
 
 Commit with `feat: show pet action motion and feedback`.
 

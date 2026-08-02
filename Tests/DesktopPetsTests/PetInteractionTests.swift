@@ -206,6 +206,41 @@ final class WorldRunnerInteractionTests: XCTestCase {
         XCTAssertEqual(runner.diagnostics["visiblePanelCount"] as? Int, 4)
         runner.stop()
     }
+
+    func testManualActionRestoresHiddenTargetAndShowsFeedback() {
+        let display = WorldRect(x: 0, y: 0, width: 1000, height: 700)!
+        let runner = WorldRunner(
+            characters: CharacterCatalog.fallback.characters,
+            geometryProvider: FixedGeometryProvider(display: display)
+        )
+        runner.start(preferences: .defaults)
+        runner.handle(.hide(id: "person-left"))
+
+        runner.handle(.performAction(PetActionRequest(actionID: .wave, targetID: "person-left")))
+
+        XCTAssertEqual(runner.diagnostics["hiddenPetCount"] as? Int, 0)
+        XCTAssertEqual(runner.diagnostics["activeFeedbackCount"] as? Int, 1)
+        runner.stop()
+    }
+
+    func testGroupActionRestoresEveryoneAndGlobalPauseExplainsRejection() {
+        let display = WorldRect(x: 0, y: 0, width: 1000, height: 700)!
+        let runner = WorldRunner(
+            characters: CharacterCatalog.fallback.characters,
+            geometryProvider: FixedGeometryProvider(display: display)
+        )
+        runner.start(preferences: .defaults)
+        runner.handle(.hide(id: "person-left"))
+        runner.handle(.hide(id: "person-right"))
+        runner.handle(.performAction(PetActionRequest(actionID: .gatherPlay, targetID: nil)))
+        XCTAssertEqual(runner.diagnostics["hiddenPetCount"] as? Int, 0)
+        XCTAssertEqual(runner.diagnostics["activeFeedbackCount"] as? Int, 4)
+
+        runner.setPaused(true)
+        runner.handle(.performAction(PetActionRequest(actionID: .roll, targetID: "person-left")))
+        XCTAssertEqual(runner.diagnostics["activeFeedbackCount"] as? Int, 4)
+        runner.stop()
+    }
 }
 
 @MainActor

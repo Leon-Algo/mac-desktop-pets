@@ -106,4 +106,12 @@ final class PanelConfigurationTests: XCTestCase {
         XCTAssertFalse(controller.panel.canBecomeKey)
         XCTAssertFalse(controller.panel.canBecomeMain)
     }
+
+    func testCoordinatorRoutesFeedbackToOnePet() {
+        let coordinator = PetWindowCoordinator(characters: CharacterCatalog.fallback.characters)
+        coordinator.showFeedback(for: "person-left", message: "嗨！", duration: 10)
+
+        XCTAssertEqual(coordinator.feedback(for: "person-left"), "嗨！")
+        XCTAssertNil(coordinator.feedback(for: "person-right"))
+    }
 }
