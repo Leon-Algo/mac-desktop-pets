@@ -53,3 +53,12 @@ enum ControlHintPolicy {
         storedHintNeeded && suppressionValue != "1"
     }
 }
+
+enum VerificationLaunchPolicy {
+    static func preferences(from stored: AppPreferences, forceVisibleValue: String?) -> AppPreferences {
+        guard forceVisibleValue == "1" else { return stored }
+        var visible = stored
+        visible.petsHidden = false
+        return visible
+    }
+}

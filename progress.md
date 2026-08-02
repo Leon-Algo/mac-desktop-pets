@@ -82,3 +82,8 @@
 - Task 2 GREEN: shared `🐾 桌宠` menu, four per-character submenus, and right-click recovery/open/quit entries passed focused tests and all 62 tests.
 - Task 3 RED: panel/guidance tests failed because the independent fallback controller and dual-route guidance did not exist; an additional regression test failed on the absent all-hidden fallback policy.
 - Task 3 GREEN: non-activating all-Spaces `🐾 总台`, bounded status-item repair, non-modal guidance, and forced fallback for all-hidden state passed focused tests and all 66 tests.
+- Task 4 RED/GREEN: packaged inspection first failed on the absent fallback-report contract; it now requires five visible app windows (four pets plus the fallback) and reports `fallbackControlPresent`.
+- Live telemetry captured labeled status-item creation, fallback presentation, and a healthy AppKit lifecycle snapshot. The current system still suppresses the menu-bar pixels, which is why the independent fallback remains necessary.
+- Live UI acceptance opened the shared menu, hid all four pets while preserving the fallback, recalled all four, verified moving versus frozen coordinates for resume/pause, and quit the process through the menu.
+- Final edge-case TDD added accessible fallback window naming, effective global visibility after four individual hides, and deterministic force-visible packaged verification.
+- Final fresh verification: 69/69 normal tests, 69/69 AddressSanitizer tests, strict Swift 6 concurrency Release build, five-window packaged smoke, and strict deep signing all pass.

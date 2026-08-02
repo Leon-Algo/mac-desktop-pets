@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 7 — Persistent control center design
+Phase 7 — Persistent control center complete
 
 ## Phases
 
@@ -58,10 +58,10 @@ Phase 7 — Persistent control center design
 - [x] Write and self-review the persistent control-center specification
 - [x] Obtain user review of the written specification
 - [x] Write and self-review the implementation plan
-- [ ] Implement status-item lifecycle diagnostics and robust presentation
-- [ ] Add global and per-character control-center commands
-- [ ] Verify visibility after first launch, relaunch, full-screen transitions, and hiding characters
-- **Status:** in_progress
+- [x] Implement status-item lifecycle diagnostics and robust presentation
+- [x] Add global and per-character control-center commands
+- [x] Verify visibility after first launch, relaunch, full-screen transitions, and hiding characters
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |
@@ -88,3 +88,4 @@ Phase 7 — Persistent control center design
 | Smoke launch consumed the real first-run control hint and created a fifth alert window | 1 | Added a tested verification-only environment switch; automated launches now suppress the hint without persisting the shown flag. |
 | First-run hint was marked shown but not presented by the accessory app | 2 | Activation alone was insufficient; temporarily use regular activation policy for modal alerts, then restore accessory policy after dismissal. |
 | A zsh-only `$pipestatus` assertion was written with bash syntax during a RED test command | 1 | Read the compiler failure directly and used ordinary `&&` commands for subsequent Swift test runs. |
+| Computer Use could read pet windows but returned `AXError.notImplemented` for the nonactivating fallback panel | 1 | Added an accessible panel title, then used the screenshot workflow plus Core Graphics input on the read-only resolved panel coordinates for live menu acceptance. |

@@ -70,6 +70,7 @@ final class PanelConfigurationTests: XCTestCase {
         XCTAssertTrue(controller.panel.collectionBehavior.contains(.fullScreenAuxiliary))
         XCTAssertEqual(controller.button.title, "🐾 总台")
         XCTAssertEqual(controller.button.accessibilityLabel(), "桌面伙伴总台")
+        XCTAssertEqual(controller.panel.title, "桌面伙伴总台")
         XCTAssertFalse(controller.panel.canBecomeKey)
         XCTAssertFalse(controller.panel.canBecomeMain)
     }

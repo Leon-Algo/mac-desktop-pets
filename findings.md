@@ -80,3 +80,7 @@
 - The status item is currently icon-only with `NSStatusItem.squareLength`; it does not set a text label, explicit visibility, or any lifecycle telemetry.
 - A separate minimal `TEST` status item launched in the same session was also absent from the visible menu bar. This indicates the environment/menu-bar presentation path can suppress new status items, so merely recreating the same icon-only item is not a reliable fix.
 - Full-screen Spaces also hide the macOS menu bar until it is revealed. The control design needs both a robust status item and an in-app fallback so users cannot become trapped after hiding all pets.
+- The completed status item reports healthy AppKit lifecycle properties (`isVisible`, button, and window all true) but remains pixel-suppressed in the current menu-bar environment. Diagnostics deliberately report this distinction instead of claiming visual visibility.
+- The launch-visible `🐾 总台` was captured at the top-right in both ordinary and full-screen desktop states. Its shared menu rendered global controls, `四人管理`, click-through, launch-at-login, diagnostics, and quit.
+- Live input acceptance proved: hide-all removes the four pet windows but leaves the fallback; recall restores four windows; resume changes window positions over 1.5 seconds; pause keeps all positions identical; quit removes the process.
+- A final review found that individually hiding all four characters must affect the global show/hide label. The effective visibility policy now changes the label to `显示宠物` and makes the next global click restore everyone.

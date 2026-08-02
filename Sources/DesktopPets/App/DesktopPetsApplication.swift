@@ -16,10 +16,23 @@ struct GeometryProbeReport: Codable {
     let ownerPIDs: [Int32]
 }
 
-struct RunningAppReport: Codable {
+struct RunningAppReport: Codable, Equatable {
     let status: String
     let pid: Int32
     let windowCount: Int
+    let fallbackControlPresent: Bool
+}
+
+enum RunningAppInspection {
+    static func evaluate(pid: Int32, windowCount: Int) -> RunningAppReport {
+        let fallbackControlPresent = windowCount >= 5
+        return RunningAppReport(
+            status: fallbackControlPresent ? "ok" : "degraded",
+            pid: pid,
+            windowCount: windowCount,
+            fallbackControlPresent: fallbackControlPresent
+        )
+    }
 }
 
 struct InteractionSelfTestReport: Codable, Equatable {
@@ -112,7 +125,7 @@ final class DesktopPetsApplication {
             }
         case let .inspectRunning(pid):
             let count = CGWindowGeometryProvider.rawWindowCount(ownerPID: pid)
-            return printJSON(RunningAppReport(status: count >= 4 ? "ok" : "degraded", pid: pid, windowCount: count))
+            return printJSON(RunningAppInspection.evaluate(pid: pid, windowCount: count))
         case let .invalid(message):
             FileHandle.standardError.write(Data("\(message)\n".utf8))
             return EXIT_FAILURE

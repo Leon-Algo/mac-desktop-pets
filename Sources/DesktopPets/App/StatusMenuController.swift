@@ -22,7 +22,12 @@ final class StatusMenuController: NSObject {
 
     func refresh(preferences: AppPreferences, characters: [PetControlState], isFallbackVisible: Bool = false) {
         controlMenu.removeAllItems()
-        let state = MenuState(preferences: preferences)
+        var effectivePreferences = preferences
+        effectivePreferences.petsHidden = ControlCenterVisibilityPolicy.isGloballyHidden(
+            globalHidden: preferences.petsHidden,
+            characters: characters
+        )
+        let state = MenuState(preferences: effectivePreferences)
         addItem(state.pauseTitle, action: #selector(AppController.togglePause(_:)), key: "p")
         addItem(state.visibilityTitle, action: #selector(AppController.toggleVisibility(_:)), key: "h")
         addItem("召回四人", action: #selector(AppController.recallPets(_:)), key: "r")

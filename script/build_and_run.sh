@@ -16,7 +16,10 @@ open_app() {
 }
 
 open_app_for_verification() {
-  /usr/bin/open -n --env DESKTOP_PETS_SUPPRESS_CONTROL_HINT=1 "$APP_BUNDLE"
+  /usr/bin/open -n \
+    --env DESKTOP_PETS_SUPPRESS_CONTROL_HINT=1 \
+    --env DESKTOP_PETS_FORCE_VISIBLE=1 \
+    "$APP_BUNDLE"
 }
 
 case "$MODE" in

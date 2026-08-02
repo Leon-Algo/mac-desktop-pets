@@ -202,17 +202,17 @@ Run: `git add Sources/DesktopPets/App/ControlCenterPanelController.swift Sources
 - Consumes: all prior tasks.
 - Produces: menu-bar/fallback diagnostics and filtered `OSLog` events under subsystem `com.codex.DesktopPets`, category `ControlCenter`.
 
-- [ ] **Step 1: Add a failing diagnostics assertion if a new inspector field is required**
+- [x] **Step 1: Add a failing diagnostics assertion if a new inspector field is required**
 
 Assert that packaged inspection reports status-item AppKit health, fallback visibility, and four character control states without claiming pixel visibility.
 
-- [ ] **Step 2: Run the focused test and verify RED, then add minimal diagnostics/telemetry**
+- [x] **Step 2: Run the focused test and verify RED, then add minimal diagnostics/telemetry**
 
 Run: `swift test --filter AppLaunchTests`
 
 Expected: the new diagnostic keys are absent before implementation and present afterward.
 
-- [ ] **Step 3: Run complete automated verification**
+- [x] **Step 3: Run complete automated verification**
 
 Run: `swift test`
 
@@ -222,7 +222,7 @@ Run: `swift build -c release -Xswiftc -strict-concurrency=complete`
 
 Expected: zero failures and exit status 0 for every command.
 
-- [ ] **Step 4: Package, sign, and smoke-test**
+- [x] **Step 4: Package, sign, and smoke-test**
 
 Run: `./script/build_and_run.sh --verify`
 
@@ -230,11 +230,11 @@ Run: `codesign --verify --deep --strict --verbose=2 build/DesktopPets.app`
 
 Expected: packaged inspection returns `status: ok`; signing verification exits 0.
 
-- [ ] **Step 5: Exercise live controls on the current Mac**
+- [x] **Step 5: Exercise live controls on the current Mac**
 
 Launch with `./script/build_and_run.sh`, capture a full-screen image, and verify either `🐾 桌宠` or the independent `🐾 总台` is visibly available. Open the control menu, hide one character and restore it, hide all and confirm the fallback remains, recall all, pause/resume, enter/leave full-screen if feasible, then quit. Capture filtered logs for creation, health, fallback, and commands.
 
-- [ ] **Step 6: Update acceptance records and commit**
+- [x] **Step 6: Update acceptance records and commit**
 
 Record exact test counts, build/signing output, observed UI state, and any environment limitation. Mark Phase 7 complete only when all acceptance criteria have concrete evidence.
 

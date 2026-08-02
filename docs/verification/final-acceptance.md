@@ -12,11 +12,13 @@ Date: 2026-08-02
 | Playful behavior | PASS | Deterministic states cover crawl, turn, jump, fall, climb, hang, chase, greet, play, idle, and sleep. |
 | Screen boundaries | PASS | Visible-screen bounds exclude Dock/menu bar; safe anchor margins prevent panel clipping. |
 | Window obstacles | PASS | Live probe accepted an external window rectangle. Tests cover top landing, side-edge detection, turn/climb reaction geometry, filtering, coordinate conversion, and long-run invariants. |
-| Menu-bar lifecycle | PASS | App launches as an accessory/menu-bar process; commands implement pause/resume, hide/show, recall, click-through, launch at login, diagnostics, and quit. |
+| Persistent control center | PASS | A labeled `🐾 桌宠` status item is strongly owned, health-checked, and bounded-repaired. The current system suppresses its pixels despite healthy AppKit state, so the independent launch-visible `🐾 总台` provides the guaranteed route. |
 | Direct interaction | PASS | Shape-aware alpha-mask routing keeps transparent pixels click-through. Single click, double click, drag/release, and right-click commands are covered by click, view, coordinator, and world tests. |
-| First-run guidance | PASS | A real foreground launch displayed and focused the control dialog explaining direct interaction and the paw-menu pause/quit path; automated smoke suppresses it without consuming the user's flag. |
-| Live launch | PASS | Packaged Release app remained alive with exactly four on-screen pet windows (`status: ok`, `windowCount: 4`). |
-| Stability | PASS | 55/55 normal tests and 55/55 AddressSanitizer tests pass, including an accelerated 30-minute simulation. |
+| Control commands | PASS | The shared menu exposes global pause/resume, hide/show, recall, four per-character submenus, click-through, fallback visibility, launch at login, diagnostics, and quit. Pet context menus add recall-all, open-total-station, and quit. |
+| First-run guidance | PASS | Guidance is non-modal and names both `🐾 桌宠` and `🐾 总台`; launch no longer changes activation policy to surface an alert. |
+| Live launch | PASS | Packaged inspection returned `status: ok`, `windowCount: 5`, and `fallbackControlPresent: true` for four pets plus the independent fallback. |
+| Live recovery | PASS | Real menu input hid all pets while preserving the fallback, recalled four panels, proved resume motion and pause stability from window coordinates, and terminated the process through Quit. |
+| Stability | PASS | 69/69 normal tests and 69/69 AddressSanitizer tests pass, including an accelerated 30-minute simulation. |
 | Swift concurrency | PASS | Release build with `-strict-concurrency=complete` succeeds. |
 | Resource use | PASS | Release sampling stabilized around 5–6% CPU and 54 MB RSS on the Apple Silicon test host. |
 | Privacy | PASS | Geometry-only inspection; no capture, Accessibility, networking, titles, or nonempty entitlements. See `privacy-audit.md`. |
@@ -39,5 +41,6 @@ The app uses the exact photographed faces, hair, and glasses over clean procedur
 - Single click: the selected person greets.
 - Double click: all four gather around the selected person and play.
 - Drag/release: move a person and let platform physics resume on release.
-- Right click: reaction, per-person pause/resume, recall, or hide.
-- Paw menu: global pause/resume, hide/show, recall, full click-through, diagnostics, and Quit.
+- Right click: reaction, per-person pause/resume, recall, hide, recall all, open total station, or quit.
+- `🐾 总台`: always visible at launch and automatically restored when all people are hidden; opens the full shared control menu.
+- `🐾 桌宠`: labeled native menu-bar entry when the current macOS menu-bar environment displays it.

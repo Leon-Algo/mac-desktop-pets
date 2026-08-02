@@ -43,6 +43,13 @@ final class PreferencesTests: XCTestCase {
         XCTAssertTrue(ControlHintPolicy.guidance.contains("退出"))
     }
 
+    func testVerificationLaunchCanForceVisibleWithoutChangingNormalPreferences() {
+        let hidden = AppPreferences(paused: true, petsHidden: true, clickThrough: true, launchAtLogin: false)
+
+        XCTAssertFalse(VerificationLaunchPolicy.preferences(from: hidden, forceVisibleValue: "1").petsHidden)
+        XCTAssertEqual(VerificationLaunchPolicy.preferences(from: hidden, forceVisibleValue: nil), hidden)
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suite = "DesktopPetsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

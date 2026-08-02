@@ -48,4 +48,20 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertEqual(report.petCount, 4)
         XCTAssertTrue(report.allFinite)
     }
+
+    func testRunningInspectionRequiresIndependentFallbackControlWindow() {
+        XCTAssertEqual(
+            RunningAppInspection.evaluate(pid: 42, windowCount: 5),
+            RunningAppReport(
+                status: "ok",
+                pid: 42,
+                windowCount: 5,
+                fallbackControlPresent: true
+            )
+        )
+        XCTAssertEqual(
+            RunningAppInspection.evaluate(pid: 42, windowCount: 4).status,
+            "degraded"
+        )
+    }
 }

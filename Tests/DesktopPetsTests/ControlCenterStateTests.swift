@@ -61,6 +61,8 @@ final class ControlCenterStateTests: XCTestCase {
         XCTAssertTrue(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: false, characters: hidden))
         XCTAssertTrue(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: true, characters: oneVisible))
         XCTAssertFalse(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: false, characters: oneVisible))
+        XCTAssertFalse(ControlCenterVisibilityPolicy.nextGlobalHidden(globalHidden: false, characters: hidden))
+        XCTAssertTrue(ControlCenterVisibilityPolicy.nextGlobalHidden(globalHidden: false, characters: oneVisible))
     }
 }
 

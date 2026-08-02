@@ -60,6 +60,19 @@ final class CommandRoutingTests: XCTestCase {
         XCTAssertEqual(received, .openControlCenter)
         runner.stop()
     }
+
+    @MainActor
+    func testGlobalVisibilityMenuOffersShowWhenAllCharactersIndividuallyHidden() {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(
+            preferences: .defaults,
+            characters: CharacterCatalog.fallback.characters.map {
+                PetControlState(id: $0.id, displayName: $0.displayName, isHidden: true, isPaused: false)
+            }
+        )
+
+        XCTAssertTrue(controller.controlMenu.items.map(\.title).contains("显示宠物"))
+    }
 }
 
 @MainActor

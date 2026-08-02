@@ -24,6 +24,8 @@ final class ControlCenterPanelController: NSObject {
         super.init()
 
         panel.identifier = NSUserInterfaceItemIdentifier("desktop-pets-control-center")
+        panel.title = "桌面伙伴总台"
+        panel.setAccessibilityLabel("桌面伙伴总台")
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true

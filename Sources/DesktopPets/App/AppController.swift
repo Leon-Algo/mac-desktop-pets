@@ -11,7 +11,10 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var controlCenterPanel: ControlCenterPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        preferences = preferenceStore.load()
+        preferences = VerificationLaunchPolicy.preferences(
+            from: preferenceStore.load(),
+            forceVisibleValue: ProcessInfo.processInfo.environment["DESKTOP_PETS_FORCE_VISIBLE"]
+        )
         let catalog = (try? CharacterCatalog.loadBundled()) ?? .fallback
         runner = WorldRunner(characters: catalog.characters, geometryProvider: CGWindowGeometryProvider())
         statusMenu = StatusMenuController(target: self)
@@ -46,7 +49,10 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     @objc func toggleVisibility(_ sender: Any?) {
-        preferences.petsHidden.toggle()
+        preferences.petsHidden = ControlCenterVisibilityPolicy.nextGlobalHidden(
+            globalHidden: preferences.petsHidden,
+            characters: runner?.controlSnapshot ?? []
+        )
         runner?.setHidden(preferences.petsHidden)
         if preferences.petsHidden { showControlCenter() }
         persistAndRefresh()
