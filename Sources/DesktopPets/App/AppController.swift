@@ -42,6 +42,11 @@ final class AppController: NSObject, NSApplicationDelegate {
             self?.statusMenu?.checkHealth()
         }
         showControlHintIfNeeded()
+        if VerificationLaunchPolicy.shouldOpenCharacterSettings(
+            value: ProcessInfo.processInfo.environment["DESKTOP_PETS_OPEN_CHARACTER_SETTINGS"]
+        ) {
+            DispatchQueue.main.async { [weak self] in self?.showCharacterSettings(nil) }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

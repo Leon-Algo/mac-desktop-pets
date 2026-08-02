@@ -39,6 +39,12 @@
 - Task 4 GREEN: a fixed native AppKit editor exposes roster list, preview, add/delete/order controls, 12 avatars, three body styles, six outfits, five templates, five advanced sliders, local import, save/cancel, and menu routing; 15 focused tests pass.
 - Task 5 RED: runtime tests failed on missing state restoration and dynamic-inspection behavior.
 - Task 5 GREEN: app launch loads/migrates a versioned roster, Save atomically replaces the runner, stable IDs restore hidden/pause state, 1/4/8 runners work, stopped panels disappear, all-person copy is count-neutral, and dynamic inspection rejects mixed sets; all 115 tests pass.
+- Task 6 RED/GREEN: packaged self-test now reports `[1,4,8]`, maximum 8, 14 commands, four default pets, and finite state.
+- Release verification passed AddressSanitizer, strict-concurrency Release, fresh packaging, deep signing, dynamic smoke, and packaged 1/4/8 self-test.
+- Visible native-window QA confirmed the complete dark-mode layout and all controls. Real `+`/Cancel interaction exposed and fixed new-row selection; visual QA also exposed and fixed misleading legacy-avatar source copy.
+- The verification launch preserves the user's actual four-person roster and leaves the final settings window available for acceptance.
+- **Status:** implementation_complete
+- Final fresh verification: 117/117 normal tests, 117/117 AddressSanitizer tests, strict-concurrency Release, fresh packaging, strict deep signing, dynamic smoke, and packaged `[1,4,8]` self-test all pass.
 - **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.

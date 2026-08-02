@@ -47,6 +47,8 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertEqual(report.commandCount, 14)
         XCTAssertEqual(report.petCount, 4)
         XCTAssertTrue(report.allFinite)
+        XCTAssertEqual(report.testedPetCounts, [1, 4, 8])
+        XCTAssertEqual(report.maximumSupportedPetCount, 8)
     }
 
     func testRunningInspectionAcceptsFourUniformHalfSizePetsAndFallbackControl() {

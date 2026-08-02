@@ -79,6 +79,8 @@ struct InteractionSelfTestReport: Codable, Equatable {
     let commandCount: Int
     let petCount: Int
     let allFinite: Bool
+    let testedPetCounts: [Int]
+    let maximumSupportedPetCount: Int
 }
 
 enum InteractionSelfTest {
@@ -106,11 +108,28 @@ enum InteractionSelfTest {
         world.step(deltaTime: 1.0 / 60.0, obstacles: map)
         let allFinite = world.poses.allSatisfy { $0.position.isFinite }
         let allHandled = !results.contains(.ignored)
+        let testedPetCounts = [1, 4, CharacterRoster.maximumCount]
+        let allRosterSizesFinite = testedPetCounts.allSatisfy { count in
+            let profiles = (0..<count).map { index -> CharacterProfile in
+                var profile = CharacterRoster.default.profiles[index % CharacterRoster.default.profiles.count]
+                profile.id = "self-test-\(count)-\(index)"
+                return profile
+            }
+            var candidate = PetWorld(
+                characters: CharacterRoster(version: 1, profiles: profiles).manifests,
+                display: display,
+                seed: UInt64(count)
+            )
+            candidate.step(deltaTime: 1.0 / 60.0, obstacles: map)
+            return candidate.poses.count == count && candidate.poses.allSatisfy { $0.position.isFinite }
+        }
         return InteractionSelfTestReport(
-            status: allHandled && allFinite && world.poses.count == 4 ? "ok" : "degraded",
+            status: allHandled && allFinite && allRosterSizesFinite && world.poses.count == 4 ? "ok" : "degraded",
             commandCount: commands.count,
             petCount: world.poses.count,
-            allFinite: allFinite
+            allFinite: allFinite,
+            testedPetCounts: testedPetCounts,
+            maximumSupportedPetCount: CharacterRoster.maximumCount
         )
     }
 }

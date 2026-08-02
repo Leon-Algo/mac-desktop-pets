@@ -15,6 +15,8 @@ final class CharacterSettingsWindowTests: XCTestCase {
         for _ in 0..<4 { controller.addCharacter(nil) }
         XCTAssertEqual(controller.tableView.numberOfRows, 8)
         XCTAssertFalse(controller.addButton.isEnabled)
+        XCTAssertEqual(controller.tableView.selectedRow, 7)
+        XCTAssertEqual(controller.nameField.stringValue, "新人物 8")
     }
 
     func testControlsEditAndSaveValidatedRoster() throws {
@@ -37,5 +39,11 @@ final class CharacterSettingsWindowTests: XCTestCase {
         controller.nameField.stringValue = "不要保存"
         controller.cancel(nil)
         XCTAssertEqual(saveCount, 0)
+    }
+
+    func testLegacyAvatarIsDescribedAsCurrentOriginalInsteadOfBuiltInPreset() {
+        let legacy = CharacterRoster.legacy(from: CharacterCatalog.fallback.characters)
+        let controller = CharacterSettingsWindowController(roster: legacy)
+        XCTAssertEqual(controller.avatarPopUp.titleOfSelectedItem, "当前：原头像")
     }
 }

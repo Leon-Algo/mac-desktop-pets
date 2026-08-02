@@ -127,4 +127,6 @@ enum VerificationLaunchPolicy {
         visible.petsHidden = false
         return visible
     }
+
+    static func shouldOpenCharacterSettings(value: String?) -> Bool { value == "1" }
 }

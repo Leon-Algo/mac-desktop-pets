@@ -118,7 +118,7 @@
 **Interfaces:**
 - Verifies: deterministic four-default self-test plus 1/4/8 roster simulations and live packaged app.
 
-- [ ] Add failing self-test expectations for roster defaults and 1/4/8 finite simulations.
-- [ ] Implement expanded JSON self-test diagnostics and dynamic smoke verification.
-- [ ] Run full tests, AddressSanitizer, strict-concurrency Release, package, signing, smoke, 1/4/8 self-tests, and ordinary live launch.
-- [ ] Record evidence, commit, and leave the app running for acceptance.
+- [x] Add failing self-test expectations for roster defaults and 1/4/8 finite simulations.
+- [x] Implement expanded JSON self-test diagnostics and dynamic smoke verification.
+- [x] Run full tests, AddressSanitizer, strict-concurrency Release, package, signing, smoke, 1/4/8 self-tests, and ordinary live launch.
+- [x] Record evidence, commit, and leave the app running for acceptance.

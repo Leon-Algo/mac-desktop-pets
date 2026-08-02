@@ -20,6 +20,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     private let countLabel = NSTextField(labelWithString: "")
     private let errorLabel = NSTextField(labelWithString: "")
     private var sliders: [NSSlider] = []
+    private var isRefreshingSelection = false
     private(set) var model: CharacterEditorModel
     var onSave: ((CharacterRoster) throws -> Void)?
     var onImportAvatar: ((Data) throws -> String)?
@@ -66,6 +67,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
+        guard !isRefreshingSelection else { return }
         guard tableView.selectedRow >= 0 else { return }
         model.selectedIndex = tableView.selectedRow
         refreshEditor()
@@ -129,6 +131,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         previewImageView.layer?.cornerRadius = 12
         root.addSubview(previewImageView)
 
+        avatarPopUp.addItem(withTitle: "当前头像")
         avatarPopUp.addItems(withTitles: BuiltInAvatarPreset.allCases.enumerated().map { "内置头像 \($0.offset + 1)" })
         bodyStylePopUp.addItems(withTitles: BodyStyle.allCases.map(\.displayName))
         outfitPopUp.addItems(withTitles: OutfitPreset.allCases.map(\.displayName))
@@ -136,7 +139,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         nameField.delegate = self
         let rows: [(String, NSView)] = [
             ("名称", nameField),
-            ("内置头像", avatarPopUp),
+            ("头像", avatarPopUp),
             ("服装样式", bodyStylePopUp),
             ("服装配色", outfitPopUp),
             ("性格模板", personalityPopUp),
@@ -189,15 +192,29 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     }
 
     private func refreshAll() {
+        let intendedIndex = model.selectedIndex
+        isRefreshingSelection = true
         tableView.reloadData()
-        tableView.selectRowIndexes(IndexSet(integer: model.selectedIndex), byExtendingSelection: false)
+        tableView.selectRowIndexes(IndexSet(integer: intendedIndex), byExtendingSelection: false)
+        isRefreshingSelection = false
+        model.selectedIndex = intendedIndex
         refreshEditor()
     }
 
     private func refreshEditor() {
         let profile = model.selectedProfile
         nameField.stringValue = profile.displayName
-        if case let .builtIn(preset) = profile.avatarSource { avatarPopUp.selectItem(at: preset.index) }
+        switch profile.avatarSource {
+        case let .builtIn(preset):
+            avatarPopUp.item(at: 0)?.title = "当前头像"
+            avatarPopUp.selectItem(at: preset.index + 1)
+        case .imported:
+            avatarPopUp.item(at: 0)?.title = "当前：本地导入头像"
+            avatarPopUp.selectItem(at: 0)
+        case .legacyBundled:
+            avatarPopUp.item(at: 0)?.title = "当前：原头像"
+            avatarPopUp.selectItem(at: 0)
+        }
         bodyStylePopUp.selectItem(withTitle: profile.bodyStyle.displayName)
         outfitPopUp.selectItem(withTitle: profile.outfit.displayName)
         personalityPopUp.selectItem(withTitle: profile.personalityPreset.displayName)
@@ -226,7 +243,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     @objc private func moveCharacterDown(_ sender: Any?) { if model.moveSelected(by: 1) { refreshAll() } }
 
     @objc private func avatarChanged(_ sender: Any?) {
-        let index = avatarPopUp.indexOfSelectedItem
+        let index = avatarPopUp.indexOfSelectedItem - 1
         guard BuiltInAvatarPreset.allCases.indices.contains(index) else { return }
         model.updateSelected { $0.avatarSource = .builtIn(BuiltInAvatarPreset.allCases[index]) }
         refreshPreview()

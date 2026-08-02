@@ -132,6 +132,9 @@ Phase 10 — Discoverable action center complete
 | Headless settings test still hung on `NSButton.performClick` | 2 | Isolated AppKit click animation/event dispatch as the remaining wait; tests now invoke the same bound target-action methods directly and inspect button enabled state separately. |
 | Dynamic inspector accepted a mixed-size set as one valid pet | 1 | The matcher used `compactMap` and validated only the matching subset; now every unnamed pet window must match the same preset and compositor factor. |
 | Full-test log extraction assigned zsh read-only variable `status` | 1 | Switched to the task-specific variable `test_exit_code`; no product code or test execution was affected. |
+| Task 6 patch expected an outdated self-test function name | 1 | Located the actual `testInteractionSelfTestExercisesCommandsAndPreservesFourFinitePets` function and applied the assertions to its exact body. |
+| Visual QA showed legacy face while avatar popup said `内置头像 1` | 1 | Added a failing UI regression test and made the source selector explicitly show `当前：原头像` or `当前：本地导入头像`; built-in presets remain separate choices 1–12. |
+| Real `+` click added a profile but selection jumped back to row 0 | 1 | `reloadData()` emitted a selection callback that overwrote the draft's new index; refresh now suppresses that transient callback and restores the intended row before updating controls. |
 
 ## Phase 11 — “叫爸爸”动作替换
 - [x] Write and review the focused behavior-change design
@@ -146,4 +149,4 @@ Phase 10 — Discoverable action center complete
 - [x] Define 2–3 product/architecture approaches and recommend one
 - [x] Present defaults, eight-character limit, UX, persistence, and migration design for approval
 - [x] Write and commit the approved design specification
-- **Status:** design_complete
+- **Status:** implementation_complete
