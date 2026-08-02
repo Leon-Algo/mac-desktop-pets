@@ -149,7 +149,7 @@ final class WorldRunner: NSObject {
         case let .show(id):
             hiddenPetIDs.remove(id)
             windows.show(identifier: id)
-        case .handled, .pauseChanged:
+        case .handled, .pauseChanged, .action:
             break
         case .ignored:
             logger.warning("Ignored interaction for unknown pet")

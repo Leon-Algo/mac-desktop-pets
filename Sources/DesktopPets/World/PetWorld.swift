@@ -59,6 +59,8 @@ struct PetWorld: Sendable {
 
     mutating func handle(_ interaction: PetInteraction, obstacles: ObstacleMap) -> PetInteractionResult {
         switch interaction {
+        case let .performAction(request):
+            return performAction(request, obstacles: obstacles)
         case let .react(id):
             guard let index = index(for: id) else { return .ignored }
             pausedAgentIDs.remove(id)
@@ -156,14 +158,23 @@ struct PetWorld: Sendable {
             case .turn:
                 if agents[index].stateTime >= 0.35 { transition(index, to: .crawl) }
             case .idle, .greet, .play:
-                if agents[index].stateTime >= 1.2 + agents[index].personality.curiosity {
+                let duration = manualDuration(for: agents[index])
+                    ?? (1.2 + agents[index].personality.curiosity)
+                if agents[index].stateTime >= duration {
+                    transition(index, to: .crawl)
+                }
+            case .roll:
+                if agents[index].stateTime >= (manualDuration(for: agents[index]) ?? 1.4) {
                     transition(index, to: .crawl)
                 }
             case .hang:
                 if agents[index].stateTime >= 1.5 { transition(index, to: .fall) }
             case .sleep:
-                if agents[index].stateTime >= 3.0 + agents[index].personality.sleepiness * 4 {
-                    transition(index, to: .idle)
+                let isManual = agents[index].manualActionID != nil
+                let duration = manualDuration(for: agents[index])
+                    ?? (3.0 + agents[index].personality.sleepiness * 4)
+                if agents[index].stateTime >= duration {
+                    transition(index, to: isManual ? .crawl : .idle)
                 }
             }
 
@@ -291,7 +302,69 @@ struct PetWorld: Sendable {
     private mutating func transition(_ index: Int, to state: PetState) {
         agents[index].state = state
         agents[index].stateTime = 0
+        agents[index].manualActionID = nil
         if state != .crawl { agents[index].supportID = state == .climb ? agents[index].supportID : nil }
+    }
+
+    private mutating func performAction(
+        _ request: PetActionRequest,
+        obstacles: ObstacleMap
+    ) -> PetInteractionResult {
+        guard let definition = PetActionCatalog.definition(for: request.actionID) else {
+            return .action(.unavailable(targetID: request.targetID, feedback: "无法识别这个动作", duration: 2))
+        }
+        guard !paused else {
+            return .action(.unavailable(
+                targetID: request.targetID,
+                feedback: "当前已暂停，请先继续活动",
+                duration: 2
+            ))
+        }
+
+        if definition.scope == .group {
+            guard request.targetID == nil, let leaderID = agents.first?.id else {
+                return .action(.unavailable(targetID: request.targetID, feedback: "暂时无法集合", duration: 2))
+            }
+            guard handle(.gatherAndPlay(leaderID: leaderID), obstacles: obstacles) == .handled else {
+                return .action(.unavailable(targetID: nil, feedback: "暂时无法集合", duration: 2))
+            }
+            return .action(.performed(
+                affectedIDs: agents.map(\.id),
+                feedback: definition.feedback,
+                duration: definition.duration
+            ))
+        }
+
+        guard let targetID = request.targetID, let index = index(for: targetID) else {
+            return .action(.unavailable(targetID: request.targetID, feedback: "找不到这个人物", duration: 2))
+        }
+        pausedAgentIDs.remove(targetID)
+        draggingAgentIDs.remove(targetID)
+        agents[index].velocity = WorldVector(dx: 0, dy: 0)
+        let state: PetState
+        switch request.actionID {
+        case .wave: state = .greet
+        case .hop: state = .jump
+        case .roll: state = .roll
+        case .sleep: state = .sleep
+        case .gatherPlay:
+            return .action(.unavailable(targetID: targetID, feedback: "动作范围不匹配", duration: 2))
+        }
+        transition(index, to: state)
+        agents[index].manualActionID = request.actionID
+        if request.actionID == .hop {
+            agents[index].velocity.dy = 240
+        }
+        return .action(.performed(
+            affectedIDs: [targetID],
+            feedback: definition.feedback,
+            duration: definition.duration
+        ))
+    }
+
+    private func manualDuration(for agent: PetAgent) -> Double? {
+        guard let actionID = agent.manualActionID else { return nil }
+        return PetActionCatalog.definition(for: actionID)?.duration
     }
 
     private func index(for id: String) -> Int? {

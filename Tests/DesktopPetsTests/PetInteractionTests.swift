@@ -84,6 +84,103 @@ final class PetInteractionTests: XCTestCase {
         XCTAssertEqual(world.handle(.react(id: "missing"), obstacles: map), .ignored)
     }
 
+    func testManualActionsEnterDistinctStates() {
+        let cases: [(PetActionID, PetState)] = [
+            (.wave, .greet),
+            (.hop, .jump),
+            (.roll, .roll),
+            (.sleep, .sleep),
+        ]
+
+        for (actionID, expectedState) in cases {
+            var world = makeWorld()
+            let result = world.handle(
+                .performAction(PetActionRequest(actionID: actionID, targetID: "person-left")),
+                obstacles: map
+            )
+            guard case let .action(.performed(ids, _, _)) = result else {
+                return XCTFail("Expected performed outcome for \(actionID)")
+            }
+            XCTAssertEqual(ids, ["person-left"])
+            XCTAssertEqual(world.poses.first { $0.id == "person-left" }?.state, expectedState)
+        }
+    }
+
+    func testManualActionResumesOnlyIndividualPauseButRespectsGlobalPause() throws {
+        var world = makeWorld()
+        _ = world.handle(.togglePause(id: "person-left"), obstacles: map)
+
+        let resumed = world.handle(
+            .performAction(PetActionRequest(actionID: .wave, targetID: "person-left")),
+            obstacles: map
+        )
+        guard case .action(.performed) = resumed else { return XCTFail("Expected performed action") }
+        XCTAssertEqual(world.poses.first { $0.id == "person-left" }?.state, .greet)
+
+        world.setPaused(true)
+        let before = world.poses
+        let blocked = world.handle(
+            .performAction(PetActionRequest(actionID: .roll, targetID: "person-left")),
+            obstacles: map
+        )
+        XCTAssertEqual(
+            blocked,
+            .action(.unavailable(
+                targetID: "person-left",
+                feedback: "当前已暂停，请先继续活动",
+                duration: 2
+            ))
+        )
+        XCTAssertEqual(world.poses, before)
+    }
+
+    func testManualActionsExpireAndRollPhaseDoesNotWrap() throws {
+        var rollWorld = makeWorld()
+        _ = rollWorld.handle(
+            .performAction(PetActionRequest(actionID: .roll, targetID: "person-left")),
+            obstacles: map
+        )
+        rollWorld.step(deltaTime: 0.7, obstacles: map)
+        XCTAssertEqual(
+            try XCTUnwrap(rollWorld.poses.first { $0.id == "person-left" }).phase,
+            0.5,
+            accuracy: 0.02
+        )
+        rollWorld.step(deltaTime: 0.75, obstacles: map)
+        XCTAssertEqual(rollWorld.poses.first { $0.id == "person-left" }?.state, .crawl)
+
+        var sleepWorld = makeWorld()
+        _ = sleepWorld.handle(
+            .performAction(PetActionRequest(actionID: .sleep, targetID: "person-left")),
+            obstacles: map
+        )
+        for _ in 0..<5 {
+            sleepWorld.step(deltaTime: 0.9, obstacles: map)
+        }
+        XCTAssertEqual(sleepWorld.poses.first { $0.id == "person-left" }?.state, .crawl)
+    }
+
+    func testGroupActionUsesAllCharactersAndInvalidTargetDoesNotMutate() {
+        var world = makeWorld()
+        let result = world.handle(
+            .performAction(PetActionRequest(actionID: .gatherPlay, targetID: nil)),
+            obstacles: map
+        )
+        guard case let .action(.performed(ids, _, _)) = result else {
+            return XCTFail("Expected group action")
+        }
+        XCTAssertEqual(Set(ids), Set(CharacterCatalog.fallback.characters.map(\.id)))
+
+        var invalidWorld = makeWorld()
+        let before = invalidWorld.poses
+        let invalid = invalidWorld.handle(
+            .performAction(PetActionRequest(actionID: .wave, targetID: "missing")),
+            obstacles: map
+        )
+        guard case .action(.unavailable) = invalid else { return XCTFail("Expected unavailable action") }
+        XCTAssertEqual(invalidWorld.poses, before)
+    }
+
     private var map: ObstacleMap { ObstacleMap(displays: [display], obstacles: []) }
 
     private func makeWorld() -> PetWorld {

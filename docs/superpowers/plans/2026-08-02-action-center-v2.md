@@ -89,7 +89,7 @@ Commit with `feat: define desktop pet action catalog`.
 - Produces: `PetInteraction.performAction(PetActionRequest)` and `PetInteractionResult.action(PetActionOutcome)`.
 - Produces: `PetState.roll` and `PetAgent.manualActionID: PetActionID?`.
 
-- [ ] **Step 1: Write individual-action RED tests**
+- [x] **Step 1: Write individual-action RED tests**
 
 For one target, issue each typed request and assert outcomes/states:
 
@@ -109,15 +109,15 @@ for (actionID, state) in cases {
 }
 ```
 
-- [ ] **Step 2: Run individual-action RED**
+- [x] **Step 2: Run individual-action RED**
 
 Run `swift test --filter PetInteractionTests/testManualActionsEnterDistinctStates`. Expected: compilation fails because `performAction` and `roll` are absent.
 
-- [ ] **Step 3: Implement typed routing and states**
+- [x] **Step 3: Implement typed routing and states**
 
 Add `.performAction(PetActionRequest)` and `.action(PetActionOutcome)`. Validate definition scope and target. For individual commands: clear target per-person pause, zero velocity, set `manualActionID`, then transition to greet/jump/roll/sleep. Hop sets `velocity.dy = 240` while retaining horizontal zero. A group request delegates to the existing gather logic and returns all affected IDs.
 
-- [ ] **Step 4: Write pause, invalid, and expiry RED tests**
+- [x] **Step 4: Write pause, invalid, and expiry RED tests**
 
 Cover:
 
@@ -127,15 +127,15 @@ Cover:
 - wave returns to crawl after 1.8 seconds, roll after 1.4 seconds, and manual sleep after 4 seconds;
 - roll pose phase reaches approximately 0.5 after 0.7 seconds and never snaps at 1 second.
 
-- [ ] **Step 5: Implement duration and phase rules**
+- [x] **Step 5: Implement duration and phase rules**
 
 Store `manualActionID` on `PetAgent`. In `PetAgent.pose`, use `min(stateTime / 1.4, 1)` for manual roll phase and the existing repeating phase otherwise. In `substep`, apply catalog duration only when `manualActionID` matches the state, then transition to crawl and clear the marker. Landing clears manual hop through the normal transition.
 
-- [ ] **Step 6: Verify world GREEN and regressions**
+- [x] **Step 6: Verify world GREEN and regressions**
 
 Run `swift test --filter PetInteractionTests`, `swift test --filter PetWorldTests`, then `swift test`.
 
-- [ ] **Step 7: Commit world slice**
+- [x] **Step 7: Commit world slice**
 
 Commit with `feat: add deterministic manual pet actions`.
 

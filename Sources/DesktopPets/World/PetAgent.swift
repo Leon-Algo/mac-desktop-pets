@@ -9,6 +9,7 @@ struct PetAgent: Sendable {
     var facing: Facing
     var stateTime: Double
     var supportID: String?
+    var manualActionID: PetActionID?
 
     init(
         id: String,
@@ -18,7 +19,8 @@ struct PetAgent: Sendable {
         velocity: WorldVector = WorldVector(dx: 0, dy: 0),
         facing: Facing = .right,
         stateTime: Double = 0,
-        supportID: String? = nil
+        supportID: String? = nil,
+        manualActionID: PetActionID? = nil
     ) {
         self.id = id
         self.personality = personality
@@ -28,6 +30,7 @@ struct PetAgent: Sendable {
         self.facing = facing
         self.stateTime = stateTime
         self.supportID = supportID
+        self.manualActionID = manualActionID
     }
 
     var pose: PetPose {
@@ -36,7 +39,9 @@ struct PetAgent: Sendable {
             position: position,
             state: state,
             facing: facing,
-            phase: stateTime.truncatingRemainder(dividingBy: 1),
+            phase: manualActionID == .roll
+                ? min(stateTime / (PetActionCatalog.definition(for: .roll)?.duration ?? 1.4), 1)
+                : stateTime.truncatingRemainder(dividingBy: 1),
             supportID: supportID
         )
     }

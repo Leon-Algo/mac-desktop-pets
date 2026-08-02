@@ -12,6 +12,7 @@ enum PetState: String, Codable, CaseIterable, Sendable {
     case chase
     case greet
     case play
+    case roll
 }
 
 enum Facing: Int, Codable, Sendable {
