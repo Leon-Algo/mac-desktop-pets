@@ -76,3 +76,5 @@
 - Wrote and self-reviewed `docs/superpowers/specs/2026-08-02-persistent-control-center-design.md`; no production code has been changed pending written-spec review.
 - User authorized uninterrupted execution without further approval gates.
 - Wrote the TDD implementation plan at `docs/superpowers/plans/2026-08-02-persistent-control-center.md` and selected inline execution because subagent delegation is not authorized.
+- Task 1 RED: focused tests failed because control snapshots and status-item health types did not exist.
+- Task 1 GREEN: 3 focused control-center tests and all 58 tests passed.

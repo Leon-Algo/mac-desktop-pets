@@ -15,9 +15,11 @@ final class WorldRunner: NSObject {
     private var lastGeometryRefresh = 0.0
     private var fullyClickThrough = false
     private var hiddenPetIDs: Set<String> = []
+    private let characters: [CharacterManifest]
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "world")
 
     init(characters: [CharacterManifest], geometryProvider: GeometryProvider) {
+        self.characters = characters
         self.geometryProvider = geometryProvider
         let snapshot = geometryProvider.snapshot()
         let fallback = WorldRect(x: 0, y: 0, width: 1440, height: 900)!
@@ -88,6 +90,17 @@ final class WorldRunner: NSObject {
             "interactionMode": fullyClickThrough ? "full-pass-through" : "shape-aware",
             "hiddenPetCount": hiddenPetIDs.count,
         ]
+    }
+
+    var controlSnapshot: [PetControlState] {
+        characters.map {
+            PetControlState(
+                id: $0.id,
+                displayName: $0.displayName,
+                isHidden: hiddenPetIDs.contains($0.id),
+                isPaused: world.isPaused(id: $0.id)
+            )
+        }
     }
 
     func handle(_ interaction: PetInteraction) {

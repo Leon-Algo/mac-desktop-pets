@@ -28,6 +28,10 @@ struct PetWorld: Sendable {
 
     var poses: [PetPose] { agents.map(\.pose) }
 
+    func isPaused(id: String) -> Bool {
+        pausedAgentIDs.contains(id)
+    }
+
     mutating func setPaused(_ value: Bool) {
         paused = value
     }

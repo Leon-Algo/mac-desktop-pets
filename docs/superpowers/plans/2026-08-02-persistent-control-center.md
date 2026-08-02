@@ -36,7 +36,7 @@
 - Produces: `StatusItemHealthPolicy.observe(_:) -> StatusItemHealthAction`, where the action is `.none`, `.recreate`, or `.showFallback`.
 - Produces: `PetWorld.isPaused(id:) -> Bool`.
 
-- [ ] **Step 1: Write failing snapshot tests**
+- [x] **Step 1: Write failing snapshot tests**
 
 ```swift
 func testControlSnapshotReportsPerPetHiddenAndPausedState() {
@@ -54,23 +54,23 @@ func testStatusHealthPolicyRepairsOnceThenFallsBackUntilRecovery() {
 }
 ```
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [x] **Step 2: Run the focused tests and verify RED**
 
 Run: `swift test --filter ControlCenterStateTests`
 
 Expected: compile failure because the new state and health types do not exist.
 
-- [ ] **Step 3: Add minimal state and policy implementations**
+- [x] **Step 3: Add minimal state and policy implementations**
 
 Implement immutable `Sendable, Equatable` snapshots, expose per-agent paused state from `PetWorld`, and combine world state with `hiddenPetIDs` in `WorldRunner`.
 
-- [ ] **Step 4: Run focused and full tests and verify GREEN**
+- [x] **Step 4: Run focused and full tests and verify GREEN**
 
 Run: `swift test --filter ControlCenterStateTests && swift test`
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add Sources/DesktopPets/App/PetControlSnapshot.swift Sources/DesktopPets/App/StatusItemHealthPolicy.swift Sources/DesktopPets/World/PetWorld.swift Sources/DesktopPets/App/WorldRunner.swift Tests/DesktopPetsTests/ControlCenterStateTests.swift && git commit -m "feat: model desktop pet control state"`
 
