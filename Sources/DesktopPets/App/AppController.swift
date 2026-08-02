@@ -14,7 +14,9 @@ final class AppController: NSObject, NSApplicationDelegate {
         let catalog = (try? CharacterCatalog.loadBundled()) ?? .fallback
         runner = WorldRunner(characters: catalog.characters, geometryProvider: CGWindowGeometryProvider())
         statusMenu = StatusMenuController(target: self)
-        statusMenu?.refresh(preferences: preferences)
+        runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
+        runner?.onUICommand = { [weak self] command in self?.handle(command) }
+        refreshControls()
         runner?.start(preferences: preferences)
         ProcessInfo.processInfo.disableAutomaticTermination("Desktop pets remain active while the menu-bar app is running")
         ProcessInfo.processInfo.disableSuddenTermination()
@@ -76,9 +78,47 @@ final class AppController: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(nil)
     }
 
+    @objc func togglePetVisibility(_ sender: Any?) {
+        guard let id = representedPetID(sender),
+              let state = runner?.controlSnapshot.first(where: { $0.id == id }) else { return }
+        runner?.handle(state.isHidden ? .recall(id: id) : .hide(id: id))
+    }
+
+    @objc func recallPet(_ sender: Any?) {
+        guard let id = representedPetID(sender) else { return }
+        runner?.handle(.recall(id: id))
+    }
+
+    @objc func togglePetPause(_ sender: Any?) {
+        guard let id = representedPetID(sender) else { return }
+        runner?.handle(.togglePause(id: id))
+    }
+
+    @objc func reactPet(_ sender: Any?) {
+        guard let id = representedPetID(sender) else { return }
+        runner?.handle(.react(id: id))
+    }
+
     private func persistAndRefresh() {
         preferenceStore.save(preferences)
-        statusMenu?.refresh(preferences: preferences)
+        refreshControls()
+    }
+
+    private func refreshControls() {
+        statusMenu?.refresh(preferences: preferences, characters: runner?.controlSnapshot ?? [])
+    }
+
+    private func representedPetID(_ sender: Any?) -> String? {
+        (sender as? NSMenuItem)?.representedObject as? String
+    }
+
+    private func handle(_ command: ControlCenterCommand) {
+        switch command {
+        case .openControlCenter:
+            break
+        case .quitApplication:
+            quit(nil)
+        }
     }
 
     private func showAlert(title: String, message: String) {

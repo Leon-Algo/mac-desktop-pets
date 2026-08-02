@@ -9,6 +9,9 @@ enum PetInteraction: Equatable, Sendable {
     case togglePause(id: String)
     case recall(id: String)
     case hide(id: String)
+    case recallAll
+    case openControlCenter
+    case quitApplication
 }
 
 enum PetInteractionResult: Equatable, Sendable {

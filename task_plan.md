@@ -87,3 +87,4 @@ Phase 7 — Persistent control center design
 | Menu-label test configured interactive mode while expecting full pass-through copy | 1 | Corrected the fixture to `clickThrough: true`; production wording already matched the approved state model. |
 | Smoke launch consumed the real first-run control hint and created a fifth alert window | 1 | Added a tested verification-only environment switch; automated launches now suppress the hint without persisting the shown flag. |
 | First-run hint was marked shown but not presented by the accessory app | 2 | Activation alone was insufficient; temporarily use regular activation policy for modal alerts, then restore accessory policy after dismissal. |
+| A zsh-only `$pipestatus` assertion was written with bash syntax during a RED test command | 1 | Read the compiler failure directly and used ordinary `&&` commands for subsequent Swift test runs. |

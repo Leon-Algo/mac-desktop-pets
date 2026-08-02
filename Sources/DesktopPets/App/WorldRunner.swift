@@ -17,6 +17,8 @@ final class WorldRunner: NSObject {
     private var hiddenPetIDs: Set<String> = []
     private let characters: [CharacterManifest]
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "world")
+    var onControlStateChange: (([PetControlState]) -> Void)?
+    var onUICommand: ((ControlCenterCommand) -> Void)?
 
     init(characters: [CharacterManifest], geometryProvider: GeometryProvider) {
         self.characters = characters
@@ -65,6 +67,7 @@ final class WorldRunner: NSObject {
             hiddenPetIDs.removeAll()
             windows.show()
         }
+        notifyControlStateChanged()
     }
 
     func setClickThrough(_ enabled: Bool) {
@@ -78,6 +81,7 @@ final class WorldRunner: NSObject {
         hiddenPetIDs.removeAll()
         windows.apply(poses: world.poses)
         windows.show()
+        notifyControlStateChanged()
     }
 
     var diagnostics: [String: Any] {
@@ -104,6 +108,19 @@ final class WorldRunner: NSObject {
     }
 
     func handle(_ interaction: PetInteraction) {
+        switch interaction {
+        case .recallAll:
+            recall()
+            return
+        case .openControlCenter:
+            onUICommand?(.openControlCenter)
+            return
+        case .quitApplication:
+            onUICommand?(.quitApplication)
+            return
+        default:
+            break
+        }
         if case .gatherAndPlay = interaction {
             hiddenPetIDs.removeAll()
             windows.show()
@@ -122,6 +139,11 @@ final class WorldRunner: NSObject {
             logger.warning("Ignored interaction for unknown pet")
         }
         windows.apply(poses: world.poses)
+        notifyControlStateChanged()
+    }
+
+    private func notifyControlStateChanged() {
+        onControlStateChange?(controlSnapshot)
     }
 
     @objc private func tick() {

@@ -78,3 +78,5 @@
 - Wrote the TDD implementation plan at `docs/superpowers/plans/2026-08-02-persistent-control-center.md` and selected inline execution because subagent delegation is not authorized.
 - Task 1 RED: focused tests failed because control snapshots and status-item health types did not exist.
 - Task 1 GREEN: 3 focused control-center tests and all 58 tests passed.
+- Task 2 RED: focused tests failed on the absent shared menu API, UI command channel, and global pet context commands.
+- Task 2 GREEN: shared `🐾 桌宠` menu, four per-character submenus, and right-click recovery/open/quit entries passed focused tests and all 62 tests.

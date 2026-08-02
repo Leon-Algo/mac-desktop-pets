@@ -93,7 +93,7 @@ Run: `git add Sources/DesktopPets/App/PetControlSnapshot.swift Sources/DesktopPe
 - Produces: `StatusMenuController.refresh(preferences:characters:)`.
 - Produces: `WorldRunner.onControlStateChange` and `WorldRunner.onUICommand` callbacks.
 
-- [ ] **Step 1: Write failing menu-model and context-command tests**
+- [x] **Step 1: Write failing menu-model and context-command tests**
 
 ```swift
 func testCharacterMenuStateUsesDisplayNameAndVisibilityPauseLabels() {
@@ -112,23 +112,23 @@ func testPetContextMenuContainsGlobalRecoveryAndQuitCommands() {
 }
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `swift test --filter CommandRoutingTests && swift test --filter PetViewInteractionTests`
 
 Expected: compile/assertion failures for absent character state labels and context entries.
 
-- [ ] **Step 3: Implement typed routing and the shared dynamic menu**
+- [x] **Step 3: Implement typed routing and the shared dynamic menu**
 
 Add UI command cases to the interaction channel, route simulation commands through `WorldRunner`, route `openControlCenter` and `quit` to `AppController`, and rebuild the one shared menu from current preferences plus character snapshots. The main status button title must be `🐾 桌宠` with a variable length.
 
-- [ ] **Step 4: Run focused and full tests and verify GREEN**
+- [x] **Step 4: Run focused and full tests and verify GREEN**
 
 Run: `swift test --filter CommandRoutingTests && swift test --filter PetViewInteractionTests && swift test`
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add Sources/DesktopPets/App/ControlCenterCommand.swift Sources/DesktopPets/Interaction/PetInteraction.swift Sources/DesktopPets/Rendering/PetSpriteView.swift Sources/DesktopPets/Rendering/PetWindowCoordinator.swift Sources/DesktopPets/App/WorldRunner.swift Sources/DesktopPets/App/AppController.swift Sources/DesktopPets/App/StatusMenuController.swift Tests/DesktopPetsTests/CommandRoutingTests.swift Tests/DesktopPetsTests/PetViewInteractionTests.swift && git commit -m "feat: add shared desktop pet control menu"`
 

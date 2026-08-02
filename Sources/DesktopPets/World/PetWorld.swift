@@ -118,6 +118,8 @@ struct PetWorld: Sendable {
         case let .hide(id):
             guard index(for: id) != nil else { return .ignored }
             return .hide(id: id)
+        case .recallAll, .openControlCenter, .quitApplication:
+            return .ignored
         }
     }
 

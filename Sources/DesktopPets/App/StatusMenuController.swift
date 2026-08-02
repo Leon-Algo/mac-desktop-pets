@@ -2,50 +2,76 @@ import AppKit
 
 @MainActor
 final class StatusMenuController {
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-    private let menu = NSMenu()
+    private(set) var statusItem: NSStatusItem
+    let controlMenu = NSMenu(title: "桌宠总台")
     private weak var target: AppController?
 
-    private let pauseItem = NSMenuItem()
-    private let visibilityItem = NSMenuItem()
-    private let clickThroughItem = NSMenuItem()
-    private let launchItem = NSMenuItem()
+    var statusButtonTitle: String { statusItem.button?.title ?? "" }
 
     init(target: AppController) {
         self.target = target
-        statusItem.button?.image = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "桌面伙伴")
-        statusItem.button?.toolTip = "桌面伙伴"
-
-        configure(pauseItem, action: #selector(AppController.togglePause(_:)))
-        configure(visibilityItem, action: #selector(AppController.toggleVisibility(_:)))
-        menu.addItem(NSMenuItem(title: "召回四人", action: #selector(AppController.recallPets(_:)), keyEquivalent: "r"))
-        menu.items.last?.target = target
-        menu.addItem(.separator())
-        configure(clickThroughItem, action: #selector(AppController.toggleClickThrough(_:)))
-        configure(launchItem, action: #selector(AppController.toggleLaunchAtLogin(_:)))
-        menu.addItem(.separator())
-        let diagnostics = NSMenuItem(title: "诊断信息…", action: #selector(AppController.showDiagnostics(_:)), keyEquivalent: "d")
-        diagnostics.target = target
-        menu.addItem(diagnostics)
-        menu.addItem(.separator())
-        let quit = NSMenuItem(title: "退出桌面伙伴", action: #selector(AppController.quit(_:)), keyEquivalent: "q")
-        quit.target = target
-        menu.addItem(quit)
-        statusItem.menu = menu
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        configureStatusItem()
     }
 
-    func refresh(preferences: AppPreferences) {
+    func refresh(preferences: AppPreferences, characters: [PetControlState]) {
+        controlMenu.removeAllItems()
         let state = MenuState(preferences: preferences)
-        pauseItem.title = state.pauseTitle
-        visibilityItem.title = state.visibilityTitle
-        clickThroughItem.title = state.clickThroughTitle
-        launchItem.title = "登录时启动"
-        launchItem.state = preferences.launchAtLogin ? .on : .off
+        addItem(state.pauseTitle, action: #selector(AppController.togglePause(_:)), key: "p")
+        addItem(state.visibilityTitle, action: #selector(AppController.toggleVisibility(_:)), key: "h")
+        addItem("召回四人", action: #selector(AppController.recallPets(_:)), key: "r")
+        controlMenu.addItem(.separator())
+
+        let peopleItem = NSMenuItem(title: "四人管理", action: nil, keyEquivalent: "")
+        let peopleMenu = NSMenu(title: "四人管理")
+        for character in characters {
+            let item = NSMenuItem(title: character.displayName, action: nil, keyEquivalent: "")
+            item.submenu = characterMenu(for: character)
+            peopleMenu.addItem(item)
+        }
+        peopleItem.submenu = peopleMenu
+        controlMenu.addItem(peopleItem)
+        controlMenu.addItem(.separator())
+
+        addItem(state.clickThroughTitle, action: #selector(AppController.toggleClickThrough(_:)))
+        let launch = addItem("登录时启动", action: #selector(AppController.toggleLaunchAtLogin(_:)))
+        launch.state = preferences.launchAtLogin ? .on : .off
+        controlMenu.addItem(.separator())
+        addItem("诊断信息…", action: #selector(AppController.showDiagnostics(_:)), key: "d")
+        controlMenu.addItem(.separator())
+        addItem("退出桌面伙伴", action: #selector(AppController.quit(_:)), key: "q")
     }
 
-    private func configure(_ item: NSMenuItem, action: Selector) {
-        item.action = action
+    private func configureStatusItem() {
+        guard let button = statusItem.button else { return }
+        button.title = "🐾 桌宠"
+        button.toolTip = "桌面伙伴总台：暂停、召回、设置或退出"
+        button.setAccessibilityLabel("桌面伙伴总台")
+        statusItem.isVisible = true
+        statusItem.menu = controlMenu
+    }
+
+    private func characterMenu(for character: PetControlState) -> NSMenu {
+        let menu = NSMenu(title: character.displayName)
+        addCharacterItem(character.visibilityTitle, action: #selector(AppController.togglePetVisibility(_:)), id: character.id, to: menu)
+        addCharacterItem("召回", action: #selector(AppController.recallPet(_:)), id: character.id, to: menu)
+        addCharacterItem(character.pauseTitle, action: #selector(AppController.togglePetPause(_:)), id: character.id, to: menu)
+        addCharacterItem("做个动作", action: #selector(AppController.reactPet(_:)), id: character.id, to: menu)
+        return menu
+    }
+
+    @discardableResult
+    private func addItem(_ title: String, action: Selector, key: String = "") -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = target
+        controlMenu.addItem(item)
+        return item
+    }
+
+    private func addCharacterItem(_ title: String, action: Selector, id: String, to menu: NSMenu) {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = target
+        item.representedObject = id
         menu.addItem(item)
     }
 }

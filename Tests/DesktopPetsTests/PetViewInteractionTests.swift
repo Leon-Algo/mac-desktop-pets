@@ -32,4 +32,28 @@ final class PetViewInteractionTests: XCTestCase {
         XCTAssertTrue(interpreter.resolveSingle(token: token))
         XCTAssertFalse(interpreter.resolveSingle(token: token))
     }
+
+    @MainActor
+    func testPetContextMenuContainsGlobalRecoveryControlCenterAndQuit() throws {
+        let view = PetSpriteView(
+            frame: NSRect(x: 0, y: 0, width: 180, height: 160),
+            character: CharacterCatalog.fallback.characters[0]
+        )
+        let event = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .rightMouseDown,
+            location: .zero,
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 1,
+            pressure: 0
+        ))
+
+        let titles = try XCTUnwrap(view.menu(for: event)).items.map(\.title)
+        XCTAssertTrue(titles.contains("召回四人"))
+        XCTAssertTrue(titles.contains("打开总台"))
+        XCTAssertTrue(titles.contains("退出桌面伙伴"))
+    }
 }

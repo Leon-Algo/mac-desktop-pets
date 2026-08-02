@@ -90,6 +90,11 @@ final class PetSpriteView: NSView {
         addMenuItem("召回这个人", action: #selector(recallFromMenu(_:)), to: menu)
         menu.addItem(.separator())
         addMenuItem("隐藏这个人", action: #selector(hideFromMenu(_:)), to: menu)
+        menu.addItem(.separator())
+        addMenuItem("召回四人", action: #selector(recallAllFromMenu(_:)), to: menu)
+        addMenuItem("打开总台", action: #selector(openControlCenterFromMenu(_:)), to: menu)
+        menu.addItem(.separator())
+        addMenuItem("退出桌面伙伴", action: #selector(quitFromMenu(_:)), to: menu)
         return menu
     }
 
@@ -97,6 +102,9 @@ final class PetSpriteView: NSView {
     @objc private func togglePauseFromMenu(_ sender: Any?) { interactionHandler?(.togglePause(id: petIdentifier)) }
     @objc private func recallFromMenu(_ sender: Any?) { interactionHandler?(.recall(id: petIdentifier)) }
     @objc private func hideFromMenu(_ sender: Any?) { interactionHandler?(.hide(id: petIdentifier)) }
+    @objc private func recallAllFromMenu(_ sender: Any?) { interactionHandler?(.recallAll) }
+    @objc private func openControlCenterFromMenu(_ sender: Any?) { interactionHandler?(.openControlCenter) }
+    @objc private func quitFromMenu(_ sender: Any?) { interactionHandler?(.quitApplication) }
 
     func apply(_ pose: PetPose) {
         let direction = pose.facing == .right ? 1.0 : -1.0
