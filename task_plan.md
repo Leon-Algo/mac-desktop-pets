@@ -66,7 +66,7 @@ Phase 8 — Compact menu-bar item in progress
 ### Phase 8: Compact menu-bar item
 - [x] Confirm the compact single-paw design and preserve accessibility/recovery behavior
 - [x] Write and self-review the design specification
-- [ ] Write the TDD implementation plan
+- [x] Write the TDD implementation plan
 - [ ] Implement square status-item sizing and compact labeling
 - [ ] Run full automated, package, signing, and live-launch verification
 - **Status:** in_progress
