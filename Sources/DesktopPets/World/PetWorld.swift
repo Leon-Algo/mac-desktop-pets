@@ -6,6 +6,7 @@ struct PetWorld: Sendable {
     private var paused = false
     private var pausedAgentIDs: Set<String> = []
     private var draggingAgentIDs: Set<String> = []
+    private var petScaleFactor = 1.0
 
     init(characters: [CharacterManifest], display: WorldRect, seed: UInt64) {
         let spacing = min(180, display.width / Double(max(characters.count + 1, 1)))
@@ -36,6 +37,13 @@ struct PetWorld: Sendable {
         paused = value
     }
 
+    mutating func setScale(_ preset: PetScalePreset, obstacles: ObstacleMap) {
+        petScaleFactor = preset.factor
+        for index in agents.indices {
+            agents[index].position = clampedPetAnchor(agents[index].position, obstacles: obstacles)
+        }
+    }
+
     mutating func recall(to display: WorldRect) {
         let spacing = display.width / Double(max(agents.count + 1, 1))
         for index in agents.indices {
@@ -62,8 +70,8 @@ struct PetWorld: Sendable {
             draggingAgentIDs.removeAll()
             let leaderPosition = obstacles.clampedPetAnchor(
                 agents[leaderIndex].position,
-                halfWidth: 90,
-                topClearance: 140
+                halfWidth: petHalfWidth,
+                topClearance: petTopClearance
             )
             let companions = agents.indices.filter { $0 != leaderIndex }
             for (offset, index) in companions.enumerated() {
@@ -71,8 +79,8 @@ struct PetWorld: Sendable {
                 let side = offset.isMultiple(of: 2) ? -1.0 : 1.0
                 agents[index].position = obstacles.clampedPetAnchor(
                     WorldPoint(x: leaderPosition.x + side * rank * 60, y: leaderPosition.y),
-                    halfWidth: 90,
-                    topClearance: 140
+                    halfWidth: petHalfWidth,
+                    topClearance: petTopClearance
                 )
                 agents[index].velocity = WorldVector(dx: 0, dy: 0)
                 transition(index, to: .play)
@@ -84,14 +92,14 @@ struct PetWorld: Sendable {
         case let .beginDrag(id, position), let .drag(id, position):
             guard let index = index(for: id) else { return .ignored }
             pausedAgentIDs.remove(id)
-            agents[index].position = obstacles.clampedPetAnchor(position, halfWidth: 90, topClearance: 140)
+            agents[index].position = clampedPetAnchor(position, obstacles: obstacles)
             agents[index].velocity = WorldVector(dx: 0, dy: 0)
             draggingAgentIDs.insert(id)
             transition(index, to: .hang)
             return .handled
         case let .release(id, position):
             guard let index = index(for: id) else { return .ignored }
-            agents[index].position = obstacles.clampedPetAnchor(position, halfWidth: 90, topClearance: 140)
+            agents[index].position = clampedPetAnchor(position, obstacles: obstacles)
             agents[index].velocity = WorldVector(dx: 0, dy: 0)
             draggingAgentIDs.remove(id)
             transition(index, to: .fall)
@@ -166,8 +174,8 @@ struct PetWorld: Sendable {
                 let previousX = agents[index].position.x
                 let clamped = obstacles.clampedPetAnchor(
                     agents[index].position,
-                    halfWidth: 90,
-                    topClearance: 140
+                    halfWidth: petHalfWidth,
+                    topClearance: petTopClearance
                 )
                 if clamped != agents[index].position {
                     agents[index].position = clamped
@@ -288,5 +296,16 @@ struct PetWorld: Sendable {
 
     private func index(for id: String) -> Int? {
         agents.firstIndex { $0.id == id }
+    }
+
+    private var petHalfWidth: Double { 90 * petScaleFactor }
+    private var petTopClearance: Double { 140 * petScaleFactor }
+
+    private func clampedPetAnchor(_ position: WorldPoint, obstacles: ObstacleMap) -> WorldPoint {
+        obstacles.clampedPetAnchor(
+            position,
+            halfWidth: petHalfWidth,
+            topClearance: petTopClearance
+        )
     }
 }

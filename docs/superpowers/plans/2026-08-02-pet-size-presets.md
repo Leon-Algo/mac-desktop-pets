@@ -99,7 +99,7 @@ Run `swift test --filter PanelConfigurationTests` and `swift test --filter Contr
 
 Commit scale-aware panels, views, runner routing, and tests.
 
-### Task 3: Scale-aware world safety bounds
+### Task 3: Scale-aware world safety bounds ✅
 
 **Files:**
 - Modify: `Sources/DesktopPets/World/PetWorld.swift`
@@ -107,7 +107,7 @@ Commit scale-aware panels, views, runner routing, and tests.
 - Modify: `Tests/DesktopPetsTests/PetWorldTests.swift`
 
 **Interfaces:**
-- Produces: `PetWorld.setScale(_ preset: PetScalePreset)` and derived half-width/top-clearance values.
+- Produces: `PetWorld.setScale(_ preset: PetScalePreset, obstacles: ObstacleMap)` and derived half-width/top-clearance values; live enlargement clamps immediately even while paused.
 - Consumes: `WorldRunner.start(preferences:)` and `WorldRunner.setScale(_:)`.
 
 - [ ] **Step 1: Write world RED tests**

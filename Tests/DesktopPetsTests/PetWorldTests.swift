@@ -74,6 +74,24 @@ final class PetWorldTests: XCTestCase {
         XCTAssertTrue(world.poses.allSatisfy { $0.position.isFinite && display.contains($0.position) })
     }
 
+    func testPetScaleChangesScreenEdgeSafetyClearances() {
+        let largeDisplay = WorldRect(x: 0, y: 0, width: 1200, height: 800)!
+        let map = ObstacleMap(displays: [largeDisplay], obstacles: [])
+        let target = WorldPoint(x: -100, y: 900)
+
+        var quarterWorld = PetWorld(
+            characters: CharacterCatalog.fallback.characters,
+            display: largeDisplay,
+            seed: 1
+        )
+        quarterWorld.setScale(.quarter, obstacles: map)
+        _ = quarterWorld.handle(.beginDrag(id: "person-left", position: target), obstacles: map)
+        XCTAssertEqual(quarterWorld.poses[0].position, WorldPoint(x: 22.5, y: 765))
+
+        quarterWorld.setScale(.original, obstacles: map)
+        XCTAssertEqual(quarterWorld.poses[0].position, WorldPoint(x: 90, y: 660))
+    }
+
     private func makeWorld(seed: UInt64 = 1) -> PetWorld {
         PetWorld(characters: CharacterCatalog.fallback.characters, display: display, seed: seed)
     }

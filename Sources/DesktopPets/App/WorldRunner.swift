@@ -42,6 +42,7 @@ final class WorldRunner: NSObject {
         world.setPaused(preferences.paused)
         fullyClickThrough = preferences.clickThrough
         scalePreset = preferences.petScale
+        world.setScale(preferences.petScale, obstacles: obstacleMap)
         windows.setScale(preferences.petScale)
         windows.apply(poses: world.poses)
         hiddenPetIDs = preferences.petsHidden ? Set(characters.map(\.id)) : []
@@ -84,6 +85,7 @@ final class WorldRunner: NSObject {
 
     func setScale(_ preset: PetScalePreset) {
         scalePreset = preset
+        world.setScale(preset, obstacles: obstacleMap)
         windows.setScale(preset)
         windows.apply(poses: world.poses)
     }

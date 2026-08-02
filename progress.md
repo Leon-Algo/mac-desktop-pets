@@ -101,6 +101,10 @@
 - Final verification: 74/74 normal tests, 74/74 AddressSanitizer tests, strict Swift 6 concurrency Release build, exact four-pet-plus-fallback packaged smoke, nine-command interaction self-test, and strict deep signing all pass.
 
 ### Phase 9 — Adjustable pet sizes
+
+- Task 1: added persistent 25% / 50% / 100% presets, defaulted new and migrated settings to 50%, and exposed the shared checked `人物大小` menu.
+- Task 2: resized AppKit panels, sprite layers, ground offsets, and alpha hit regions together; focused geometry tests cover all three presets.
+- Task 3: scaled screen-edge safety clearances and immediate world clamping with the selected preset; all seven `PetWorldTests` pass.
 - **Status:** in_progress
 - Selected global 25%, 50%, and 100% presets with a 50% default; continuous and per-person sizing are out of scope.
 - Added a backward-compatible Codable preset model. Legacy preference JSON keeps all booleans and gains the 50% size; all three presets round-trip.
