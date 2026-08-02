@@ -64,6 +64,8 @@ final class StatusMenuController: NSObject {
         peopleItem.submenu = peopleMenu
         controlMenu.addItem(peopleItem)
 
+        addItem("人物设置…", action: #selector(AppController.showCharacterSettings(_:)), key: ",")
+
         let sizeItem = NSMenuItem(title: "人物大小", action: nil, keyEquivalent: "")
         let sizeMenu = NSMenu(title: "人物大小")
         for preset in PetScalePreset.allCases {

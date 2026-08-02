@@ -35,6 +35,8 @@
 - Task 2 GREEN: atomic roster round-trip/recovery, invalid-save protection, safe local avatar import, 512-square PNG normalization, and orphan cleanup pass five focused tests.
 - Task 3 RED: editor and avatar tests failed on absent model/renderer APIs.
 - Task 3 GREEN: 12 distinct procedural avatars, explicit body styles, imported/legacy avatar resolution, roster-to-manifest conversion, and draft add/delete/reorder/template/cancel behavior pass 15 focused tests.
+- Task 4 RED: native-window and menu tests failed on missing settings controller and selector.
+- Task 4 GREEN: a fixed native AppKit editor exposes roster list, preview, add/delete/order controls, 12 avatars, three body styles, six outfits, five templates, five advanced sliders, local import, save/cancel, and menu routing; 15 focused tests pass.
 - **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.

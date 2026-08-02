@@ -161,6 +161,15 @@ final class CommandRoutingTests: XCTestCase {
         XCTAssertNotNil(management.items.first { $0.title == "让他做动作…" }?.submenu)
         XCTAssertFalse(management.items.contains { $0.title == "做个动作" })
     }
+
+    @MainActor
+    func testSharedMenuExposesCharacterSettingsEntry() {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(preferences: .defaults, characters: [])
+        let item = controller.controlMenu.items.first { $0.title == "人物设置…" }
+        XCTAssertNotNil(item)
+        XCTAssertEqual(item?.action, #selector(AppController.showCharacterSettings(_:)))
+    }
 }
 
 @MainActor

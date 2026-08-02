@@ -127,6 +127,9 @@ Phase 10 — Discoverable action center complete
 | Packaged smoke rejected five Stage Manager-scaled windows | 1 | Core Graphics reported 90×80/96×38 logical windows as 82×73/88×36 compositor bounds; added proportional-group inspection instead of absolute-pixel-only matching. |
 | Final verification referenced nonexistent `Scripts/build-app.sh` | 1 | Repository evidence showed the real packaging entry point is `Scripts/package-app.sh`; discarded the stale-bundle result and reran packaging plus all bundle checks from the correct script. |
 | Avatar normalization test compared two PNG encodings byte-for-byte | 1 | PNG encoders may emit different metadata/compression for identical pixels; replaced the invalid assertion with PNG signature, decodability, and exact pixel-dimension checks. |
+| Settings actions `moveUp:`/`moveDown:` collided with `NSResponder` | 1 | Renamed selectors to `moveCharacterUp:` and `moveCharacterDown:` so they remain ordinary target-action handlers instead of accidental overrides. |
+| Settings test hung after `NSPopUpButton.performClick` | 1 | `performClick` opens a real popup menu event loop in headless XCTest; terminated the exact test PIDs and invoked the controller's existing target action directly after selecting the item. |
+| Headless settings test still hung on `NSButton.performClick` | 2 | Isolated AppKit click animation/event dispatch as the remaining wait; tests now invoke the same bound target-action methods directly and inspect button enabled state separately. |
 
 ## Phase 11 — “叫爸爸”动作替换
 - [x] Write and review the focused behavior-change design

@@ -80,10 +80,10 @@
 **Interfaces:**
 - Produces: `showCharacterSettings`, native list/preview/form controls, import panel action, save/cancel callbacks, and menu item `人物设置…`.
 
-- [ ] Write failing tests for menu routing, 1/8 button states, editing controls, save/cancel, and preview refresh.
-- [ ] Run focused tests to observe RED.
-- [ ] Implement one reusable AppKit window controller and wire it to the menu.
-- [ ] Run focused tests and commit.
+- [x] Write failing tests for menu routing, 1/8 button states, editing controls, save/cancel, and preview refresh.
+- [x] Run focused tests to observe RED.
+- [x] Implement one reusable AppKit window controller and wire it to the menu.
+- [x] Run focused tests and commit.
 
 ### Task 5: Dynamic runtime application and count-neutral behavior
 

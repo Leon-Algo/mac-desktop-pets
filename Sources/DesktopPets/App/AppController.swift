@@ -9,6 +9,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var runner: WorldRunner?
     private var statusMenu: StatusMenuController?
     private var controlCenterPanel: ControlCenterPanelController?
+    private let rosterStore = CharacterRosterStore()
+    private var roster = CharacterRoster.default
+    private var characterSettings: CharacterSettingsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         preferences = VerificationLaunchPolicy.preferences(
@@ -145,6 +148,24 @@ final class AppController: NSObject, NSApplicationDelegate {
     @objc func performPetAction(_ sender: Any?) {
         guard let request = (sender as? NSMenuItem)?.representedObject as? PetActionRequest else { return }
         runner?.handle(.performAction(request))
+    }
+
+    @objc func showCharacterSettings(_ sender: Any?) {
+        if characterSettings == nil {
+            let controller = CharacterSettingsWindowController(roster: roster)
+            controller.onImportAvatar = { [weak self] data in
+                guard let self else { throw CharacterRosterStoreError.applicationSupportUnavailable }
+                return try self.rosterStore.importAvatar(data: data)
+            }
+            controller.onSave = { [weak self] saved in
+                guard let self else { return }
+                try self.rosterStore.save(saved)
+                self.roster = saved
+                try self.rosterStore.removeUnreferencedAvatars(roster: saved)
+            }
+            characterSettings = controller
+        }
+        characterSettings?.present(roster: roster)
     }
 
     private func persistAndRefresh() {
