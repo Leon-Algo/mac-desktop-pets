@@ -8,16 +8,25 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var preferences = AppPreferences.defaults
     private var runner: WorldRunner?
     private var statusMenu: StatusMenuController?
+    private var controlCenterPanel: ControlCenterPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         preferences = preferenceStore.load()
         let catalog = (try? CharacterCatalog.loadBundled()) ?? .fallback
         runner = WorldRunner(characters: catalog.characters, geometryProvider: CGWindowGeometryProvider())
         statusMenu = StatusMenuController(target: self)
+        if let menu = statusMenu?.controlMenu {
+            controlCenterPanel = ControlCenterPanelController(menu: menu)
+        }
+        statusMenu?.onFallbackRequired = { [weak self] in self?.showControlCenter() }
         runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
         runner?.onUICommand = { [weak self] command in self?.handle(command) }
         refreshControls()
         runner?.start(preferences: preferences)
+        controlCenterPanel?.show()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+            self?.statusMenu?.checkHealth()
+        }
         ProcessInfo.processInfo.disableAutomaticTermination("Desktop pets remain active while the menu-bar app is running")
         ProcessInfo.processInfo.disableSuddenTermination()
         showControlHintIfNeeded()
@@ -25,6 +34,7 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         runner?.stop()
+        controlCenterPanel?.hide()
         ProcessInfo.processInfo.enableSuddenTermination()
         ProcessInfo.processInfo.enableAutomaticTermination("Desktop pets are quitting")
     }
@@ -38,6 +48,7 @@ final class AppController: NSObject, NSApplicationDelegate {
     @objc func toggleVisibility(_ sender: Any?) {
         preferences.petsHidden.toggle()
         runner?.setHidden(preferences.petsHidden)
+        if preferences.petsHidden { showControlCenter() }
         persistAndRefresh()
     }
 
@@ -69,13 +80,27 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     @objc func showDiagnostics(_ sender: Any?) {
-        let data = runner?.diagnostics ?? [:]
+        var data = runner?.diagnostics ?? [:]
+        statusMenu?.diagnostics.forEach { data[$0.key] = $0.value }
+        data["fallbackControlVisible"] = controlCenterPanel?.isVisible ?? false
         let text = data.keys.sorted().map { "\($0): \(data[$0] ?? "-")" }.joined(separator: "\n")
         showAlert(title: "桌面伙伴诊断", message: text)
     }
 
     @objc func quit(_ sender: Any?) {
         NSApplication.shared.terminate(nil)
+    }
+
+    @objc func toggleControlCenter(_ sender: Any?) {
+        if ControlCenterVisibilityPolicy.mustShowFallback(
+            globalHidden: preferences.petsHidden,
+            characters: runner?.controlSnapshot ?? []
+        ) {
+            showControlCenter()
+        } else {
+            controlCenterPanel?.toggle()
+            refreshControls()
+        }
     }
 
     @objc func togglePetVisibility(_ sender: Any?) {
@@ -105,7 +130,18 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func refreshControls() {
-        statusMenu?.refresh(preferences: preferences, characters: runner?.controlSnapshot ?? [])
+        let states = runner?.controlSnapshot ?? []
+        if ControlCenterVisibilityPolicy.mustShowFallback(
+            globalHidden: preferences.petsHidden,
+            characters: states
+        ) {
+            showControlCenter()
+        }
+        statusMenu?.refresh(
+            preferences: preferences,
+            characters: states,
+            isFallbackVisible: controlCenterPanel?.isVisible ?? false
+        )
     }
 
     private func representedPetID(_ sender: Any?) -> String? {
@@ -115,10 +151,23 @@ final class AppController: NSObject, NSApplicationDelegate {
     private func handle(_ command: ControlCenterCommand) {
         switch command {
         case .openControlCenter:
-            break
+            showControlCenter(openingMenu: true)
         case .quitApplication:
             quit(nil)
         }
+    }
+
+    private func showControlCenter(openingMenu: Bool = false) {
+        controlCenterPanel?.show(openingMenu: openingMenu)
+        refreshMenuOnly()
+    }
+
+    private func refreshMenuOnly() {
+        statusMenu?.refresh(
+            preferences: preferences,
+            characters: runner?.controlSnapshot ?? [],
+            isFallbackVisible: controlCenterPanel?.isVisible ?? false
+        )
     }
 
     private func showAlert(title: String, message: String) {
@@ -143,11 +192,7 @@ final class AppController: NSObject, NSApplicationDelegate {
             suppressionValue: ProcessInfo.processInfo.environment["DESKTOP_PETS_SUPPRESS_CONTROL_HINT"]
         ) else { return }
         preferenceStore.markControlHintShown()
-        DispatchQueue.main.async { [weak self] in
-            self?.showAlert(
-                title: "桌面伙伴已经启动",
-                message: "点击人物可以互动，双击会召集大家，拖动可以把人物放到别处，右键可打开单人操作。\n\n暂停、隐藏和完全退出位于屏幕顶部菜单栏的爪印图标中。"
-            )
-        }
+        controlCenterPanel?.button.toolTip = ControlHintPolicy.guidance
+        showControlCenter()
     }
 }

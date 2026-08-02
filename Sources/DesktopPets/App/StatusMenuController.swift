@@ -1,20 +1,26 @@
 import AppKit
+import OSLog
 
 @MainActor
-final class StatusMenuController {
+final class StatusMenuController: NSObject {
     private(set) var statusItem: NSStatusItem
     let controlMenu = NSMenu(title: "桌宠总台")
     private weak var target: AppController?
+    private var healthPolicy = StatusItemHealthPolicy()
+    private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "ControlCenter")
+    var onFallbackRequired: (() -> Void)?
 
     var statusButtonTitle: String { statusItem.button?.title ?? "" }
 
     init(target: AppController) {
         self.target = target
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        super.init()
         configureStatusItem()
+        observeStatusContext()
     }
 
-    func refresh(preferences: AppPreferences, characters: [PetControlState]) {
+    func refresh(preferences: AppPreferences, characters: [PetControlState], isFallbackVisible: Bool = false) {
         controlMenu.removeAllItems()
         let state = MenuState(preferences: preferences)
         addItem(state.pauseTitle, action: #selector(AppController.togglePause(_:)), key: "p")
@@ -34,6 +40,10 @@ final class StatusMenuController {
         controlMenu.addItem(.separator())
 
         addItem(state.clickThroughTitle, action: #selector(AppController.toggleClickThrough(_:)))
+        addItem(
+            isFallbackVisible ? "隐藏备用总台" : "显示备用总台",
+            action: #selector(AppController.toggleControlCenter(_:))
+        )
         let launch = addItem("登录时启动", action: #selector(AppController.toggleLaunchAtLogin(_:)))
         launch.state = preferences.launchAtLogin ? .on : .off
         controlMenu.addItem(.separator())
@@ -49,6 +59,81 @@ final class StatusMenuController {
         button.setAccessibilityLabel("桌面伙伴总台")
         statusItem.isVisible = true
         statusItem.menu = controlMenu
+        logger.info("Status item configured with labeled control")
+    }
+
+    @discardableResult
+    func checkHealth() -> StatusItemHealthAction {
+        let snapshot = healthSnapshot
+        let action = healthPolicy.observe(snapshot)
+        logger.info(
+            "Status item health markedVisible=\(snapshot.isMarkedVisible) button=\(snapshot.hasButton) window=\(snapshot.hasWindow) action=\(String(describing: action), privacy: .public)"
+        )
+        switch action {
+        case .none:
+            break
+        case .recreate:
+            recreateStatusItem()
+        case .showFallback:
+            onFallbackRequired?()
+        }
+        return action
+    }
+
+    var healthSnapshot: StatusItemHealthSnapshot {
+        StatusItemHealthSnapshot(
+            isMarkedVisible: statusItem.isVisible,
+            hasButton: statusItem.button != nil,
+            hasWindow: statusItem.button?.window != nil
+        )
+    }
+
+    var diagnostics: [String: Any] {
+        let snapshot = healthSnapshot
+        return [
+            "statusItemMarkedVisible": snapshot.isMarkedVisible,
+            "statusItemHasButton": snapshot.hasButton,
+            "statusItemHasWindow": snapshot.hasWindow,
+            "statusItemAppKitHealthy": snapshot.isHealthy,
+            "statusItemPixelVisibilityKnown": false,
+        ]
+    }
+
+    private func recreateStatusItem() {
+        NSStatusBar.system.removeStatusItem(statusItem)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        configureStatusItem()
+        logger.warning("Recreated unhealthy status item once")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.checkHealth()
+        }
+    }
+
+    private func observeStatusContext() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(statusContextChanged(_:)),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(statusContextChanged(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(statusContextChanged(_:)),
+            name: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func statusContextChanged(_ notification: Notification) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.checkHealth()
+        }
     }
 
     private func characterMenu(for character: PetControlState) -> NSMenu {

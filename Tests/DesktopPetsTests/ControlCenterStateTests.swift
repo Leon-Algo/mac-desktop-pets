@@ -44,6 +44,24 @@ final class ControlCenterStateTests: XCTestCase {
 
         XCTAssertFalse(snapshot.isHealthy)
     }
+
+    func testHidingAllCharactersRequiresFallbackControl() {
+        let hidden = CharacterCatalog.fallback.characters.map {
+            PetControlState(id: $0.id, displayName: $0.displayName, isHidden: true, isPaused: false)
+        }
+        let oneVisible = hidden.enumerated().map { index, state in
+            PetControlState(
+                id: state.id,
+                displayName: state.displayName,
+                isHidden: index != 0,
+                isPaused: state.isPaused
+            )
+        }
+
+        XCTAssertTrue(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: false, characters: hidden))
+        XCTAssertTrue(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: true, characters: oneVisible))
+        XCTAssertFalse(ControlCenterVisibilityPolicy.mustShowFallback(globalHidden: false, characters: oneVisible))
+    }
 }
 
 @MainActor

@@ -80,3 +80,5 @@
 - Task 1 GREEN: 3 focused control-center tests and all 58 tests passed.
 - Task 2 RED: focused tests failed on the absent shared menu API, UI command channel, and global pet context commands.
 - Task 2 GREEN: shared `🐾 桌宠` menu, four per-character submenus, and right-click recovery/open/quit entries passed focused tests and all 62 tests.
+- Task 3 RED: panel/guidance tests failed because the independent fallback controller and dual-route guidance did not exist; an additional regression test failed on the absent all-hidden fallback policy.
+- Task 3 GREEN: non-activating all-Spaces `🐾 总台`, bounded status-item repair, non-modal guidance, and forced fallback for all-hidden state passed focused tests and all 66 tests.

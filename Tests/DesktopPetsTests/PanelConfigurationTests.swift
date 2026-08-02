@@ -50,4 +50,27 @@ final class PanelConfigurationTests: XCTestCase {
         XCTAssertTrue(coordinator.allPanels.allSatisfy(\.isVisible))
         coordinator.hide()
     }
+
+    func testControlCenterPlacementStaysInsideVisibleFrame() {
+        let visibleFrame = NSRect(x: 100, y: 50, width: 1200, height: 800)
+        let frame = ControlCenterPanelController.frame(in: visibleFrame)
+
+        XCTAssertTrue(visibleFrame.contains(frame))
+        XCTAssertEqual(frame.maxX, visibleFrame.maxX - 16, accuracy: 0.001)
+        XCTAssertEqual(frame.maxY, visibleFrame.maxY - 16, accuracy: 0.001)
+    }
+
+    @MainActor
+    func testControlPanelIsNonactivatingAvailableOnAllSpacesAndAccessible() {
+        let controller = ControlCenterPanelController(menu: NSMenu())
+
+        XCTAssertTrue(controller.panel.styleMask.contains(.nonactivatingPanel))
+        XCTAssertTrue(controller.panel.styleMask.contains(.borderless))
+        XCTAssertTrue(controller.panel.collectionBehavior.contains(.canJoinAllSpaces))
+        XCTAssertTrue(controller.panel.collectionBehavior.contains(.fullScreenAuxiliary))
+        XCTAssertEqual(controller.button.title, "🐾 总台")
+        XCTAssertEqual(controller.button.accessibilityLabel(), "桌面伙伴总台")
+        XCTAssertFalse(controller.panel.canBecomeKey)
+        XCTAssertFalse(controller.panel.canBecomeMain)
+    }
 }

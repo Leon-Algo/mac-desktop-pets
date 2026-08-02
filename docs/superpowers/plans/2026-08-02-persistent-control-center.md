@@ -147,7 +147,7 @@ Run: `git add Sources/DesktopPets/App/ControlCenterCommand.swift Sources/Desktop
 - Produces: `ControlCenterPanelController.show()`, `hide()`, `toggle()`, `isVisible`, and `reposition(on:)`.
 - Produces: `StatusMenuController.checkHealth()` and `StatusMenuController.diagnostics`.
 
-- [ ] **Step 1: Write failing fallback panel and non-modal guidance tests**
+- [x] **Step 1: Write failing fallback panel and non-modal guidance tests**
 
 ```swift
 @MainActor
@@ -165,23 +165,23 @@ func testControlHintCopyNamesBothControlRoutes() {
 }
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `swift test --filter PanelConfigurationTests && swift test --filter PreferencesTests`
 
 Expected: compile failures because the fallback controller and non-modal guidance string do not exist.
 
-- [ ] **Step 3: Implement the panel, health checks, and startup behavior**
+- [x] **Step 3: Implement the panel, health checks, and startup behavior**
 
 Create a borderless non-activating utility panel using `NSVisualEffectView` and an accessible button. Place it within `NSScreen.main?.visibleFrame`, show it on launch, connect it to the shared menu, observe Space/screen/app activation notifications, apply one bounded status-item recreation, and replace the modal first-run alert with the launch-visible control route plus concise guidance in the fallback tooltip. When global hide becomes true, always call `show()` on the fallback.
 
-- [ ] **Step 4: Run focused and full tests and verify GREEN**
+- [x] **Step 4: Run focused and full tests and verify GREEN**
 
 Run: `swift test --filter PanelConfigurationTests && swift test --filter PreferencesTests && swift test`
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add Sources/DesktopPets/App/ControlCenterPanelController.swift Sources/DesktopPets/App/StatusMenuController.swift Sources/DesktopPets/App/AppController.swift Sources/DesktopPets/App/PreferencesStore.swift Tests/DesktopPetsTests/PanelConfigurationTests.swift Tests/DesktopPetsTests/PreferencesTests.swift && git commit -m "feat: add persistent floating pet control center"`
 

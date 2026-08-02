@@ -37,6 +37,12 @@ final class PreferencesTests: XCTestCase {
         XCTAssertFalse(ControlHintPolicy.shouldShow(storedHintNeeded: false, suppressionValue: nil))
     }
 
+    func testControlHintGuidanceNamesBothPersistentControlRoutes() {
+        XCTAssertTrue(ControlHintPolicy.guidance.contains("🐾 桌宠"))
+        XCTAssertTrue(ControlHintPolicy.guidance.contains("🐾 总台"))
+        XCTAssertTrue(ControlHintPolicy.guidance.contains("退出"))
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suite = "DesktopPetsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
