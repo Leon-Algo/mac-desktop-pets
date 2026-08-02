@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 8 — Compact menu-bar item in progress
+Phase 8 — Compact menu-bar item complete
 
 ## Phases
 
@@ -68,8 +68,8 @@ Phase 8 — Compact menu-bar item in progress
 - [x] Write and self-review the design specification
 - [x] Write the TDD implementation plan
 - [x] Implement square status-item sizing and compact labeling
-- [ ] Run full automated, package, signing, and live-launch verification
-- **Status:** in_progress
+- [x] Run full automated, package, signing, and live-launch verification
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |

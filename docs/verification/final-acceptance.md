@@ -19,7 +19,7 @@ Date: 2026-08-02
 | Live launch | PASS | Packaged inspection precisely matched four 180×160 pet windows plus the named 96×38 fallback and returned `status: ok`, `windowCount: 5`, `petWindowCount: 4`, and `fallbackControlPresent: true`. |
 | Relaunch reliability | PASS | Three consecutive ordinary Finder-style launches each produced the exact four-pet-plus-fallback window set. Early lifecycle protection remains as defensive hardening. |
 | Live recovery | PASS | Real menu input hid all pets while preserving the fallback, recalled four panels, proved resume motion and pause stability from window coordinates, and terminated the process through Quit. |
-| Stability | PASS | 74/74 normal tests pass, including compact creation/repair coverage and an accelerated 30-minute simulation. AddressSanitizer verification is repeated for every packaged release. |
+| Stability | PASS | 74/74 normal tests and 74/74 AddressSanitizer tests pass, including compact creation/repair coverage and an accelerated 30-minute simulation. |
 | Swift concurrency | PASS | Release build with `-strict-concurrency=complete` succeeds. |
 | Resource use | PASS | Release sampling stabilized around 5–6% CPU and 54 MB RSS on the Apple Silicon test host. |
 | Privacy | PASS | Geometry-only inspection; no capture, Accessibility, networking, titles, or nonempty entitlements. See `privacy-audit.md`. |

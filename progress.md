@@ -98,4 +98,4 @@
 - RED: initial and repair-path tests observed the old `🐾 桌宠` title and variable status-item length.
 - GREEN: both construction paths now use `NSStatusItem.squareLength` and display only `🐾`; tooltip, accessibility label, shared menu, and fallback behavior remain unchanged.
 - RED/GREEN: first-run guidance now accurately describes the compact menu-bar `🐾` icon.
-- Current normal suite: 74/74 passing; release verification remains in progress.
+- Final verification: 74/74 normal tests, 74/74 AddressSanitizer tests, strict Swift 6 concurrency Release build, exact four-pet-plus-fallback packaged smoke, nine-command interaction self-test, and strict deep signing all pass.

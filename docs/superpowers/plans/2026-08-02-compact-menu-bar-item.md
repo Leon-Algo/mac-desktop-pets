@@ -62,18 +62,18 @@ Record the compact control and final evidence in `docs/verification/final-accept
 - Consumes: packaged `DesktopPets.app` and `--inspect-running` diagnostic mode.
 - Produces: a running ad-hoc-signed app with four pet windows and one fallback window.
 
-- [ ] **Step 1: Run safety verification**
+- [x] **Step 1: Run safety verification**
 
 Run `swift test --sanitize=address` and `swift build -c release -Xswiftc -strict-concurrency=complete`.
 
-- [ ] **Step 2: Package and validate**
+- [x] **Step 2: Package and validate**
 
 Run `./Scripts/smoke-test.sh` and `codesign --verify --deep --strict --verbose=2 build/DesktopPets.app`. Require `petWindowCount: 4`, `fallbackControlPresent: true`, and nine successful interaction commands.
 
-- [ ] **Step 3: Launch the final app**
+- [x] **Step 3: Launch the final app**
 
 Run `./script/build_and_run.sh`, wait for a healthy `--inspect-running` report, and leave that process running for user acceptance.
 
-- [ ] **Step 4: Final repository check**
+- [x] **Step 4: Final repository check**
 
 Run `git diff --check` and `git status --short`; commit any final documentation update and require a clean worktree.
