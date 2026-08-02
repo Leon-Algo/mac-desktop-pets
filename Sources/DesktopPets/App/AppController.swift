@@ -34,8 +34,6 @@ final class AppController: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
             self?.statusMenu?.checkHealth()
         }
-        ProcessInfo.processInfo.disableAutomaticTermination("Desktop pets remain active while the menu-bar app is running")
-        ProcessInfo.processInfo.disableSuddenTermination()
         showControlHintIfNeeded()
     }
 

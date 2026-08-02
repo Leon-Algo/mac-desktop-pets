@@ -98,6 +98,10 @@ final class DesktopPetsApplication {
         case .normal:
             let app = NSApplication.shared
             app.setActivationPolicy(.accessory)
+            ProcessInfo.processInfo.disableAutomaticTermination(
+                "Desktop pets are initializing their persistent controls"
+            )
+            ProcessInfo.processInfo.disableSuddenTermination()
             let controller = AppController()
             appController = controller
             app.delegate = controller
