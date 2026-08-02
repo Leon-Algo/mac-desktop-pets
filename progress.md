@@ -29,6 +29,8 @@
 - User approved the recommended design and requested an acceptance-ready implementation without further checkpoints.
 - Wrote the formal specification covering 1–8 limits, native editor UX, procedural presets, local imports, migration, atomic runner rebuild, dynamic copy, diagnostics, and release acceptance.
 - **Status:** design_complete
+- Task 1 RED: roster tests failed on missing profile, preset, avatar-source, and validation types.
+- Task 1 GREEN: four safe defaults, 12 built-in avatar choices, five personalities, six outfits, safe source validation, name normalization, unique IDs, and the 1–8 invariant pass four focused tests.
 - **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.

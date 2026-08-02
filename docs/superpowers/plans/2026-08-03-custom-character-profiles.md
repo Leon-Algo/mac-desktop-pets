@@ -29,10 +29,10 @@
 **Interfaces:**
 - Produces: `AvatarSource`, `BodyStyle`, `OutfitPreset`, `PersonalityPreset`, `CharacterProfile`, `CharacterRoster.validated()` and `CharacterRoster.default`
 
-- [ ] Write tests requiring four safe defaults, 12 avatar presets, five personality templates, 1–8 validation, unique IDs, trimmed 1–20 character names, and safe imported filenames.
-- [ ] Run `swift test --filter CharacterRosterTests` and verify failure because the types are absent.
-- [ ] Implement only the validated value types, defaults, and conversion to `CharacterManifest`.
-- [ ] Run focused tests and commit.
+- [x] Write tests requiring four safe defaults, 12 avatar presets, five personality templates, 1–8 validation, unique IDs, trimmed 1–20 character names, and safe imported filenames.
+- [x] Run `swift test --filter CharacterRosterTests` and verify failure because the types are absent.
+- [x] Implement only the validated value types, defaults, and conversion to `CharacterManifest`.
+- [x] Run focused tests and commit.
 
 ### Task 2: Roster and avatar persistence
 
