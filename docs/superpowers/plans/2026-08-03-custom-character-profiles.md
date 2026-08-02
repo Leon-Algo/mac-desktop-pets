@@ -45,10 +45,10 @@
 **Interfaces:**
 - Produces: `CharacterRosterStore.load/save`, `importAvatar(data:)`, `removeUnreferencedAvatars(roster:)`, and an injected root directory for tests.
 
-- [ ] Write tests for round-trip JSON, corrupt recovery, atomic rejection, PNG/JPEG decoding, 512-square output, safe UUID filenames, and orphan cleanup.
-- [ ] Run focused tests and verify the missing APIs fail.
-- [ ] Implement atomic JSON persistence and local normalized avatar storage.
-- [ ] Run focused tests and commit.
+- [x] Write tests for round-trip JSON, corrupt recovery, atomic rejection, PNG/JPEG decoding, 512-square output, safe UUID filenames, and orphan cleanup.
+- [x] Run focused tests and verify the missing APIs fail.
+- [x] Implement atomic JSON persistence and local normalized avatar storage.
+- [x] Run focused tests and commit.
 
 ### Task 3: Preset/import rendering and editor model
 

@@ -126,6 +126,7 @@ Phase 10 — Discoverable action center complete
 | First Task 4 patch referenced a nonexistent standalone runner test file | 1 | Located `WorldRunnerInteractionTests` inside `PetInteractionTests.swift` and reapplied the complete test patch to the real file. |
 | Packaged smoke rejected five Stage Manager-scaled windows | 1 | Core Graphics reported 90×80/96×38 logical windows as 82×73/88×36 compositor bounds; added proportional-group inspection instead of absolute-pixel-only matching. |
 | Final verification referenced nonexistent `Scripts/build-app.sh` | 1 | Repository evidence showed the real packaging entry point is `Scripts/package-app.sh`; discarded the stale-bundle result and reran packaging plus all bundle checks from the correct script. |
+| Avatar normalization test compared two PNG encodings byte-for-byte | 1 | PNG encoders may emit different metadata/compression for identical pixels; replaced the invalid assertion with PNG signature, decodability, and exact pixel-dimension checks. |
 
 ## Phase 11 — “叫爸爸”动作替换
 - [x] Write and review the focused behavior-change design
