@@ -4,8 +4,8 @@ enum PetActionID: String, Codable, CaseIterable, Hashable, Sendable {
     case wave
     case hop
     case roll
-    case sleep
-    case gatherPlay
+    case callDad
+    case groupCallDad
 }
 
 enum PetActionScope: String, Codable, Sendable {
@@ -59,22 +59,22 @@ enum PetActionCatalog {
             duration: 1.4
         ),
         PetActionDefinition(
-            id: .sleep,
+            id: .callDad,
             scope: .individual,
-            title: "💤 趴下睡觉",
-            explanation: "在当前位置趴下休息约 4 秒",
-            feedback: "先睡一会儿…",
-            duration: 4
+            title: "📣 叫爸爸",
+            explanation: "原地弹跳并喊一声爸爸",
+            feedback: "爸爸！",
+            duration: 1.8
         ),
     ]
 
     static let group = [
         PetActionDefinition(
-            id: .gatherPlay,
+            id: .groupCallDad,
             scope: .group,
-            title: "🎉 四人集合玩耍",
-            explanation: "把四个人召集到一起玩耍",
-            feedback: "集合玩耍！",
+            title: "📣 四人一起喊爸爸",
+            explanation: "召回四个人，集合后一起喊爸爸",
+            feedback: "爸爸！",
             duration: 2
         ),
     ]

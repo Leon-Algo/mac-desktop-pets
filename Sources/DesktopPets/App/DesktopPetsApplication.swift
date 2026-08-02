@@ -98,8 +98,8 @@ enum InteractionSelfTest {
             .performAction(PetActionRequest(actionID: .wave, targetID: "person-left")),
             .performAction(PetActionRequest(actionID: .hop, targetID: "person-center-left")),
             .performAction(PetActionRequest(actionID: .roll, targetID: "person-center-right")),
-            .performAction(PetActionRequest(actionID: .sleep, targetID: "person-right")),
-            .performAction(PetActionRequest(actionID: .gatherPlay, targetID: nil)),
+            .performAction(PetActionRequest(actionID: .callDad, targetID: "person-right")),
+            .performAction(PetActionRequest(actionID: .groupCallDad, targetID: nil)),
         ]
         let results = commands.map { world.handle($0, obstacles: map) }
         world.step(deltaTime: 1.0 / 60.0, obstacles: map)

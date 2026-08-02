@@ -125,10 +125,11 @@ Phase 10 — Discoverable action center complete
 | Manual sleep expiry test tried to advance 4.1 seconds in one call | 1 | The world intentionally caps one `step` call to 1 second; advanced five deterministic 0.9-second steps instead. |
 | First Task 4 patch referenced a nonexistent standalone runner test file | 1 | Located `WorldRunnerInteractionTests` inside `PetInteractionTests.swift` and reapplied the complete test patch to the real file. |
 | Packaged smoke rejected five Stage Manager-scaled windows | 1 | Core Graphics reported 90×80/96×38 logical windows as 82×73/88×36 compositor bounds; added proportional-group inspection instead of absolute-pixel-only matching. |
+| Final verification referenced nonexistent `Scripts/build-app.sh` | 1 | Repository evidence showed the real packaging entry point is `Scripts/package-app.sh`; discarded the stale-bundle result and reran packaging plus all bundle checks from the correct script. |
 
 ## Phase 11 — “叫爸爸”动作替换
-- [ ] Write and review the focused behavior-change design
-- [ ] Add failing catalog, world-routing, menu, and packaged-self-test expectations
-- [ ] Replace individual sleep with `叫爸爸` and group play with `四人一起喊爸爸`
-- [ ] Run focused, full, release, signing, smoke, and live-launch verification
-- **Status:** in_progress
+- [x] Write and review the focused behavior-change design
+- [x] Add failing catalog, world-routing, menu, and packaged-self-test expectations
+- [x] Replace individual sleep with `叫爸爸` and group play with `四人一起喊爸爸`
+- [x] Run focused, full, release, signing, smoke, and live-launch verification
+- **Status:** complete

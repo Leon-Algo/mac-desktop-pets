@@ -89,7 +89,7 @@ final class PetInteractionTests: XCTestCase {
             (.wave, .greet),
             (.hop, .jump),
             (.roll, .roll),
-            (.sleep, .sleep),
+            (.callDad, .jump),
         ]
 
         for (actionID, expectedState) in cases {
@@ -149,27 +149,32 @@ final class PetInteractionTests: XCTestCase {
         rollWorld.step(deltaTime: 0.75, obstacles: map)
         XCTAssertEqual(rollWorld.poses.first { $0.id == "person-left" }?.state, .crawl)
 
-        var sleepWorld = makeWorld()
-        _ = sleepWorld.handle(
-            .performAction(PetActionRequest(actionID: .sleep, targetID: "person-left")),
+        var callDadWorld = makeWorld()
+        let callDadResult = callDadWorld.handle(
+            .performAction(PetActionRequest(actionID: .callDad, targetID: "person-left")),
             obstacles: map
         )
-        for _ in 0..<5 {
-            sleepWorld.step(deltaTime: 0.9, obstacles: map)
+        guard case let .action(.performed(_, feedback, _)) = callDadResult else {
+            return XCTFail("Expected call-dad action")
         }
-        XCTAssertEqual(sleepWorld.poses.first { $0.id == "person-left" }?.state, .crawl)
+        XCTAssertEqual(feedback, "爸爸！")
+        for _ in 0..<3 {
+            callDadWorld.step(deltaTime: 0.9, obstacles: map)
+        }
+        XCTAssertEqual(callDadWorld.poses.first { $0.id == "person-left" }?.state, .crawl)
     }
 
     func testGroupActionUsesAllCharactersAndInvalidTargetDoesNotMutate() {
         var world = makeWorld()
         let result = world.handle(
-            .performAction(PetActionRequest(actionID: .gatherPlay, targetID: nil)),
+            .performAction(PetActionRequest(actionID: .groupCallDad, targetID: nil)),
             obstacles: map
         )
-        guard case let .action(.performed(ids, _, _)) = result else {
+        guard case let .action(.performed(ids, feedback, _)) = result else {
             return XCTFail("Expected group action")
         }
         XCTAssertEqual(Set(ids), Set(CharacterCatalog.fallback.characters.map(\.id)))
+        XCTAssertEqual(feedback, "爸爸！")
 
         var invalidWorld = makeWorld()
         let before = invalidWorld.poses
@@ -232,7 +237,7 @@ final class WorldRunnerInteractionTests: XCTestCase {
         runner.start(preferences: .defaults)
         runner.handle(.hide(id: "person-left"))
         runner.handle(.hide(id: "person-right"))
-        runner.handle(.performAction(PetActionRequest(actionID: .gatherPlay, targetID: nil)))
+        runner.handle(.performAction(PetActionRequest(actionID: .groupCallDad, targetID: nil)))
         XCTAssertEqual(runner.diagnostics["hiddenPetCount"] as? Int, 0)
         XCTAssertEqual(runner.diagnostics["activeFeedbackCount"] as? Int, 4)
 

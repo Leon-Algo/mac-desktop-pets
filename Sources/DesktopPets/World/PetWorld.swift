@@ -346,13 +346,13 @@ struct PetWorld: Sendable {
         case .wave: state = .greet
         case .hop: state = .jump
         case .roll: state = .roll
-        case .sleep: state = .sleep
-        case .gatherPlay:
+        case .callDad: state = .jump
+        case .groupCallDad:
             return .action(.unavailable(targetID: targetID, feedback: "动作范围不匹配", duration: 2))
         }
         transition(index, to: state)
         agents[index].manualActionID = request.actionID
-        if request.actionID == .hop {
+        if request.actionID == .hop || request.actionID == .callDad {
             agents[index].velocity.dy = 240
         }
         return .action(.performed(

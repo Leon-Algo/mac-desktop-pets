@@ -145,15 +145,15 @@ final class CommandRoutingTests: XCTestCase {
         XCTAssertEqual(Array(center.items.prefix(4)).map(\.title), ["格子衫", "黑背心", "薄荷衫", "黑外套"])
         let firstActions = try XCTUnwrap(center.items.first?.submenu)
         XCTAssertEqual(firstActions.items.map(\.title), [
-            "👋 打个招呼", "⬆️ 原地跳一下", "🙈 翻个跟头", "💤 趴下睡觉",
+            "👋 打个招呼", "⬆️ 原地跳一下", "🙈 翻个跟头", "📣 叫爸爸",
         ])
         XCTAssertEqual(
             firstActions.items.compactMap { ($0.representedObject as? PetActionRequest)?.targetID },
             Array(repeating: "person-left", count: 4)
         )
         XCTAssertEqual(firstActions.items.map(\.toolTip), PetActionCatalog.individual.map(\.explanation))
-        let group = try XCTUnwrap(center.items.first { $0.title == "🎉 四人集合玩耍" })
-        XCTAssertEqual(group.representedObject as? PetActionRequest, PetActionRequest(actionID: .gatherPlay, targetID: nil))
+        let group = try XCTUnwrap(center.items.first { $0.title == "📣 四人一起喊爸爸" })
+        XCTAssertEqual(group.representedObject as? PetActionRequest, PetActionRequest(actionID: .groupCallDad, targetID: nil))
 
         let management = try XCTUnwrap(
             controller.controlMenu.items.first { $0.title == "四人管理" }?.submenu?.items.first?.submenu

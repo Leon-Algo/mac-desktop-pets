@@ -29,20 +29,20 @@
 - Produces: `PetActionID.callDad`, `PetActionID.groupCallDad`
 - Preserves: `PetActionOutcome.performed(affectedIDs:feedback:duration:)`
 
-- [ ] **Step 1: Write failing catalog and routing tests**
+- [x] **Step 1: Write failing catalog and routing tests**
 
 Expect individual IDs `[.wave, .hop, .roll, .callDad]`, group ID `[.groupCallDad]`, labels `📣 叫爸爸` and `📣 四人一起喊爸爸`, individual state `.jump`, and group feedback `爸爸！` for all character IDs.
 
-- [ ] **Step 2: Run tests to verify RED**
+- [x] **Step 2: Run tests to verify RED**
 
 Run: `swift test --filter 'PetActionCatalogTests|PetInteractionTests'`
 Expected: compilation failure because `callDad` and `groupCallDad` do not exist.
 
-- [ ] **Step 3: Implement the minimal semantic replacement**
+- [x] **Step 3: Implement the minimal semantic replacement**
 
 Rename the enum cases and catalog definitions. Route `.callDad` to `.jump` with the existing hop velocity and route `.groupCallDad` through existing group gather behavior. Use a short deterministic duration.
 
-- [ ] **Step 4: Run focused tests to verify GREEN**
+- [x] **Step 4: Run focused tests to verify GREEN**
 
 Run: `swift test --filter 'PetActionCatalogTests|PetInteractionTests'`
 Expected: all selected tests pass.
@@ -61,24 +61,24 @@ Expected: all selected tests pass.
 - Consumes: `PetActionID.callDad`, `PetActionID.groupCallDad`
 - Verifies: persistent action center, per-pet feedback, packaged self-test
 
-- [ ] **Step 1: Write failing menu and runner expectations**
+- [x] **Step 1: Write failing menu and runner expectations**
 
 Require `📣 叫爸爸`, `📣 四人一起喊爸爸`, typed represented objects using the new IDs, and four active `爸爸！` feedback bubbles after the group action.
 
-- [ ] **Step 2: Run tests to verify RED**
+- [x] **Step 2: Run tests to verify RED**
 
 Run: `swift test --filter 'CommandRoutingTests|WorldRunnerInteractionTests'`
 Expected: failures until menus and routing consume the renamed catalog entries.
 
-- [ ] **Step 3: Update packaged self-test and acceptance records**
+- [x] **Step 3: Update packaged self-test and acceptance records**
 
 Replace old `.sleep` and `.gatherPlay` requests with the new IDs. Record focused and final verification evidence in project planning files.
 
-- [ ] **Step 4: Run final verification**
+- [x] **Step 4: Run final verification**
 
 Run normal and AddressSanitizer test suites, strict-concurrency Release build, packaging script, deep code-sign verification, packaged smoke/self-test, and live running-window inspection.
 Expected: every command succeeds, exactly four pet windows plus the fallback control are reported, and the ordinary app remains running.
 
-- [ ] **Step 5: Commit the completed behavior change**
+- [x] **Step 5: Commit the completed behavior change**
 
 Commit the tests, implementation, and updated project records together with a focused feature message.

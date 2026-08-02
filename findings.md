@@ -116,3 +116,5 @@
 - The single-character composite artwork cannot animate a mouth or isolated limb. A short hop plus a `爸爸！` feedback bubble is a clear, dependency-free first implementation.
 - Group routing already restores and gathers all four characters. It can remain the physical behavior while the typed action becomes `groupCallDad` and all four receive the same `爸爸！` feedback.
 - Autonomous sleeping remains valid world behavior and is not removed; only the user-triggered sleep command is being replaced.
+- The completed implementation uses typed IDs `callDad` and `groupCallDad`; no production or test menu copy retains the removed sleep/play labels.
+- Final verification passed 94/94 normal tests, 94/94 AddressSanitizer tests, strict-concurrency Release build, fresh packaging, deep signing, five-window smoke inspection, and the 14-command self-test.

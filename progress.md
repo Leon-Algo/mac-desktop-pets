@@ -10,7 +10,11 @@
 - User requested replacing the individual sleep command with `叫爸爸` and the group play command with a collective `喊爸爸` action.
 - Selected a semantic replacement rather than label-only relabeling: new typed IDs, catalog copy, deterministic routing, menus, feedback, tests, and packaged self-test will all agree.
 - Autonomous sleep behavior remains unchanged; no audio dependency is added in this iteration.
-- **Status:** in_progress
+- RED: focused tests failed because `PetActionID.callDad` and `.groupCallDad` did not exist.
+- GREEN: catalog, world routing, menus, four-person feedback, and packaged self-test now use the new typed actions; 27 focused tests pass.
+- Final verification: 94/94 normal and 94/94 AddressSanitizer tests pass; strict-concurrency Release, fresh app packaging, signing, smoke test, 14-command interaction self-test, and ordinary live launch pass.
+- The newly packaged app is running as PID 64251 with four pet windows and the fallback controller.
+- **Status:** complete
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.
 - Captured the confirmed macOS-first scope and Windows-follow-up direction.
