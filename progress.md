@@ -74,3 +74,5 @@
 - Ran a same-session minimal `TEST` status-item control experiment; it was also not visible, ruling out simple controller deallocation as the sole cause.
 - User approved the recommended labeled status-item plus independent fallback-control design.
 - Wrote and self-reviewed `docs/superpowers/specs/2026-08-02-persistent-control-center-design.md`; no production code has been changed pending written-spec review.
+- User authorized uninterrupted execution without further approval gates.
+- Wrote the TDD implementation plan at `docs/superpowers/plans/2026-08-02-persistent-control-center.md` and selected inline execution because subagent delegation is not authorized.

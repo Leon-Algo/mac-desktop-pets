@@ -56,7 +56,8 @@ Phase 7 — Persistent control center design
 - [x] Compare against a minimal standalone status item in the same session
 - [x] Obtain approval for a persistent, visible control-center design
 - [x] Write and self-review the persistent control-center specification
-- [ ] Obtain user review of the written specification
+- [x] Obtain user review of the written specification
+- [x] Write and self-review the implementation plan
 - [ ] Implement status-item lifecycle diagnostics and robust presentation
 - [ ] Add global and per-character control-center commands
 - [ ] Verify visibility after first launch, relaunch, full-screen transitions, and hiding characters
