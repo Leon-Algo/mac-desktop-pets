@@ -47,7 +47,7 @@ struct MenuState: Equatable, Sendable {
 }
 
 enum ControlHintPolicy {
-    static let guidance = "使用顶部菜单栏的 🐾 桌宠，或桌面上的 🐾 总台，可以暂停、召回、设置或退出桌面伙伴。"
+    static let guidance = "使用顶部菜单栏的 🐾 图标，或桌面上的 🐾 总台，可以暂停、召回、设置或退出桌面伙伴。"
 
     static func shouldShow(storedHintNeeded: Bool, suppressionValue: String?) -> Bool {
         storedHintNeeded && suppressionValue != "1"

@@ -38,7 +38,7 @@ final class PreferencesTests: XCTestCase {
     }
 
     func testControlHintGuidanceNamesBothPersistentControlRoutes() {
-        XCTAssertTrue(ControlHintPolicy.guidance.contains("🐾 桌宠"))
+        XCTAssertTrue(ControlHintPolicy.guidance.contains("顶部菜单栏的 🐾 图标"))
         XCTAssertTrue(ControlHintPolicy.guidance.contains("🐾 总台"))
         XCTAssertTrue(ControlHintPolicy.guidance.contains("退出"))
     }

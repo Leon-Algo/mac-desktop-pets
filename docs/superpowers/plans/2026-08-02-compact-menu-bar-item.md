@@ -27,7 +27,7 @@
 - Consumes: `StatusMenuController.init(target:)`, `statusButtonTitle`.
 - Produces: a square `🐾` status button; tests read the existing read-only `statusItem` getter.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Change the shared-menu test to assert:
 
@@ -36,19 +36,19 @@ XCTAssertEqual(controller.statusButtonTitle, "🐾")
 XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run `swift test --filter CommandRoutingTests/testSharedMenuContainsGlobalAndFourCharacterControls` and confirm it fails because the title is still `🐾 桌宠` and the length is variable.
 
-- [ ] **Step 3: Implement the minimum AppKit change**
+- [x] **Step 3: Implement the minimum AppKit change**
 
 Create and recreate the status item with `NSStatusItem.squareLength` and set `button.title = "🐾"`. Keep the existing read-only status-item getter, tooltip, accessibility label, menu, and health policy.
 
-- [ ] **Step 4: Verify GREEN and regressions**
+- [x] **Step 4: Verify GREEN and regressions**
 
 Run the focused test, then `swift test`; both must pass.
 
-- [ ] **Step 5: Update acceptance records and commit**
+- [x] **Step 5: Update acceptance records and commit**
 
 Record the compact control and final evidence in `docs/verification/final-acceptance.md`, `progress.md`, and `task_plan.md`, then commit the implementation.
 

@@ -16,7 +16,7 @@ final class StatusMenuController: NSObject {
 
     init(target: AppController) {
         self.target = target
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureStatusItem()
         observeStatusContext()
@@ -69,7 +69,7 @@ final class StatusMenuController: NSObject {
 
     private func configureStatusItem() {
         guard let button = statusItem.button else { return }
-        button.title = "🐾 桌宠"
+        button.title = "🐾"
         button.toolTip = "桌面伙伴总台：暂停、召回、设置或退出"
         button.setAccessibilityLabel("桌面伙伴总台")
         statusItem.isVisible = true
@@ -116,7 +116,7 @@ final class StatusMenuController: NSObject {
 
     private func recreateStatusItem() {
         NSStatusBar.system.removeStatusItem(statusItem)
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         configureStatusItem()
         logger.warning("Recreated unhealthy status item once")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

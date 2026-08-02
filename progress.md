@@ -90,3 +90,12 @@
 - Independent code review identified one control-lockout risk and three state/lifecycle weaknesses. TDD fixes now keep the fallback visible during full click-through or all-hidden states, synchronize global hidden state into every character snapshot (including startup), reposition the fallback after screen/Space changes, debounce status health checks, and require exact pet/fallback window signatures in packaged inspection.
 - Post-review fresh verification: 73/73 normal tests, 73/73 AddressSanitizer tests, strict Swift 6 concurrency Release build, exact four-pet-plus-fallback packaged smoke, nine-command interaction self-test, and strict deep signing all pass.
 - A final ordinary launch appeared to end early; the user later clarified that it may have been closed manually, so this is not recorded as a reproduced product defect. Early lifecycle protection remains as defensive hardening, and three consecutive ordinary launches each reached the exact five-window healthy state.
+
+### Phase 8 — Compact menu-bar item
+- **Status:** in_progress
+- User selected the compact approach after confirming that macOS does not move overflowing status items across the notch.
+- Wrote and committed the focused design and TDD implementation plan.
+- RED: initial and repair-path tests observed the old `🐾 桌宠` title and variable status-item length.
+- GREEN: both construction paths now use `NSStatusItem.squareLength` and display only `🐾`; tooltip, accessibility label, shared menu, and fallback behavior remain unchanged.
+- RED/GREEN: first-run guidance now accurately describes the compact menu-bar `🐾` icon.
+- Current normal suite: 74/74 passing; release verification remains in progress.

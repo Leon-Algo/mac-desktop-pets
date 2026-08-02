@@ -40,7 +40,8 @@ final class CommandRoutingTests: XCTestCase {
             }
         )
 
-        XCTAssertEqual(controller.statusButtonTitle, "🐾 桌宠")
+        XCTAssertEqual(controller.statusButtonTitle, "🐾")
+        XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
         XCTAssertTrue(controller.controlMenu.items.map(\.title).contains("四人管理"))
         let people = controller.controlMenu.items.first { $0.title == "四人管理" }?.submenu?.items ?? []
         XCTAssertEqual(people.map(\.title), ["格子衫", "黑背心", "薄荷衫", "黑外套"])
@@ -100,6 +101,16 @@ final class CommandRoutingTests: XCTestCase {
         controller.handleStatusContextChange()
 
         XCTAssertEqual(changeCount, 1)
+    }
+
+    @MainActor
+    func testStatusItemRepairPreservesCompactSquareControl() {
+        let controller = StatusMenuController(target: AppController())
+        controller.statusItem.isVisible = false
+
+        XCTAssertEqual(controller.checkHealth(), .recreate)
+        XCTAssertEqual(controller.statusButtonTitle, "🐾")
+        XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
     }
 }
 
