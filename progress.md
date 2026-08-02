@@ -4,6 +4,13 @@
 
 ### Phase 1 — Requirements and feasibility
 - **Status:** in_progress
+
+### Phase 11 — Replace sleep/play commands with “叫爸爸”
+
+- User requested replacing the individual sleep command with `叫爸爸` and the group play command with a collective `喊爸爸` action.
+- Selected a semantic replacement rather than label-only relabeling: new typed IDs, catalog copy, deterministic routing, menus, feedback, tests, and packaged self-test will all agree.
+- Autonomous sleep behavior remains unchanged; no audio dependency is added in this iteration.
+- **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.
 - Captured the confirmed macOS-first scope and Windows-follow-up direction.

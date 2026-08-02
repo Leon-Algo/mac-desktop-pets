@@ -109,3 +109,10 @@
 - Manual duration needs lightweight agent state (`manualActionID`) so manual greet and sleep can expire at catalog-defined durations without changing unrelated autonomous behavior.
 - `PetWindowCoordinator` is the narrow feedback bridge: it can expose `showFeedback(for:message:duration:)` while keeping feedback-layer ownership inside `PetSpriteView`.
 - Stage Manager applies a compositor transform to inactive window groups, so `CGWindowList` can report 90×80/96×38 logical windows as 82×73/88×36. Packaged inspection must validate a uniformly scaled five-window set rather than only absolute logical sizes.
+
+# Phase 11 “叫爸爸” findings (2026-08-03)
+
+- The public action IDs still encode the old semantics (`sleep`, `gatherPlay`), so a best-practice replacement must rename the typed IDs as well as the visible labels.
+- The single-character composite artwork cannot animate a mouth or isolated limb. A short hop plus a `爸爸！` feedback bubble is a clear, dependency-free first implementation.
+- Group routing already restores and gathers all four characters. It can remain the physical behavior while the typed action becomes `groupCallDad` and all four receive the same `爸爸！` feedback.
+- Autonomous sleeping remains valid world behavior and is not removed; only the user-triggered sleep command is being replaced.
