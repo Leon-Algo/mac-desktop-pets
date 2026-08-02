@@ -25,7 +25,7 @@
 
 **Interfaces:**
 - Consumes: `StatusMenuController.init(target:)`, `statusButtonTitle`.
-- Produces: `StatusMenuController.statusItemLength: CGFloat` and a square `🐾` status button.
+- Produces: a square `🐾` status button; tests read the existing read-only `statusItem` getter.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -33,16 +33,16 @@ Change the shared-menu test to assert:
 
 ```swift
 XCTAssertEqual(controller.statusButtonTitle, "🐾")
-XCTAssertEqual(controller.statusItemLength, NSStatusItem.squareLength)
+XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
 ```
 
 - [ ] **Step 2: Verify RED**
 
-Run `swift test --filter CommandRoutingTests/testSharedMenuContainsGlobalAndFourCharacterControls` and confirm it fails because the title is still `🐾 桌宠` and `statusItemLength` does not exist.
+Run `swift test --filter CommandRoutingTests/testSharedMenuContainsGlobalAndFourCharacterControls` and confirm it fails because the title is still `🐾 桌宠` and the length is variable.
 
 - [ ] **Step 3: Implement the minimum AppKit change**
 
-Create and recreate the status item with `NSStatusItem.squareLength`, set `button.title = "🐾"`, and expose `var statusItemLength: CGFloat { statusItem.length }`. Keep the existing tooltip, accessibility label, menu, and health policy.
+Create and recreate the status item with `NSStatusItem.squareLength` and set `button.title = "🐾"`. Keep the existing read-only status-item getter, tooltip, accessibility label, menu, and health policy.
 
 - [ ] **Step 4: Verify GREEN and regressions**
 
