@@ -15,6 +15,21 @@
 - Final verification: 94/94 normal and 94/94 AddressSanitizer tests pass; strict-concurrency Release, fresh app packaging, signing, smoke test, 14-command interaction self-test, and ordinary live launch pass.
 - The newly packaged app is running as PID 64251 with four pet windows and the fallback controller.
 - **Status:** complete
+
+### Phase 12 — Design configurable character profiles
+
+- Fast-forward merged `feature/action-center-v2` into local `main` at `aad9023`; the merged 94-test suite passed and the feature branch was removed.
+- Created `feature/custom-character-profiles` for design work so the accepted main milestone remains stable.
+- Began architecture inspection. The manifest model is reusable, but face loading, asset storage, fixed-four copy, persistence, and runtime roster rebuilding need explicit design.
+- Confirmed that the renderer can support option-based face/body customization, but current runtime objects are immutable and require an atomic roster rebuild after Save.
+- Confirmed that a native settings window is a new UI surface; no current settings or open-panel implementation can be reused.
+- Recommended a preset-first editor with optional local image import, 1–8 active characters, four synthetic defaults, twelve built-in faces, six outfits, and five personality presets.
+- Prepared the product, storage, migration, and runtime-apply design for user approval before writing the formal spec or implementation plan.
+- **Status:** awaiting_design_approval
+- User approved the recommended design and requested an acceptance-ready implementation without further checkpoints.
+- Wrote the formal specification covering 1–8 limits, native editor UX, procedural presets, local imports, migration, atomic runner rebuild, dynamic copy, diagnostics, and release acceptance.
+- **Status:** design_complete
+- **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.
 - Captured the confirmed macOS-first scope and Windows-follow-up direction.

@@ -133,3 +133,11 @@ Phase 10 — Discoverable action center complete
 - [x] Replace individual sleep with `叫爸爸` and group play with `四人一起喊爸爸`
 - [x] Run focused, full, release, signing, smoke, and live-launch verification
 - **Status:** complete
+
+## Phase 12 — 可选式人物与头像自定义设计
+- [x] Merge the accepted action-center milestone into `main`
+- [x] Inspect current character, preference, asset, menu, and lifecycle boundaries
+- [x] Define 2–3 product/architecture approaches and recommend one
+- [x] Present defaults, eight-character limit, UX, persistence, and migration design for approval
+- [x] Write and commit the approved design specification
+- **Status:** design_complete
