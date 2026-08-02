@@ -31,7 +31,7 @@
 - Produces: `PetActionID`, `PetActionScope`, `PetActionDefinition`, `PetActionRequest`, `PetActionOutcome`, and `PetActionCatalog`.
 - Produces: `FeedbackBubbleState.show(message:) -> UInt64` and `dismiss(generation:)`.
 
-- [ ] **Step 1: Write catalog RED tests**
+- [x] **Step 1: Write catalog RED tests**
 
 Assert the exact stable action order and metadata:
 
@@ -45,11 +45,11 @@ XCTAssertTrue(PetActionCatalog.all.allSatisfy { !$0.explanation.isEmpty && $0.du
 XCTAssertEqual(Set(PetActionCatalog.all.map(\.id)).count, PetActionCatalog.all.count)
 ```
 
-- [ ] **Step 2: Run catalog RED**
+- [x] **Step 2: Run catalog RED**
 
 Run `swift test --filter PetActionCatalogTests`. Expected: compilation fails because the catalog types do not exist.
 
-- [ ] **Step 3: Implement the catalog**
+- [x] **Step 3: Implement the catalog**
 
 Define exact cases `wave`, `hop`, `roll`, `sleep`, and `gatherPlay`. Provide immutable definitions with scope, title, explanation, feedback, and duration. Use durations 1.8, 1.4, 1.4, 4.0, and 2.0 seconds respectively. `PetActionRequest` contains `actionID: PetActionID` and `targetID: String?`. `PetActionOutcome` has:
 
@@ -60,15 +60,15 @@ enum PetActionOutcome: Equatable, Sendable {
 }
 ```
 
-- [ ] **Step 4: Write and verify feedback-state RED**
+- [x] **Step 4: Write and verify feedback-state RED**
 
 Create a test where showing message A, then B, then dismissing A's generation leaves B visible; dismissing B clears it. Run `swift test --filter FeedbackBubbleStateTests` and confirm the missing-type failure.
 
-- [ ] **Step 5: Implement feedback generation state and verify GREEN**
+- [x] **Step 5: Implement feedback generation state and verify GREEN**
 
 Implement a value type holding `message: String?` and monotonically increasing `generation`. `show(message:)` increments and returns the generation. `dismiss(generation:)` clears only when it matches. Run both new test classes and then `swift test`.
 
-- [ ] **Step 6: Commit catalog slice**
+- [x] **Step 6: Commit catalog slice**
 
 Commit with `feat: define desktop pet action catalog`.
 
