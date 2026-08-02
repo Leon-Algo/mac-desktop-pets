@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 10 — Discoverable action center in progress
+Phase 10 — Discoverable action center complete
 
 ## Phases
 
@@ -86,11 +86,11 @@ Phase 10 — Discoverable action center in progress
 - [x] Inspect current world states, rendering transforms, menus, panels, and command routing
 - [x] Write and self-review the action-center design specification
 - [x] Write the detailed TDD implementation plan
-- [ ] Implement the action catalog and deterministic action commands
-- [ ] Implement discoverable action menus and transient feedback bubbles
-- [ ] Add the first four clearly differentiated manual actions
-- [ ] Run full automated, package, signing, and live-launch verification
-- **Status:** in_progress
+- [x] Implement the action catalog and deterministic action commands
+- [x] Implement discoverable action menus and transient feedback bubbles
+- [x] Add the first four clearly differentiated manual actions
+- [x] Run full automated, package, signing, and live-launch verification
+- **Status:** complete
 
 ## Initial Decisions
 | Decision | Rationale |
@@ -124,3 +124,4 @@ Phase 10 — Discoverable action center in progress
 | AppKit quantized the 45-point-wide quarter-size panel origin to a whole point | 1 | Kept the exact 45×40 size and accepted the unavoidable maximum 0.5-point horizontal anchor variance. |
 | Manual sleep expiry test tried to advance 4.1 seconds in one call | 1 | The world intentionally caps one `step` call to 1 second; advanced five deterministic 0.9-second steps instead. |
 | First Task 4 patch referenced a nonexistent standalone runner test file | 1 | Located `WorldRunnerInteractionTests` inside `PetInteractionTests.swift` and reapplied the complete test patch to the real file. |
+| Packaged smoke rejected five Stage Manager-scaled windows | 1 | Core Graphics reported 90×80/96×38 logical windows as 82×73/88×36 compositor bounds; added proportional-group inspection instead of absolute-pixel-only matching. |

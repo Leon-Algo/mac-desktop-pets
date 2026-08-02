@@ -127,4 +127,7 @@
 - Task 3 RED: menu tests failed on the absent action-center and context APIs. GREEN: both persistent controls and per-pet right-click menus expose typed, explained action lists with no ambiguous `做个动作` label; all 89 tests pass.
 - Task 4 RED: rendering, feedback, coordinator, and runner tests failed on missing APIs. GREEN: roll uses normalized full rotation, bubbles remain 11-point readable, newer feedback replaces older feedback safely, and typed outcomes restore/show the correct panels; all 93 tests pass.
 - Task 5 self-test RED/GREEN: packaged interaction coverage increased from 9 to 14 commands by exercising all four manual actions and group play while preserving four finite pets.
+- Release diagnosis: the first smoke run was correctly rejected because Stage Manager exposed compositor-scaled bounds. A RED/GREEN inspection test now accepts one uniformly scaled supported window set while mixed sizes remain degraded.
+- Final verification: 94/94 normal tests, 94/94 AddressSanitizer tests, strict-concurrency Release build, packaged smoke, 14-command self-test, deep signing, and ordinary live launch pass. The final app is running as PID 60130.
+- **Status:** complete
 - **Status:** in_progress

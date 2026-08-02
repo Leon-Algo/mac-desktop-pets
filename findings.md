@@ -108,3 +108,4 @@
 - `PetAgent.pose.phase` currently wraps every second. For a 1.4-second roll, it must emit normalized roll progress instead of the ordinary repeating gait phase, otherwise the rotation snaps after one second.
 - Manual duration needs lightweight agent state (`manualActionID`) so manual greet and sleep can expire at catalog-defined durations without changing unrelated autonomous behavior.
 - `PetWindowCoordinator` is the narrow feedback bridge: it can expose `showFeedback(for:message:duration:)` while keeping feedback-layer ownership inside `PetSpriteView`.
+- Stage Manager applies a compositor transform to inactive window groups, so `CGWindowList` can report 90×80/96×38 logical windows as 82×73/88×36. Packaged inspection must validate a uniformly scaled five-window set rather than only absolute logical sizes.

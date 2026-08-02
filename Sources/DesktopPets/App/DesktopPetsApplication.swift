@@ -32,19 +32,39 @@ struct RunningWindowDescriptor: Equatable, Sendable {
 
 enum RunningAppInspection {
     static func evaluate(pid: Int32, windows: [RunningWindowDescriptor]) -> RunningAppReport {
-        let fallbackControlPresent = windows.contains {
+        var fallbackControlPresent = windows.contains {
             $0.name == "桌面伙伴总台" && abs($0.width - 96) <= 1 && abs($0.height - 38) <= 1
         }
-        let countsByPreset = PetScalePreset.allCases.map { preset in
-            windows.filter { descriptor in
-                abs(descriptor.width - preset.panelSize.width) <= 1
-                    && abs(descriptor.height - preset.panelSize.height) <= 1
+        let unnamed = windows.filter { $0.name.isEmpty }
+        var hasFourUniformPets = false
+        for preset in PetScalePreset.allCases {
+            let factors = unnamed.compactMap { descriptor -> Double? in
+                let factor = descriptor.width / preset.panelSize.width
+                guard (0.5...1.05).contains(factor),
+                      abs(descriptor.height - preset.panelSize.height * factor) <= 2 else { return nil }
+                return factor
+            }
+            guard factors.count == 4,
+                  (factors.max() ?? 0) - (factors.min() ?? 0) <= 0.03 else { continue }
+            hasFourUniformPets = true
+            let factor = factors.reduce(0, +) / Double(factors.count)
+            if windows.contains(where: {
+                $0.name == "桌面伙伴总台"
+                    && abs($0.width - 96 * factor) <= 2
+                    && abs($0.height - 38 * factor) <= 2
+            }) {
+                fallbackControlPresent = true
+            }
+            break
+        }
+        let petWindowCount = hasFourUniformPets ? 4 : PetScalePreset.allCases.reduce(0) { count, preset in
+            count + unnamed.filter {
+                abs($0.width - preset.panelSize.width) <= 1
+                    && abs($0.height - preset.panelSize.height) <= 1
             }.count
         }
-        let petWindowCount = countsByPreset.reduce(0, +)
-        let hasFourUniformPets = countsByPreset.contains(4) && petWindowCount == 4
         return RunningAppReport(
-            status: fallbackControlPresent && hasFourUniformPets ? "ok" : "degraded",
+            status: fallbackControlPresent && hasFourUniformPets && petWindowCount == 4 ? "ok" : "degraded",
             pid: pid,
             windowCount: windows.count,
             petWindowCount: petWindowCount,

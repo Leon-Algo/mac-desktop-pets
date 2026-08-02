@@ -81,6 +81,21 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertEqual(RunningAppInspection.evaluate(pid: 42, windows: mixed).status, "degraded")
     }
 
+    func testRunningInspectionAcceptsUniformStageManagerCompositorScaling() {
+        let stageManagerScaled = [
+            RunningWindowDescriptor(name: "", width: 82, height: 73),
+            RunningWindowDescriptor(name: "", width: 82, height: 73),
+            RunningWindowDescriptor(name: "", width: 82, height: 73),
+            RunningWindowDescriptor(name: "", width: 82, height: 73),
+            RunningWindowDescriptor(name: "桌面伙伴总台", width: 88, height: 36),
+        ]
+
+        let report = RunningAppInspection.evaluate(pid: 42, windows: stageManagerScaled)
+        XCTAssertEqual(report.status, "ok")
+        XCTAssertEqual(report.petWindowCount, 4)
+        XCTAssertTrue(report.fallbackControlPresent)
+    }
+
     func testRunningInspectionRejectsUnrelatedFifthWindowWithoutFallbackControl() {
         let invalid = [
             RunningWindowDescriptor(name: "", width: 180, height: 160),

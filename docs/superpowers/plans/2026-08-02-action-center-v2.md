@@ -253,7 +253,7 @@ Add the four individual action requests and one group request to `InteractionSel
 
 Count typed action outcomes as successful commands and keep the finite four-pet invariant. Run `swift test --filter AppLaunchTests` and `swift test`.
 
-- [ ] **Step 3: Run complete safety suite**
+- [x] **Step 3: Run complete safety suite**
 
 Run:
 
@@ -267,10 +267,10 @@ codesign --verify --deep --strict --verbose=2 build/DesktopPets.app
 
 Require zero failures, strict build success, `status: ok`, four pet windows, the fallback controller, and strict signature validity.
 
-- [ ] **Step 4: Run and inspect the ordinary app**
+- [x] **Step 4: Run and inspect the ordinary app**
 
 Run `./script/build_and_run.sh`, wait for `DesktopPets`, inspect it with `--inspect-running`, and verify four uniformly sized pet windows plus the fallback. Leave the final app running.
 
-- [ ] **Step 5: Record acceptance and finish**
+- [x] **Step 5: Record acceptance and finish**
 
 Update the acceptance matrix with action catalog/menu/feedback evidence and exact test counts. Mark Phase 10 complete. Run `git diff --check`, commit with `docs: record action center acceptance`, and require `git status --short` to be empty.
