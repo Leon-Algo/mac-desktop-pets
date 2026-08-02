@@ -44,7 +44,7 @@ final class AppLaunchTests: XCTestCase {
         let report = InteractionSelfTest.run()
 
         XCTAssertEqual(report.status, "ok")
-        XCTAssertEqual(report.commandCount, 9)
+        XCTAssertEqual(report.commandCount, 14)
         XCTAssertEqual(report.petCount, 4)
         XCTAssertTrue(report.allFinite)
     }

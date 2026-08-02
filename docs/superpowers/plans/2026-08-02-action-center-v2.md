@@ -245,11 +245,11 @@ Commit with `feat: show pet action motion and feedback`.
 **Interfaces:**
 - Produces: interaction self-test coverage for four manual actions plus group play.
 
-- [ ] **Step 1: Extend interaction self-test RED**
+- [x] **Step 1: Extend interaction self-test RED**
 
 Add the four individual action requests and one group request to `InteractionSelfTest.run()`. Update the expected command count and assert every result is handled/action-performed. Run `swift test --filter AppLaunchTests/testInteractionSelfTestExercisesCommandsAndPreservesFourFinitePets` and confirm the old command count fails.
 
-- [ ] **Step 2: Implement self-test reporting and verify GREEN**
+- [x] **Step 2: Implement self-test reporting and verify GREEN**
 
 Count typed action outcomes as successful commands and keep the finite four-pet invariant. Run `swift test --filter AppLaunchTests` and `swift test`.
 
