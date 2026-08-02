@@ -105,3 +105,6 @@
 - The first release action set will therefore use four visually separable and reliable commands: `打招呼`, `原地跳`, `翻个跟头`, and `趴下睡觉`; the existing group gather/play command remains available as `四人集合玩耍`.
 - Feedback should be a non-modal `CATextLayer` bubble owned by each `PetSpriteView`, with a generation token so a newer message cannot be dismissed by an older timer.
 - Manual commands use typed IDs and outcomes. Per-person pause is cleared on a direct command, while global pause rejects the command with a visible explanation instead of silently changing the global setting.
+- `PetAgent.pose.phase` currently wraps every second. For a 1.4-second roll, it must emit normalized roll progress instead of the ordinary repeating gait phase, otherwise the rotation snaps after one second.
+- Manual duration needs lightweight agent state (`manualActionID`) so manual greet and sleep can expire at catalog-defined durations without changing unrelated autonomous behavior.
+- `PetWindowCoordinator` is the narrow feedback bridge: it can expose `showFeedback(for:message:duration:)` while keeping feedback-layer ownership inside `PetSpriteView`.

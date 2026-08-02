@@ -85,7 +85,7 @@ Phase 10 — Discoverable action center in progress
 - [x] Confirm the recommended action-center direction and obtain authorization to proceed
 - [x] Inspect current world states, rendering transforms, menus, panels, and command routing
 - [x] Write and self-review the action-center design specification
-- [ ] Write the detailed TDD implementation plan
+- [x] Write the detailed TDD implementation plan
 - [ ] Implement the action catalog and deterministic action commands
 - [ ] Implement discoverable action menus and transient feedback bubbles
 - [ ] Add the first four clearly differentiated manual actions

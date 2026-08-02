@@ -121,4 +121,5 @@
 - Created `feature/action-center-v2` from the accepted `main` milestone.
 - Began context inspection: existing menus expose only `做个动作`, while the world already has deterministic state transitions suitable for a typed action layer.
 - Completed the approved written design for a typed catalog, nested native menus, four individual actions, group play, and non-modal feedback bubbles. Self-review found no placeholders, contradictions, or unresolved scope decisions.
+- Wrote the five-task TDD implementation plan covering catalog/state, deterministic world actions, native menus, feedback rendering, and full release verification.
 - **Status:** in_progress
