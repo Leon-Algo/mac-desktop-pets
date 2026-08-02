@@ -76,6 +76,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         guard let rawValue = (sender as? NSMenuItem)?.representedObject as? String,
               let preset = PetScalePreset(rawValue: rawValue) else { return }
         preferences.petScale = preset
+        runner?.setScale(preset)
         persistAndRefresh()
     }
 

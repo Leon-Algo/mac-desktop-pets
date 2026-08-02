@@ -29,6 +29,38 @@ final class PanelConfigurationTests: XCTestCase {
         XCTAssertEqual(frame.minY, 230, accuracy: 0.001)
     }
 
+    func testCoordinatorScalesPanelsContentAndGroundOffsetForEveryPreset() throws {
+        let expectedSizes: [PetScalePreset: CGSize] = [
+            .quarter: CGSize(width: 45, height: 40),
+            .half: CGSize(width: 90, height: 80),
+            .original: CGSize(width: 180, height: 160),
+        ]
+        let pose = PetPose(
+            id: "person-left",
+            position: WorldPoint(x: 300, y: 250),
+            state: .crawl,
+            facing: .right,
+            phase: 0.25,
+            supportID: nil
+        )
+
+        for preset in PetScalePreset.allCases {
+            let coordinator = PetWindowCoordinator(characters: CharacterCatalog.fallback.characters)
+            coordinator.setScale(preset)
+            coordinator.apply(poses: [pose])
+
+            let panel = try XCTUnwrap(
+                coordinator.allPanels.first { $0.petIdentifier == "person-left" }
+            )
+            let expected = try XCTUnwrap(expectedSizes[preset])
+            XCTAssertEqual(panel.frame.size.width, expected.width, accuracy: 0.001)
+            XCTAssertEqual(panel.frame.size.height, expected.height, accuracy: 0.001)
+            XCTAssertEqual(panel.contentView?.bounds.size, expected)
+            XCTAssertEqual(panel.frame.midX, 300, accuracy: 0.5)
+            XCTAssertEqual(panel.frame.minY, 250 - 20 * preset.factor, accuracy: 0.001)
+        }
+    }
+
     func testFullClickThroughOverrideIgnoresMouseForEveryPanel() {
         let coordinator = PetWindowCoordinator(characters: CharacterCatalog.fallback.characters)
         coordinator.updateMouseAcceptance(at: CGPoint(x: 0, y: 0), fullyClickThrough: true)

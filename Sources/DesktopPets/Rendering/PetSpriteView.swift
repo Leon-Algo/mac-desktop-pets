@@ -11,6 +11,7 @@ final class PetSpriteView: NSView {
     private let alphaMask: PetAlphaMask
     private var clickInterpreter = ClickInterpreter()
     private var pendingSingleClick: DispatchWorkItem?
+    private var renderScale: CGFloat = 1
 
     init(frame frameRect: NSRect, character: CharacterManifest) {
         petIdentifier = character.id
@@ -31,6 +32,17 @@ final class PetSpriteView: NSView {
 
     required init?(coder: NSCoder) {
         nil
+    }
+
+    func setRenderScale(_ factor: CGFloat) {
+        renderScale = factor
+        let size = CGSize(
+            width: PetWindowCoordinator.basePanelSize.width * factor,
+            height: PetWindowCoordinator.basePanelSize.height * factor
+        )
+        frame = NSRect(origin: .zero, size: size)
+        petLayer.bounds = CGRect(origin: .zero, size: size)
+        petLayer.position = CGPoint(x: size.width / 2, y: 20 * factor)
     }
 
     func containsVisiblePet(at point: CGPoint) -> Bool {
@@ -126,7 +138,10 @@ final class PetSpriteView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         petLayer.setAffineTransform(transform)
-        petLayer.position = CGPoint(x: bounds.midX, y: 20 + max(0, stride) * 4)
+        petLayer.position = CGPoint(
+            x: bounds.midX,
+            y: 20 * renderScale + max(0, stride) * 4 * renderScale
+        )
         petLayer.opacity = opacity
         CATransaction.commit()
     }

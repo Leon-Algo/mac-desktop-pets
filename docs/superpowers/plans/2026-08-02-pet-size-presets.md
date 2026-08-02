@@ -79,23 +79,23 @@ Run `swift test --filter PreferencesTests` and `swift test --filter CommandRouti
 - Produces: `PetSpriteView.setRenderScale(_ factor: CGFloat)`.
 - Produces: `WorldRunner.setScale(_ preset: PetScalePreset)`.
 
-- [ ] **Step 1: Write panel RED tests**
+- [x] **Step 1: Write panel RED tests**
 
 For all presets, apply a pose at `(300, 250)` and assert panel dimensions equal 45×40, 90×80, or 180×160, `midX == 300`, and `minY == 250 - 20 * factor`. Assert the sprite view bounds equal its panel bounds after resizing.
 
-- [ ] **Step 2: Verify panel RED**
+- [x] **Step 2: Verify panel RED**
 
 Run `swift test --filter PanelConfigurationTests` and confirm failures are caused by missing scale APIs and fixed panel geometry.
 
-- [ ] **Step 3: Implement coordinated resizing**
+- [x] **Step 3: Implement coordinated resizing**
 
 Keep `basePanelSize = 180×160`, store the active preset, derive panel size and ground offset from its factor, resize `PetPanel` and `PetSpriteView`, update CALayer bounds/anchor position, and reapply poses after `WorldRunner` changes scale.
 
-- [ ] **Step 4: Verify panel GREEN**
+- [x] **Step 4: Verify panel GREEN**
 
 Run `swift test --filter PanelConfigurationTests` and `swift test --filter ControlCenterStateTests`.
 
-- [ ] **Step 5: Commit rendering slice**
+- [x] **Step 5: Commit rendering slice**
 
 Commit scale-aware panels, views, runner routing, and tests.
 

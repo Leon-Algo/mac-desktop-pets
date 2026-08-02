@@ -15,6 +15,7 @@ final class WorldRunner: NSObject {
     private var lastGeometryRefresh = 0.0
     private var fullyClickThrough = false
     private var hiddenPetIDs: Set<String> = []
+    private var scalePreset = PetScalePreset.original
     private let characters: [CharacterManifest]
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "world")
     var onControlStateChange: (([PetControlState]) -> Void)?
@@ -40,6 +41,9 @@ final class WorldRunner: NSObject {
     func start(preferences: AppPreferences) {
         world.setPaused(preferences.paused)
         fullyClickThrough = preferences.clickThrough
+        scalePreset = preferences.petScale
+        windows.setScale(preferences.petScale)
+        windows.apply(poses: world.poses)
         hiddenPetIDs = preferences.petsHidden ? Set(characters.map(\.id)) : []
         preferences.petsHidden ? windows.hide() : windows.show()
         lastTick = ProcessInfo.processInfo.systemUptime
@@ -78,6 +82,12 @@ final class WorldRunner: NSObject {
         windows.updateMouseAcceptance(at: NSEvent.mouseLocation, fullyClickThrough: enabled)
     }
 
+    func setScale(_ preset: PetScalePreset) {
+        scalePreset = preset
+        windows.setScale(preset)
+        windows.apply(poses: world.poses)
+    }
+
     func recall() {
         let display = obstacleMap.displays.first ?? WorldRect(x: 0, y: 0, width: 1440, height: 900)!
         world.recall(to: display)
@@ -96,6 +106,7 @@ final class WorldRunner: NSObject {
             "states": world.poses.map { $0.state.rawValue },
             "interactionMode": fullyClickThrough ? "full-pass-through" : "shape-aware",
             "hiddenPetCount": hiddenPetIDs.count,
+            "petScale": scalePreset.rawValue,
         ]
     }
 

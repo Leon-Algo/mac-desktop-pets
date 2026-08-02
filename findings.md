@@ -92,3 +92,4 @@
 - `PetWorld` clamps against fixed 90-point half-width and 140-point top clearance; these must become scale-aware to prevent small pets retaining oversized invisible boundaries.
 - Packaged inspection currently recognizes only four 180×160 windows and must accept the active supported preset.
 - Preferences use synthesized Codable without a size field, so explicit backward-compatible decoding is required for upgrades.
+- AppKit quantizes the origin of the odd-width 45-point quarter-size panel to a whole point, creating at most 0.5 point of horizontal anchor variance.

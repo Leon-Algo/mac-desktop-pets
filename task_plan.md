@@ -109,3 +109,4 @@ Phase 9 — Adjustable pet sizes in progress
 | First-run hint was marked shown but not presented by the accessory app | 2 | Activation alone was insufficient; temporarily use regular activation policy for modal alerts, then restore accessory policy after dismissal. |
 | A zsh-only `$pipestatus` assertion was written with bash syntax during a RED test command | 1 | Read the compiler failure directly and used ordinary `&&` commands for subsequent Swift test runs. |
 | Computer Use could read pet windows but returned `AXError.notImplemented` for the nonactivating fallback panel | 1 | Added an accessible panel title, then used the screenshot workflow plus Core Graphics input on the read-only resolved panel coordinates for live menu acceptance. |
+| AppKit quantized the 45-point-wide quarter-size panel origin to a whole point | 1 | Kept the exact 45×40 size and accepted the unavoidable maximum 0.5-point horizontal anchor variance. |

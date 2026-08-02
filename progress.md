@@ -106,3 +106,6 @@
 - Added a backward-compatible Codable preset model. Legacy preference JSON keeps all booleans and gains the 50% size; all three presets round-trip.
 - Added the shared `人物大小` submenu with exactly one checked preset and validated represented values.
 - Preference and command-routing slices pass their focused tests; rendering/world integration remains in progress.
+- Added live panel and Core Animation resizing for all three presets. The content view and normalized alpha hit region now match the actual panel footprint, and the ground offset scales with the visible character.
+- AppKit's unavoidable 0.5-point horizontal quantization at the odd 45-point width is documented and covered by the panel test.
+- Panel and runner control-state suites pass; world-bound integration remains in progress.

@@ -2,16 +2,17 @@ import AppKit
 
 @MainActor
 final class PetWindowCoordinator {
-    static let panelSize = CGSize(width: 180, height: 160)
+    static let basePanelSize = CGSize(width: 180, height: 160)
 
     private var entries: [String: (panel: PetPanel, view: PetSpriteView)] = [:]
     private let orderedIdentifiers: [String]
+    private var scalePreset = PetScalePreset.original
 
     init(characters: [CharacterManifest], interactionHandler: ((PetInteraction) -> Void)? = nil) {
         orderedIdentifiers = characters.map(\.id)
         for character in characters {
-            let panel = PetPanel(identifier: character.id, size: Self.panelSize)
-            let view = PetSpriteView(frame: NSRect(origin: .zero, size: Self.panelSize), character: character)
+            let panel = PetPanel(identifier: character.id, size: Self.basePanelSize)
+            let view = PetSpriteView(frame: NSRect(origin: .zero, size: Self.basePanelSize), character: character)
             view.interactionHandler = interactionHandler
             panel.contentView = view
             entries[character.id] = (panel, view)
@@ -23,14 +24,22 @@ final class PetWindowCoordinator {
 
     func frame(for identifier: String) -> NSRect? { entries[identifier]?.panel.frame }
 
+    func setScale(_ preset: PetScalePreset) {
+        scalePreset = preset
+        entries.values.forEach { $0.view.setRenderScale(CGFloat(preset.factor)) }
+    }
+
     func apply(poses: [PetPose]) {
+        let size = scalePreset.panelSize
+        let groundOffset = 20 * scalePreset.factor
         for pose in poses {
             guard let entry = entries[pose.id] else { continue }
             let origin = CGPoint(
-                x: pose.position.x - Self.panelSize.width / 2,
-                y: pose.position.y - 20
+                x: pose.position.x - size.width / 2,
+                y: pose.position.y - groundOffset
             )
-            entry.panel.setFrame(NSRect(origin: origin, size: Self.panelSize), display: true)
+            entry.panel.setFrame(NSRect(origin: origin, size: size), display: true)
+            entry.view.setRenderScale(CGFloat(scalePreset.factor))
             entry.view.apply(pose)
         }
     }
