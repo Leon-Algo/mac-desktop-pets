@@ -33,6 +33,8 @@
 - Task 1 GREEN: four safe defaults, 12 built-in avatar choices, five personalities, six outfits, safe source validation, name normalization, unique IDs, and the 1–8 invariant pass four focused tests.
 - Task 2 RED: store and avatar-processing tests failed on missing APIs.
 - Task 2 GREEN: atomic roster round-trip/recovery, invalid-save protection, safe local avatar import, 512-square PNG normalization, and orphan cleanup pass five focused tests.
+- Task 3 RED: editor and avatar tests failed on absent model/renderer APIs.
+- Task 3 GREEN: 12 distinct procedural avatars, explicit body styles, imported/legacy avatar resolution, roster-to-manifest conversion, and draft add/delete/reorder/template/cancel behavior pass 15 focused tests.
 - **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.

@@ -63,10 +63,10 @@
 **Interfaces:**
 - Produces: explicit avatar/body-style fields on manifests, asset resolution without magic IDs, draft add/delete/move/update/apply-template APIs, `canAdd` and `canDelete`.
 
-- [ ] Write failing rendering/editor tests covering all 12 presets, imported images, add-to-eight, delete-to-one, reorder, template application, and validation.
-- [ ] Run focused tests to observe RED.
-- [ ] Implement deterministic procedural faces, imported/legacy loading, explicit styles, and pure draft editing.
-- [ ] Run focused tests and commit.
+- [x] Write failing rendering/editor tests covering all 12 presets, imported images, add-to-eight, delete-to-one, reorder, template application, and validation.
+- [x] Run focused tests to observe RED.
+- [x] Implement deterministic procedural faces, imported/legacy loading, explicit styles, and pure draft editing.
+- [x] Run focused tests and commit.
 
 ### Task 4: Native character settings window
 

@@ -50,6 +50,28 @@ struct CharacterRoster: Codable, Equatable, Sendable {
         profile(id: "default-violet", name: "紫团", avatar: .violet, outfit: .violet, personality: .curious),
     ])
 
+    var manifests: [CharacterManifest] {
+        let frame = FrameRect(x: 0, y: 0, width: 1, height: 1)
+        let clip = AnimationClip(frames: [frame], fps: 8)
+        let animations = Dictionary(uniqueKeysWithValues: [
+            "idle", "crawl", "turn", "climb", "hang", "jump", "fall", "sleep", "chase", "greet", "play",
+        ].map { ($0, clip) })
+        return profiles.map { profile in
+            CharacterManifest(
+                id: profile.id,
+                displayName: profile.displayName,
+                atlasName: nil,
+                palette: profile.outfit.palette,
+                personality: profile.personality,
+                anchor: NormalizedPoint(x: 0.5, y: 0.08),
+                collisionBody: FrameRect(x: 0.15, y: 0.04, width: 0.7, height: 0.72),
+                animations: animations,
+                avatarSource: profile.avatarSource,
+                bodyStyle: profile.bodyStyle
+            )
+        }
+    }
+
     private static func profile(
         id: String,
         name: String,

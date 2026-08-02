@@ -54,6 +54,8 @@ struct CharacterManifest: Codable, Equatable, Sendable {
     let anchor: NormalizedPoint
     let collisionBody: FrameRect
     let animations: [String: AnimationClip]
+    var avatarSource: AvatarSource? = nil
+    var bodyStyle: BodyStyle? = nil
 
     func animation(named name: String) -> AnimationClip? {
         animations[name] ?? animations["idle"]
