@@ -124,4 +124,5 @@
 - Wrote the five-task TDD implementation plan covering catalog/state, deterministic world actions, native menus, feedback rendering, and full release verification.
 - Task 1 RED: catalog and feedback tests failed on the absent typed APIs. GREEN: five stable action definitions and generation-safe feedback state pass focused tests and all 83 tests.
 - Task 2 RED: manual-action tests failed on absent routing and roll state. GREEN: four distinct individual states, deterministic durations, non-wrapping roll progress, group execution, individual resume, global-pause rejection, and invalid-request safety pass all 87 tests.
+- Task 3 RED: menu tests failed on the absent action-center and context APIs. GREEN: both persistent controls and per-pet right-click menus expose typed, explained action lists with no ambiguous `做个动作` label; all 89 tests pass.
 - **Status:** in_progress

@@ -128,6 +128,39 @@ final class CommandRoutingTests: XCTestCase {
         XCTAssertEqual(sizeMenu.items.map(\.state), [.off, .on, .off])
         XCTAssertEqual(sizeMenu.items.map { $0.representedObject as? String }, ["quarter", "half", "original"])
     }
+
+    @MainActor
+    func testSharedMenuExposesDiscoverableActionCenter() throws {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(
+            preferences: .defaults,
+            characters: CharacterCatalog.fallback.characters.map {
+                PetControlState(id: $0.id, displayName: $0.displayName, isHidden: false, isPaused: false)
+            }
+        )
+
+        let center = try XCTUnwrap(
+            controller.controlMenu.items.first { $0.title == "动作中心" }?.submenu
+        )
+        XCTAssertEqual(Array(center.items.prefix(4)).map(\.title), ["格子衫", "黑背心", "薄荷衫", "黑外套"])
+        let firstActions = try XCTUnwrap(center.items.first?.submenu)
+        XCTAssertEqual(firstActions.items.map(\.title), [
+            "👋 打个招呼", "⬆️ 原地跳一下", "🙈 翻个跟头", "💤 趴下睡觉",
+        ])
+        XCTAssertEqual(
+            firstActions.items.compactMap { ($0.representedObject as? PetActionRequest)?.targetID },
+            Array(repeating: "person-left", count: 4)
+        )
+        XCTAssertEqual(firstActions.items.map(\.toolTip), PetActionCatalog.individual.map(\.explanation))
+        let group = try XCTUnwrap(center.items.first { $0.title == "🎉 四人集合玩耍" })
+        XCTAssertEqual(group.representedObject as? PetActionRequest, PetActionRequest(actionID: .gatherPlay, targetID: nil))
+
+        let management = try XCTUnwrap(
+            controller.controlMenu.items.first { $0.title == "四人管理" }?.submenu?.items.first?.submenu
+        )
+        XCTAssertNotNil(management.items.first { $0.title == "让他做动作…" }?.submenu)
+        XCTAssertFalse(management.items.contains { $0.title == "做个动作" })
+    }
 }
 
 @MainActor

@@ -154,27 +154,27 @@ Commit with `feat: add deterministic manual pet actions`.
 - Consumes: `PetActionCatalog.individual`, `PetActionCatalog.group`, and typed `PetActionRequest` represented objects.
 - Produces: `AppController.performPetAction(_:)` and nested `NSMenu` action surfaces.
 
-- [ ] **Step 1: Write shared-menu RED tests**
+- [x] **Step 1: Write shared-menu RED tests**
 
 Assert a top-level `动作中心` exists. Verify its person menus are ordered `格子衫`, `黑背心`, `薄荷衫`, `黑外套`; each contains the four exact individual titles and typed requests for that person. Verify `🎉 四人集合玩耍` stores a request with `targetID == nil`. Verify every item tooltip equals its catalog explanation.
 
-- [ ] **Step 2: Run shared-menu RED**
+- [x] **Step 2: Run shared-menu RED**
 
 Run `swift test --filter CommandRoutingTests/testSharedMenuExposesDiscoverableActionCenter`. Expected: failure because no `动作中心` item exists.
 
-- [ ] **Step 3: Implement shared menus and selector routing**
+- [x] **Step 3: Implement shared menus and selector routing**
 
 Add `动作中心` after `召回四人`. Replace `做个动作` in each character management menu with a `让他做动作…` submenu. Build action items through one helper that assigns `target`, `representedObject`, and `toolTip`. Implement `performPetAction(_:)` to validate a typed request and call `runner?.handle(.performAction(request))`.
 
-- [ ] **Step 4: Write context-menu RED tests**
+- [x] **Step 4: Write context-menu RED tests**
 
 Build a `PetSpriteView` context menu and assert `让他做动作…` contains the same four definitions, no visible title equals `做个动作`, and invoking the first submenu item's target/action emits `.performAction(.init(actionID: .wave, targetID: petIdentifier))`.
 
-- [ ] **Step 5: Implement the context submenu and verify GREEN**
+- [x] **Step 5: Implement the context submenu and verify GREEN**
 
 Replace `reactFromMenu` with typed action routing. Keep single-click mapped to `.react` for backward-compatible direct greeting and double-click mapped to group play. Run `swift test --filter CommandRoutingTests`, `swift test --filter PetViewInteractionTests`, then `swift test`.
 
-- [ ] **Step 6: Commit menu slice**
+- [x] **Step 6: Commit menu slice**
 
 Commit with `feat: add discoverable desktop pet action menus`.
 

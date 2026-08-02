@@ -97,7 +97,21 @@ final class PetSpriteView: NSView {
 
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = NSMenu(title: "人物操作")
-        addMenuItem("做个动作", action: #selector(reactFromMenu(_:)), to: menu)
+        let actions = NSMenuItem(title: "让他做动作…", action: nil, keyEquivalent: "")
+        let actionMenu = NSMenu(title: "让他做动作")
+        for definition in PetActionCatalog.individual {
+            let item = NSMenuItem(
+                title: definition.title,
+                action: #selector(performContextAction(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = PetActionRequest(actionID: definition.id, targetID: petIdentifier)
+            item.toolTip = definition.explanation
+            actionMenu.addItem(item)
+        }
+        actions.submenu = actionMenu
+        menu.addItem(actions)
         addMenuItem("暂停/继续这个人", action: #selector(togglePauseFromMenu(_:)), to: menu)
         addMenuItem("召回这个人", action: #selector(recallFromMenu(_:)), to: menu)
         menu.addItem(.separator())
@@ -110,7 +124,10 @@ final class PetSpriteView: NSView {
         return menu
     }
 
-    @objc private func reactFromMenu(_ sender: Any?) { interactionHandler?(.react(id: petIdentifier)) }
+    @objc func performContextAction(_ sender: Any?) {
+        guard let request = (sender as? NSMenuItem)?.representedObject as? PetActionRequest else { return }
+        interactionHandler?(.performAction(request))
+    }
     @objc private func togglePauseFromMenu(_ sender: Any?) { interactionHandler?(.togglePause(id: petIdentifier)) }
     @objc private func recallFromMenu(_ sender: Any?) { interactionHandler?(.recall(id: petIdentifier)) }
     @objc private func hideFromMenu(_ sender: Any?) { interactionHandler?(.hide(id: petIdentifier)) }

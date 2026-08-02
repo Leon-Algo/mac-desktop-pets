@@ -40,6 +40,20 @@ final class StatusMenuController: NSObject {
         addItem("召回四人", action: #selector(AppController.recallPets(_:)), key: "r")
         controlMenu.addItem(.separator())
 
+        let actionCenterItem = NSMenuItem(title: "动作中心", action: nil, keyEquivalent: "")
+        let actionCenterMenu = NSMenu(title: "动作中心")
+        for character in characters {
+            let person = NSMenuItem(title: character.displayName, action: nil, keyEquivalent: "")
+            person.submenu = actionMenu(targetID: character.id)
+            actionCenterMenu.addItem(person)
+        }
+        actionCenterMenu.addItem(.separator())
+        for definition in PetActionCatalog.group {
+            actionCenterMenu.addItem(actionItem(definition: definition, targetID: nil))
+        }
+        actionCenterItem.submenu = actionCenterMenu
+        controlMenu.addItem(actionCenterItem)
+
         let peopleItem = NSMenuItem(title: "四人管理", action: nil, keyEquivalent: "")
         let peopleMenu = NSMenu(title: "四人管理")
         for character in characters {
@@ -178,8 +192,30 @@ final class StatusMenuController: NSObject {
         addCharacterItem(character.visibilityTitle, action: #selector(AppController.togglePetVisibility(_:)), id: character.id, to: menu)
         addCharacterItem("召回", action: #selector(AppController.recallPet(_:)), id: character.id, to: menu)
         addCharacterItem(character.pauseTitle, action: #selector(AppController.togglePetPause(_:)), id: character.id, to: menu)
-        addCharacterItem("做个动作", action: #selector(AppController.reactPet(_:)), id: character.id, to: menu)
+        let actions = NSMenuItem(title: "让他做动作…", action: nil, keyEquivalent: "")
+        actions.submenu = actionMenu(targetID: character.id)
+        menu.addItem(actions)
         return menu
+    }
+
+    private func actionMenu(targetID: String) -> NSMenu {
+        let menu = NSMenu(title: "让他做动作")
+        PetActionCatalog.individual.forEach {
+            menu.addItem(actionItem(definition: $0, targetID: targetID))
+        }
+        return menu
+    }
+
+    private func actionItem(definition: PetActionDefinition, targetID: String?) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: definition.title,
+            action: #selector(AppController.performPetAction(_:)),
+            keyEquivalent: ""
+        )
+        item.target = target
+        item.representedObject = PetActionRequest(actionID: definition.id, targetID: targetID)
+        item.toolTip = definition.explanation
+        return item
     }
 
     @discardableResult

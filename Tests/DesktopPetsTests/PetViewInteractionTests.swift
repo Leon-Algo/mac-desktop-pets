@@ -56,4 +56,38 @@ final class PetViewInteractionTests: XCTestCase {
         XCTAssertTrue(titles.contains("打开总台"))
         XCTAssertTrue(titles.contains("退出桌面伙伴"))
     }
+
+    @MainActor
+    func testPetContextMenuExposesTypedDiscoverableActions() throws {
+        let view = PetSpriteView(
+            frame: NSRect(x: 0, y: 0, width: 180, height: 160),
+            character: CharacterCatalog.fallback.characters[0]
+        )
+        let event = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .rightMouseDown,
+            location: .zero,
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 1,
+            pressure: 0
+        ))
+        let menu = try XCTUnwrap(view.menu(for: event))
+        let actions = try XCTUnwrap(menu.items.first { $0.title == "让他做动作…" }?.submenu)
+        XCTAssertEqual(actions.items.map(\.title), PetActionCatalog.individual.map(\.title))
+        XCTAssertEqual(
+            actions.items.compactMap { $0.representedObject as? PetActionRequest },
+            PetActionCatalog.individual.map {
+                PetActionRequest(actionID: $0.id, targetID: "person-left")
+            }
+        )
+        XCTAssertFalse(menu.items.contains { $0.title == "做个动作" })
+
+        var received: PetInteraction?
+        view.interactionHandler = { received = $0 }
+        view.performContextAction(actions.items[0])
+        XCTAssertEqual(received, .performAction(PetActionRequest(actionID: .wave, targetID: "person-left")))
+    }
 }

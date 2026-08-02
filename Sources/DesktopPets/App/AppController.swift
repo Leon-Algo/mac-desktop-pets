@@ -142,6 +142,11 @@ final class AppController: NSObject, NSApplicationDelegate {
         runner?.handle(.react(id: id))
     }
 
+    @objc func performPetAction(_ sender: Any?) {
+        guard let request = (sender as? NSMenuItem)?.representedObject as? PetActionRequest else { return }
+        runner?.handle(.performAction(request))
+    }
+
     private func persistAndRefresh() {
         preferenceStore.save(preferences)
         refreshControls()
