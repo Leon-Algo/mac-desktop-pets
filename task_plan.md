@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 5 — Verification and handoff complete for the local-development build
+Phase 6 — Direct pet interaction implementation
 
 ## Phases
 
@@ -42,6 +42,15 @@ Phase 5 — Verification and handoff complete for the local-development build
 - [x] Record Windows-porting design notes
 - **Status:** complete
 
+### Phase 6: Direct pet interaction
+- [x] Confirm interaction design with the user
+- [x] Record the design and implementation plan
+- [ ] Implement shape-aware mouse acceptance and interaction routing with TDD
+- [ ] Implement click, double-click, drag/release, and per-pet context commands
+- [ ] Add discoverable stop/quit guidance
+- [ ] Rebuild, launch, exercise, and package the updated app
+- **Status:** in_progress
+
 ## Initial Decisions
 | Decision | Rationale |
 |---|---|
@@ -53,6 +62,7 @@ Phase 5 — Verification and handoff complete for the local-development build
 | Prototype with placeholder art before finalizing four characters | Retires the highest platform-integration risk before expensive asset production. |
 | Use semi-realistic 2D miniature people | User approved the recommended option and directed implementation using best practices. |
 | Support macOS 13+ and verify on Apple Silicon macOS 26.5.2 | Matches available APIs while covering a broader practical deployment floor than the test machine. |
+| Shape-aware interaction mode by default | Enables direct pet interaction while transparent panel regions continue passing mouse input to the desktop. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

@@ -66,3 +66,9 @@
 - All 39 tests pass normally and under AddressSanitizer. A strict Swift 6 concurrency release build also passes.
 - The packaged app launches as one menu-bar process with four on-screen pet panels, uses empty entitlements, and passes `codesign --verify --deep --strict` with ad-hoc signing.
 - No Developer ID certificate is installed (`0 valid identities found`), so Gatekeeper correctly rejects the local ad-hoc build for public distribution. Developer ID signing and Apple notarization remain release operations, not functional defects.
+
+## Direct-interaction findings — 2026-08-02
+- The existing paw status menu already exposes pause, hide, and quit, but there is no first-launch guidance, so the control path is not discoverable.
+- Default `clickThrough = true` makes every pet panel ignore mouse events. Turning it off only makes the rectangular panel receive clicks; `PetSpriteView` currently has no mouse handlers.
+- AppKit windows are rectangular at the WindowServer level. Shape-aware pass-through therefore requires dynamically toggling `ignoresMouseEvents` from the rendered alpha mask at the current mouse location, while pinning acceptance during a drag.
+- The approved interaction set is: single-click reaction, double-click group play, drag/release with falling, right-click per-pet commands, and an explicit first-launch explanation of the paw menu.

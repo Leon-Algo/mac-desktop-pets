@@ -51,3 +51,9 @@
 - Privacy audit: no screen capture, Accessibility, networking, window-title collection, or nonempty entitlements.
 - Generated and visually inspected a 1440×320 alpha-enabled runtime snapshot.
 - Public Developer ID signing/notarization is unavailable on this machine and is documented rather than claimed.
+
+### Phase 6 — Direct pet interaction
+- **Status:** in_progress
+- User reported that stop/quit controls were difficult to discover and pets could not be clicked.
+- Confirmed the existing cause: default full-window click-through plus no view mouse-event routing.
+- User approved the recommended single-click, double-click, drag/release, right-click, and first-launch guidance design.
