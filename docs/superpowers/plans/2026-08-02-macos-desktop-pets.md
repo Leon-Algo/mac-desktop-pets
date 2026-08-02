@@ -4,9 +4,9 @@
 
 **Goal:** Build and verify a native macOS menu-bar app with four recognizable crawling desktop pets that react to screen and visible-window edges.
 
-**Architecture:** A SwiftPM AppKit executable separates deterministic world simulation from macOS window enumeration and transparent-panel rendering. Character atlases and manifests use platform-neutral PNG/JSON contracts, with procedural fallback assets guaranteeing launch even if a production atlas is unavailable.
+**Architecture:** A SwiftPM AppKit executable separates deterministic world simulation from macOS window enumeration and transparent-panel rendering. Character assets and manifests use platform-neutral PNG/JSON contracts, with procedural fallback assets guaranteeing launch even if a portrait resource is unavailable.
 
-**Tech Stack:** Swift 6.3, AppKit, SpriteKit, Core Graphics, XCTest/Swift Testing, SwiftPM, shell packaging scripts.
+**Tech Stack:** Swift 6.3, AppKit, Core Animation, Core Graphics, XCTest/Swift Testing, SwiftPM, shell packaging scripts.
 
 ## Global Constraints
 
@@ -23,7 +23,7 @@
 - `Sources/DesktopPets/App/` — application lifecycle, status item, command routing, preferences.
 - `Sources/DesktopPets/World/` — geometry, obstacles, deterministic simulation, pet state machine.
 - `Sources/DesktopPets/Platform/` — screen and Core Graphics window adapters.
-- `Sources/DesktopPets/Rendering/` — transparent panels, SpriteKit character view, texture/fallback rendering.
+- `Sources/DesktopPets/Rendering/` — transparent panels, Core Animation character view, portrait/fallback rendering.
 - `Sources/DesktopPets/Characters/` — portable manifest models, validation, catalog loading.
 - `Sources/DesktopPets/Resources/Characters/` — bundled JSON and PNG character packages.
 - `Tests/DesktopPetsTests/` — deterministic unit and integration tests.
@@ -137,8 +137,8 @@
 
 - [ ] Write tests for nonactivating/borderless configuration values, click-through toggling, four stable panel identifiers, and pose-to-panel coordinate mapping.
 - [ ] Run `swift test --filter PanelConfigurationTests`; verify failures precede implementation.
-- [ ] Implement transparent non-key panels with all-Spaces/full-screen auxiliary behavior and SpriteKit rendering.
-- [ ] Implement friendly procedural human fallback figures with identity-specific face/hair/glasses/clothing cues and crawling limb animation.
+- [x] Implement transparent non-key panels with all-Spaces/full-screen auxiliary behavior and Core Animation rendering.
+- [x] Implement friendly procedural human fallback figures with identity-specific face/hair/glasses/clothing cues and crawling limb animation.
 - [ ] Add `--render-snapshot <path>` that renders all four fallback figures into a transparent PNG without launching persistent panels.
 - [ ] Run tests and verify the PNG is nonempty, has alpha, and contains four separated character bounds.
 - [ ] Commit the rendering subsystem.
@@ -221,4 +221,3 @@
 - [ ] Inspect the runtime snapshot visually for transparency, distinct identities, clipping, malformed assets, and desktop obstruction.
 - [ ] Write the final acceptance matrix with PASS/FAIL and exact evidence; fix any failure and repeat the affected verification rather than weakening criteria.
 - [ ] Mark the plan complete only when every required item passes; otherwise keep the goal active with the remaining evidence clearly identified.
-

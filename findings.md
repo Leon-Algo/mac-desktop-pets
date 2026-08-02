@@ -47,8 +47,49 @@
 - ScreenCaptureKit shareable content: https://developer.apple.com/documentation/screencapturekit/scshareablecontent
 - Accessibility AXUIElement: https://developer.apple.com/documentation/applicationservices/axuielement_h
 
-## Open questions
-1. Should the character art look like realistic photo cutouts, semi-realistic illustrated miniatures, or deliberately cartoonish chibi figures?
-2. What Mac model/processor and macOS version will be used for testing?
-3. Should pets ignore mouse input by default, or be draggable/clickable?
-4. Is sending the source image to an external image-generation service acceptable, or must all processing remain local?
+## Resolved product choices
+1. The local MVP uses recognizable photo faces with semi-realistic/stylized miniature crawling bodies.
+2. The build supports macOS 13+ and was verified on Apple Silicon macOS 26.5.2.
+3. Pets ignore mouse input by default; the menu can disable click-through.
+4. Runtime assets and processing are local. The attempted built-in identity-preserving generation never produced an uploaded-result artifact, so the shipped assets use deterministic local crops.
+
+## Implementation findings — 2026-08-02
+- The live Core Graphics probe returned one display and one accepted external application-window rectangle without ScreenCaptureKit or Accessibility APIs.
+- The first behavior test exposed an x-motion cancellation caused by reversing direction after vertical floor clamping. The implementation now reverses only when horizontal clamping occurs; the regression test passes.
+- The procedural renderer produced a transparent 1440×320 Retina PNG containing four separated crawling human figures with distinct clothing cues.
+- Visual inspection: pose, transparency, glasses, plaid shirt, mint shirt, and black/white clothing cues are clear. The procedural faces are not sufficiently recognizable as the four people and are only an operational fallback; production identity-preserving assets remain mandatory.
+- The built-in identity-preserving edit failed twice at the image service network boundary and produced no artifact. Per the image-generation workflow, no unapproved CLI/model fallback was used.
+- A deterministic local extraction from the 6528×4896 source produced four separately reviewed portrait crops. The runtime composite now uses the exact photographed faces/hair/glasses over the stylized crawling bodies; a transparent 1440×320 Retina verification image shows four recognizable separated identities.
+- Core Animation replaced SpriteKit for the single-layer procedural figures after an asleep-display run exposed CVDisplayLink startup errors. This removes an unnecessary display-link dependency while retaining pose transforms.
+- The final simulation cadence is 20 Hz with window metadata refreshed at 1 Hz. A release run stabilized around 5–6% CPU and 54 MB RSS on the test host.
+- The final obstacle model supports window-top landing, side-edge crossing detection, turn-or-climb reactions, falls, screen-safe clamping, and exclusion of Dock/menu-bar areas via `visibleFrame`.
+- All 39 tests pass normally and under AddressSanitizer. A strict Swift 6 concurrency release build also passes.
+- The packaged app launches as one menu-bar process with four on-screen pet panels, uses empty entitlements, and passes `codesign --verify --deep --strict` with ad-hoc signing.
+- No Developer ID certificate is installed (`0 valid identities found`), so Gatekeeper correctly rejects the local ad-hoc build for public distribution. Developer ID signing and Apple notarization remain release operations, not functional defects.
+
+## Direct-interaction findings — 2026-08-02
+- The existing paw status menu already exposes pause, hide, and quit, but there is no first-launch guidance, so the control path is not discoverable.
+- Default `clickThrough = true` makes every pet panel ignore mouse events. Turning it off only makes the rectangular panel receive clicks; `PetSpriteView` currently has no mouse handlers.
+- AppKit windows are rectangular at the WindowServer level. Shape-aware pass-through therefore requires dynamically toggling `ignoresMouseEvents` from the rendered alpha mask at the current mouse location, while pinning acceptance during a drag.
+- The approved interaction set is: single-click reaction, double-click group play, drag/release with falling, right-click per-pet commands, and an explicit first-launch explanation of the paw menu.
+
+## Persistent control-center investigation — 2026-08-02
+- The user reported that the paw status item is absent, leaving no obvious global pause/quit/restore path.
+- Reproduced on the live packaged app: process and four pet panels were active, while a full-screen capture of a normal desktop Space showed no paw item in the visible menu bar.
+- Ownership is not the immediate failure: `DesktopPetsApplication` strongly retains `AppController`, which strongly retains `StatusMenuController`, which strongly retains the `NSStatusItem`.
+- The status item is currently icon-only with `NSStatusItem.squareLength`; it does not set a text label, explicit visibility, or any lifecycle telemetry.
+- A separate minimal `TEST` status item launched in the same session was also absent from the visible menu bar. This indicates the environment/menu-bar presentation path can suppress new status items, so merely recreating the same icon-only item is not a reliable fix.
+- Full-screen Spaces also hide the macOS menu bar until it is revealed. The control design needs both a robust status item and an in-app fallback so users cannot become trapped after hiding all pets.
+- The completed status item reports healthy AppKit lifecycle properties (`isVisible`, button, and window all true) but remains pixel-suppressed in the current menu-bar environment. Diagnostics deliberately report this distinction instead of claiming visual visibility.
+- The launch-visible `🐾 总台` was captured at the top-right in both ordinary and full-screen desktop states. Its shared menu rendered global controls, `四人管理`, click-through, launch-at-login, diagnostics, and quit.
+- Live input acceptance proved: hide-all removes the four pet windows but leaves the fallback; recall restores four windows; resume changes window positions over 1.5 seconds; pause keeps all positions identical; quit removes the process.
+- A final review found that individually hiding all four characters must affect the global show/hide label. The effective visibility policy now changes the label to `显示宠物` and makes the next global click restore everyone.
+# 2026-08-02 — Pet size presets
+
+- Current pet panels and rendered canvases are fixed at 180×160 points.
+- Pose positions represent the feet/ground anchor; panel origin currently subtracts a fixed 20-point ground offset.
+- `PetSpriteView` uses a normalized alpha mask, so resized layer bounds can preserve accurate click-through without regenerating the identity image.
+- `PetWorld` clamps against fixed 90-point half-width and 140-point top clearance; these must become scale-aware to prevent small pets retaining oversized invisible boundaries.
+- Packaged inspection currently recognizes only four 180×160 windows and must accept the active supported preset.
+- Preferences use synthesized Codable without a size field, so explicit backward-compatible decoding is required for upgrades.
+- AppKit quantizes the origin of the odd-width 45-point quarter-size panel to a whole point, creating at most 0.5 point of horizontal anchor variance.
