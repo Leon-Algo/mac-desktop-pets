@@ -4,6 +4,8 @@ struct PetWorld: Sendable {
     private(set) var agents: [PetAgent]
     private var random: SeededRandom
     private var paused = false
+    private var pausedAgentIDs: Set<String> = []
+    private var draggingAgentIDs: Set<String> = []
 
     init(characters: [CharacterManifest], display: WorldRect, seed: UInt64) {
         let spacing = min(180, display.width / Double(max(characters.count + 1, 1)))
@@ -39,6 +41,76 @@ struct PetWorld: Sendable {
             agents[index].stateTime = 0
             agents[index].supportID = "screen-floor-\(display.x)-\(display.y)"
         }
+        pausedAgentIDs.removeAll()
+        draggingAgentIDs.removeAll()
+    }
+
+    mutating func handle(_ interaction: PetInteraction, obstacles: ObstacleMap) -> PetInteractionResult {
+        switch interaction {
+        case let .react(id):
+            guard let index = index(for: id) else { return .ignored }
+            transition(index, to: .greet)
+            return .handled
+        case let .gatherAndPlay(leaderID):
+            guard let leaderIndex = index(for: leaderID) else { return .ignored }
+            let leaderPosition = obstacles.clampedPetAnchor(
+                agents[leaderIndex].position,
+                halfWidth: 90,
+                topClearance: 140
+            )
+            let companions = agents.indices.filter { $0 != leaderIndex }
+            for (offset, index) in companions.enumerated() {
+                let rank = Double(offset + 1)
+                let side = offset.isMultiple(of: 2) ? -1.0 : 1.0
+                agents[index].position = obstacles.clampedPetAnchor(
+                    WorldPoint(x: leaderPosition.x + side * rank * 60, y: leaderPosition.y),
+                    halfWidth: 90,
+                    topClearance: 140
+                )
+                agents[index].velocity = WorldVector(dx: 0, dy: 0)
+                transition(index, to: .play)
+            }
+            agents[leaderIndex].position = leaderPosition
+            agents[leaderIndex].velocity = WorldVector(dx: 0, dy: 0)
+            transition(leaderIndex, to: .greet)
+            return .handled
+        case let .beginDrag(id, position), let .drag(id, position):
+            guard let index = index(for: id) else { return .ignored }
+            agents[index].position = obstacles.clampedPetAnchor(position, halfWidth: 90, topClearance: 140)
+            agents[index].velocity = WorldVector(dx: 0, dy: 0)
+            draggingAgentIDs.insert(id)
+            transition(index, to: .hang)
+            return .handled
+        case let .release(id, position):
+            guard let index = index(for: id) else { return .ignored }
+            agents[index].position = obstacles.clampedPetAnchor(position, halfWidth: 90, topClearance: 140)
+            agents[index].velocity = WorldVector(dx: 0, dy: 0)
+            draggingAgentIDs.remove(id)
+            transition(index, to: .fall)
+            return .handled
+        case let .togglePause(id):
+            guard let index = index(for: id) else { return .ignored }
+            if pausedAgentIDs.remove(id) != nil {
+                transition(index, to: .crawl)
+                return .pauseChanged(id: id, paused: false)
+            }
+            pausedAgentIDs.insert(id)
+            agents[index].velocity = WorldVector(dx: 0, dy: 0)
+            transition(index, to: .idle)
+            return .pauseChanged(id: id, paused: true)
+        case let .recall(id):
+            guard let index = index(for: id), let display = obstacles.displays.first else { return .ignored }
+            agents[index].position = WorldPoint(x: display.center.x, y: display.minY)
+            agents[index].velocity = WorldVector(dx: 0, dy: 0)
+            agents[index].supportID = "screen-floor-\(display.x)-\(display.y)"
+            pausedAgentIDs.remove(id)
+            draggingAgentIDs.remove(id)
+            transition(index, to: .crawl)
+            return .show(id: id)
+        case let .hide(id):
+            guard index(for: id) != nil else { return .ignored }
+            return .hide(id: id)
+        }
     }
 
     mutating func step(deltaTime: Double, obstacles: ObstacleMap) {
@@ -53,6 +125,8 @@ struct PetWorld: Sendable {
 
     private mutating func substep(dt: Double, obstacles: ObstacleMap) {
         for index in agents.indices {
+            guard !pausedAgentIDs.contains(agents[index].id),
+                  !draggingAgentIDs.contains(agents[index].id) else { continue }
             agents[index].stateTime += dt
             switch agents[index].state {
             case .crawl, .chase:
@@ -200,5 +274,9 @@ struct PetWorld: Sendable {
         agents[index].state = state
         agents[index].stateTime = 0
         if state != .crawl { agents[index].supportID = state == .climb ? agents[index].supportID : nil }
+    }
+
+    private func index(for id: String) -> Int? {
+        agents.firstIndex { $0.id == id }
     }
 }
