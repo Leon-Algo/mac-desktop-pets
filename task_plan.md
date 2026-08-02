@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 7 — Persistent control center complete
+Phase 8 — Compact menu-bar item in progress
 
 ## Phases
 
@@ -63,6 +63,14 @@ Phase 7 — Persistent control center complete
 - [x] Verify visibility after first launch, relaunch, full-screen transitions, and hiding characters
 - **Status:** complete
 
+### Phase 8: Compact menu-bar item
+- [x] Confirm the compact single-paw design and preserve accessibility/recovery behavior
+- [x] Write and self-review the design specification
+- [ ] Write the TDD implementation plan
+- [ ] Implement square status-item sizing and compact labeling
+- [ ] Run full automated, package, signing, and live-launch verification
+- **Status:** in_progress
+
 ## Initial Decisions
 | Decision | Rationale |
 |---|---|
@@ -76,6 +84,7 @@ Phase 7 — Persistent control center complete
 | Support macOS 13+ and verify on Apple Silicon macOS 26.5.2 | Matches available APIs while covering a broader practical deployment floor than the test machine. |
 | Shape-aware interaction mode by default | Enables direct pet interaction while transparent panel regions continue passing mouse input to the desktop. |
 | Use a labeled status item plus an independent fallback control | A same-session minimal status item was also suppressed, so a menu-bar-only fix cannot guarantee a stop/restore/quit route. |
+| Use a square single-paw native status item | The user prioritized minimizing menu-bar width on a notched display; tooltip, accessibility text, and the independent fallback preserve discoverability. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
