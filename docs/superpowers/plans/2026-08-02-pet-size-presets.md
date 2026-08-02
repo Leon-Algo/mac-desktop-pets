@@ -118,15 +118,15 @@ Set the world to `.quarter`, drag a pet beyond a 1200×800 display, and assert i
 
 Run the focused world test and confirm scale-aware bounds are missing.
 
-- [ ] **Step 3: Implement shared safety metrics**
+- [x] **Step 3: Implement shared safety metrics**
 
 Store the active factor in `PetWorld`, replace every fixed 90/140 clamp argument with `90 * factor` and `140 * factor`, and set the world preset both at runner startup and on live changes.
 
-- [ ] **Step 4: Verify world GREEN and full suite**
+- [x] **Step 4: Verify world GREEN and full suite**
 
 Run `swift test --filter PetWorldTests` followed by `swift test`.
 
-- [ ] **Step 5: Commit world slice**
+- [x] **Step 5: Commit world slice**
 
 Commit the scale-aware world bounds and tests.
 
@@ -142,15 +142,15 @@ Commit the scale-aware world bounds and tests.
 **Interfaces:**
 - Produces: `RunningAppInspection.evaluate(pid:windows:)` accepting exactly four uniformly sized pet windows at a supported preset.
 
-- [ ] **Step 1: Write inspection RED tests**
+- [x] **Step 1: Write inspection RED tests**
 
 Assert four 90×80 windows plus the named fallback are healthy; assert mixed supported sizes and four unrelated windows are degraded.
 
-- [ ] **Step 2: Verify inspection RED**
+- [x] **Step 2: Verify inspection RED**
 
 Run `swift test --filter AppLaunchTests/testRunningInspectionRequiresIndependentFallbackControlWindow` and confirm 90×80 is rejected by the existing 180×160-only logic.
 
-- [ ] **Step 3: Implement supported-size inspection**
+- [x] **Step 3: Implement supported-size inspection**
 
 Count windows matching each `PetScalePreset.panelSize`; require one preset count to equal four, report all supported pet windows in `petWindowCount`, and keep exact fallback matching.
 

@@ -35,11 +35,16 @@ enum RunningAppInspection {
         let fallbackControlPresent = windows.contains {
             $0.name == "桌面伙伴总台" && abs($0.width - 96) <= 1 && abs($0.height - 38) <= 1
         }
-        let petWindowCount = windows.filter {
-            abs($0.width - 180) <= 1 && abs($0.height - 160) <= 1
-        }.count
+        let countsByPreset = PetScalePreset.allCases.map { preset in
+            windows.filter { descriptor in
+                abs(descriptor.width - preset.panelSize.width) <= 1
+                    && abs(descriptor.height - preset.panelSize.height) <= 1
+            }.count
+        }
+        let petWindowCount = countsByPreset.reduce(0, +)
+        let hasFourUniformPets = countsByPreset.contains(4) && petWindowCount == 4
         return RunningAppReport(
-            status: fallbackControlPresent && petWindowCount == 4 ? "ok" : "degraded",
+            status: fallbackControlPresent && hasFourUniformPets ? "ok" : "degraded",
             pid: pid,
             windowCount: windows.count,
             petWindowCount: petWindowCount,

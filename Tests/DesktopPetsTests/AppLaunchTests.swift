@@ -49,12 +49,12 @@ final class AppLaunchTests: XCTestCase {
         XCTAssertTrue(report.allFinite)
     }
 
-    func testRunningInspectionRequiresIndependentFallbackControlWindow() {
+    func testRunningInspectionAcceptsFourUniformHalfSizePetsAndFallbackControl() {
         let valid = [
-            RunningWindowDescriptor(name: "", width: 180, height: 160),
-            RunningWindowDescriptor(name: "", width: 180, height: 160),
-            RunningWindowDescriptor(name: "", width: 180, height: 160),
-            RunningWindowDescriptor(name: "", width: 180, height: 160),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
             RunningWindowDescriptor(name: "桌面伙伴总台", width: 96, height: 38),
         ]
         XCTAssertEqual(
@@ -67,12 +67,29 @@ final class AppLaunchTests: XCTestCase {
                 fallbackControlPresent: true
             )
         )
-        XCTAssertEqual(
-            RunningAppInspection.evaluate(
-                pid: 42,
-                windows: valid.dropLast() + [RunningWindowDescriptor(name: "诊断", width: 400, height: 300)]
-            ).status,
-            "degraded"
-        )
+    }
+
+    func testRunningInspectionRejectsMixedSupportedPetSizes() {
+        let mixed = [
+            RunningWindowDescriptor(name: "", width: 45, height: 40),
+            RunningWindowDescriptor(name: "", width: 45, height: 40),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
+            RunningWindowDescriptor(name: "", width: 90, height: 80),
+            RunningWindowDescriptor(name: "桌面伙伴总台", width: 96, height: 38),
+        ]
+
+        XCTAssertEqual(RunningAppInspection.evaluate(pid: 42, windows: mixed).status, "degraded")
+    }
+
+    func testRunningInspectionRejectsUnrelatedFifthWindowWithoutFallbackControl() {
+        let invalid = [
+            RunningWindowDescriptor(name: "", width: 180, height: 160),
+            RunningWindowDescriptor(name: "", width: 180, height: 160),
+            RunningWindowDescriptor(name: "", width: 180, height: 160),
+            RunningWindowDescriptor(name: "", width: 180, height: 160),
+            RunningWindowDescriptor(name: "诊断", width: 400, height: 300),
+        ]
+
+        XCTAssertEqual(RunningAppInspection.evaluate(pid: 42, windows: invalid).status, "degraded")
     }
 }
