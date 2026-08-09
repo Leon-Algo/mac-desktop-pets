@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 10 — Discoverable action center complete
+Phase 13 — Claude Code cold-start handoff audit
 
 ## Phases
 
@@ -150,3 +150,10 @@ Phase 10 — Discoverable action center complete
 - [x] Present defaults, eight-character limit, UX, persistence, and migration design for approval
 - [x] Write and commit the approved design specification
 - **Status:** implementation_complete
+
+## Phase 13 — Claude Code 冷启动交接
+- [x] 读取交接任务书与文件化规划规范
+- [x] 实测 Git、代码结构、测试、打包及规划文档现状
+- [x] 梳理已完成能力、限制、风险与下一阶段最佳实践
+- [x] 产出一份可直接粘贴给 Claude Code 的只读对齐提示词
+- **Status:** complete

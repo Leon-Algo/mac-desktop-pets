@@ -26,8 +26,21 @@ final class CharacterRosterStore {
     func load(fallback: CharacterRoster = .default) -> CharacterRoster {
         guard let data = try? Data(contentsOf: rosterURL),
               let decoded = try? JSONDecoder().decode(CharacterRoster.self, from: data),
-              let valid = try? decoded.validated() else { return fallback }
+              let valid = try? decoded.validated() else {
+            // 读取/解码/校验任一失败：不静默丢弃，先把损坏文件备份为 .corrupt，
+            // 供排查与人工恢复，再回退到默认 roster。
+            backupCorruptRosterIfNeeded()
+            return fallback
+        }
         return valid
+    }
+
+    /// 若已存在损坏的 roster 文件且尚未备份，则复制为 `<name>.corrupt`。
+    private func backupCorruptRosterIfNeeded() {
+        guard fileManager.fileExists(atPath: rosterURL.path) else { return }
+        let backup = rosterURL.deletingPathExtension().appendingPathExtension("json.corrupt")
+        guard !fileManager.fileExists(atPath: backup.path) else { return }
+        try? fileManager.copyItem(at: rosterURL, to: backup)
     }
 
     var hasStoredRoster: Bool { fileManager.fileExists(atPath: rosterURL.path) }

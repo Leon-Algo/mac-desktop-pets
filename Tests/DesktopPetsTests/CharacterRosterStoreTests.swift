@@ -27,6 +27,20 @@ final class CharacterRosterStoreTests: XCTestCase {
         XCTAssertEqual(store.load(), .default)
     }
 
+    func testCorruptRosterIsBackedUpBeforeFallback() throws {
+        let root = temporaryRoot()
+        let store = CharacterRosterStore(rootDirectory: root)
+        try store.save(.default)
+
+        let corrupt = Data("not-json".utf8)
+        try corrupt.write(to: store.rosterURL)
+
+        _ = store.load()
+        let backup = root.appendingPathComponent("characters-v1.json.corrupt")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backup.path), "损坏文件应备份为 .corrupt")
+        XCTAssertEqual(try Data(contentsOf: backup), corrupt, "备份内容应与损坏原文件一致")
+    }
+
     func testImportedAvatarUsesSafePNGNameAndOrphansAreRemoved() throws {
         let root = temporaryRoot()
         let store = CharacterRosterStore(rootDirectory: root)

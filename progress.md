@@ -1,5 +1,17 @@
 # Progress Log
 
+## Session: 2026-08-08 — Claude Code cold-start handoff
+- Read the required `using-superpowers`, `leader`, and `planning-with-files` workflows.
+- Classified the requested deliverable as an exploration/alignment brief with a strict read-only boundary.
+- Began a fresh repository audit; no product code, Git history, branches, or external systems have been changed.
+- Verified the branch split (`feature/custom-character-profiles` at `4e4842e`, `main` at `aad9023`), absence of remotes, repository inventory, and dated acceptance/specification documents.
+- Inspected actual build/package/smoke commands and identified that live smoke is state-changing because it kills the running app and rebuilds the bundle.
+- Ran the non-destructive normal suite: 119/119 passed on 2026-08-08.
+- Ran the strict-concurrency Release build successfully on 2026-08-08.
+- Ran AddressSanitizer successfully: 119/119 passed on 2026-08-08.
+- Audited current bundle signing, process state, release metadata, open-source scaffolding, and avatar-store implementation.
+- Completed the evidence-backed current-state, risk, roadmap, and read-only Claude Code alignment brief. Product source and Git history remain untouched.
+
 ## Session: 2026-08-01
 
 ### Phase 1 — Requirements and feasibility

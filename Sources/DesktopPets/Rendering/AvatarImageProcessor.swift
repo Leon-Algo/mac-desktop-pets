@@ -3,6 +3,8 @@ import Foundation
 
 enum AvatarImageProcessorError: Error, Equatable {
     case undecodableImage
+    case sourceTooLarge
+    case sourceExceedsPixelLimit
     case bitmapCreationFailed
     case pngEncodingFailed
 }
@@ -10,6 +12,10 @@ enum AvatarImageProcessorError: Error, Equatable {
 @MainActor
 enum AvatarImageProcessor {
     static let pixelSize = 512
+    /// 源文件字节上限（约 25 MB）。用于防止超大/伪装文件耗尽内存。
+    static let maxSourceBytes = 25 * 1024 * 1024
+    /// 源图像像素上限（宽×高）。用于防止解码炸弹触发巨量像素分配。
+    static let maxSourcePixels = 8000 * 8000
 
     static func normalizedPNG(
         from data: Data,
@@ -17,8 +23,14 @@ enum AvatarImageProcessor {
         offsetX: Double = 0,
         offsetY: Double = 0
     ) throws -> Data {
+        guard data.count <= maxSourceBytes else {
+            throw AvatarImageProcessorError.sourceTooLarge
+        }
         guard let image = NSImage(data: data), image.size.width > 0, image.size.height > 0 else {
             throw AvatarImageProcessorError.undecodableImage
+        }
+        guard image.size.width * image.size.height <= Double(maxSourcePixels) else {
+            throw AvatarImageProcessorError.sourceExceedsPixelLimit
         }
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,

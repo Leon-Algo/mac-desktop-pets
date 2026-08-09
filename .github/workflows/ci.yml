@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test (macOS)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Unit tests
+        run: swift test
+      - name: Address sanitizer
+        run: swift test --sanitize=address
+      - name: Strict concurrency release build
+        run: swift build -c release -Xswiftc -strict-concurrency=complete

@@ -185,8 +185,11 @@ final class AppController: NSObject, NSApplicationDelegate {
         wireRunnerCallbacks()
         runner?.start(preferences: preferences)
         runner?.restoreControlState(previousState, restorePause: !preferences.paused)
-        try rosterStore.removeUnreferencedAvatars(roster: valid)
+        // 先刷新 UI，让用户立即看到已生效的新 roster。
         refreshControls()
+        // 孤儿头像清理属非关键维护：失败仅遗留无用文件、无数据丢失风险，
+        // 不应让已成功的保存流程误报"保存失败"，故在此非致命化处理。
+        try? rosterStore.removeUnreferencedAvatars(roster: valid)
     }
 
     private func makeRunner(characters: [CharacterManifest]) -> WorldRunner {
