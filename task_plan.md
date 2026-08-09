@@ -4,7 +4,7 @@
 Design and, after explicit approval, build a testable macOS desktop-pet app featuring four recognizable people derived from the supplied group photo, with playful monkey-like crawling animation and interaction with visible window boundaries. Preserve a clear path to a later Windows edition.
 
 ## Current Phase
-Phase 10 — Discoverable action center complete
+Phase 13 — Claude Code cold-start handoff audit
 
 ## Phases
 
@@ -126,10 +126,34 @@ Phase 10 — Discoverable action center complete
 | First Task 4 patch referenced a nonexistent standalone runner test file | 1 | Located `WorldRunnerInteractionTests` inside `PetInteractionTests.swift` and reapplied the complete test patch to the real file. |
 | Packaged smoke rejected five Stage Manager-scaled windows | 1 | Core Graphics reported 90×80/96×38 logical windows as 82×73/88×36 compositor bounds; added proportional-group inspection instead of absolute-pixel-only matching. |
 | Final verification referenced nonexistent `Scripts/build-app.sh` | 1 | Repository evidence showed the real packaging entry point is `Scripts/package-app.sh`; discarded the stale-bundle result and reran packaging plus all bundle checks from the correct script. |
+| Avatar normalization test compared two PNG encodings byte-for-byte | 1 | PNG encoders may emit different metadata/compression for identical pixels; replaced the invalid assertion with PNG signature, decodability, and exact pixel-dimension checks. |
+| Settings actions `moveUp:`/`moveDown:` collided with `NSResponder` | 1 | Renamed selectors to `moveCharacterUp:` and `moveCharacterDown:` so they remain ordinary target-action handlers instead of accidental overrides. |
+| Settings test hung after `NSPopUpButton.performClick` | 1 | `performClick` opens a real popup menu event loop in headless XCTest; terminated the exact test PIDs and invoked the controller's existing target action directly after selecting the item. |
+| Headless settings test still hung on `NSButton.performClick` | 2 | Isolated AppKit click animation/event dispatch as the remaining wait; tests now invoke the same bound target-action methods directly and inspect button enabled state separately. |
+| Dynamic inspector accepted a mixed-size set as one valid pet | 1 | The matcher used `compactMap` and validated only the matching subset; now every unnamed pet window must match the same preset and compositor factor. |
+| Full-test log extraction assigned zsh read-only variable `status` | 1 | Switched to the task-specific variable `test_exit_code`; no product code or test execution was affected. |
+| Task 6 patch expected an outdated self-test function name | 1 | Located the actual `testInteractionSelfTestExercisesCommandsAndPreservesFourFinitePets` function and applied the assertions to its exact body. |
+| Visual QA showed legacy face while avatar popup said `内置头像 1` | 1 | Added a failing UI regression test and made the source selector explicitly show `当前：原头像` or `当前：本地导入头像`; built-in presets remain separate choices 1–12. |
+| Real `+` click added a profile but selection jumped back to row 0 | 1 | `reloadData()` emitted a selection callback that overwrote the draft's new index; refresh now suppresses that transient callback and restores the intended row before updating controls. |
 
 ## Phase 11 — “叫爸爸”动作替换
 - [x] Write and review the focused behavior-change design
 - [x] Add failing catalog, world-routing, menu, and packaged-self-test expectations
 - [x] Replace individual sleep with `叫爸爸` and group play with `四人一起喊爸爸`
 - [x] Run focused, full, release, signing, smoke, and live-launch verification
+- **Status:** complete
+
+## Phase 12 — 可选式人物与头像自定义设计
+- [x] Merge the accepted action-center milestone into `main`
+- [x] Inspect current character, preference, asset, menu, and lifecycle boundaries
+- [x] Define 2–3 product/architecture approaches and recommend one
+- [x] Present defaults, eight-character limit, UX, persistence, and migration design for approval
+- [x] Write and commit the approved design specification
+- **Status:** implementation_complete
+
+## Phase 13 — Claude Code 冷启动交接
+- [x] 读取交接任务书与文件化规划规范
+- [x] 实测 Git、代码结构、测试、打包及规划文档现状
+- [x] 梳理已完成能力、限制、风险与下一阶段最佳实践
+- [x] 产出一份可直接粘贴给 Claude Code 的只读对齐提示词
 - **Status:** complete

@@ -72,8 +72,8 @@ enum PetActionCatalog {
         PetActionDefinition(
             id: .groupCallDad,
             scope: .group,
-            title: "📣 四人一起喊爸爸",
-            explanation: "召回四个人，集合后一起喊爸爸",
+            title: "📣 全部人物一起喊爸爸",
+            explanation: "召回全部人物，集合后一起喊爸爸",
             feedback: "爸爸！",
             duration: 2
         ),

@@ -42,8 +42,8 @@ final class CommandRoutingTests: XCTestCase {
 
         XCTAssertEqual(controller.statusButtonTitle, "🐾")
         XCTAssertEqual(controller.statusItem.length, NSStatusItem.squareLength)
-        XCTAssertTrue(controller.controlMenu.items.map(\.title).contains("四人管理"))
-        let people = controller.controlMenu.items.first { $0.title == "四人管理" }?.submenu?.items ?? []
+        XCTAssertTrue(controller.controlMenu.items.map(\.title).contains("人物管理"))
+        let people = controller.controlMenu.items.first { $0.title == "人物管理" }?.submenu?.items ?? []
         XCTAssertEqual(people.map(\.title), ["格子衫", "黑背心", "薄荷衫", "黑外套"])
     }
 
@@ -152,14 +152,34 @@ final class CommandRoutingTests: XCTestCase {
             Array(repeating: "person-left", count: 4)
         )
         XCTAssertEqual(firstActions.items.map(\.toolTip), PetActionCatalog.individual.map(\.explanation))
-        let group = try XCTUnwrap(center.items.first { $0.title == "📣 四人一起喊爸爸" })
+        let group = try XCTUnwrap(center.items.first { $0.title == "📣 全部人物一起喊爸爸" })
         XCTAssertEqual(group.representedObject as? PetActionRequest, PetActionRequest(actionID: .groupCallDad, targetID: nil))
 
         let management = try XCTUnwrap(
-            controller.controlMenu.items.first { $0.title == "四人管理" }?.submenu?.items.first?.submenu
+            controller.controlMenu.items.first { $0.title == "人物管理" }?.submenu?.items.first?.submenu
         )
         XCTAssertNotNil(management.items.first { $0.title == "让他做动作…" }?.submenu)
         XCTAssertFalse(management.items.contains { $0.title == "做个动作" })
+    }
+
+    @MainActor
+    func testSharedMenuExposesCharacterSettingsEntry() {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(preferences: .defaults, characters: [])
+        let item = controller.controlMenu.items.first { $0.title == "人物设置…" }
+        XCTAssertNotNil(item)
+        XCTAssertEqual(item?.action, #selector(AppController.showCharacterSettings(_:)))
+    }
+
+    @MainActor
+    func testSharedMenuUsesCountNeutralRosterLabels() {
+        let controller = StatusMenuController(target: AppController())
+        controller.refresh(preferences: .defaults, characters: [])
+        let titles = controller.controlMenu.items.map(\.title)
+        XCTAssertTrue(titles.contains("召回全部人物"))
+        XCTAssertTrue(titles.contains("人物管理"))
+        XCTAssertFalse(titles.contains { $0.contains("四人") })
+        XCTAssertEqual(PetActionCatalog.group.first?.title, "📣 全部人物一起喊爸爸")
     }
 }
 

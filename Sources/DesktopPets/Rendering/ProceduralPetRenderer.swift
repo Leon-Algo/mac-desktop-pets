@@ -52,7 +52,8 @@ enum ProceduralPetRenderer {
         shirt.setFill()
         NSBezierPath(roundedRect: NSRect(x: 55, y: 60, width: 72, height: 52), xRadius: 22, yRadius: 22).fill()
 
-        if character.id == "person-left" {
+        let bodyStyle = character.bodyStyle ?? (character.id == "person-left" ? .plaid : (character.id == "person-right" ? .jacket : .plain))
+        if bodyStyle == .plaid {
             accent.withAlphaComponent(0.65).setStroke()
             for x in stride(from: 62.0, through: 118.0, by: 14) {
                 let line = NSBezierPath(); line.move(to: CGPoint(x: x, y: 64)); line.line(to: CGPoint(x: x, y: 106)); line.lineWidth = 2; line.stroke()
@@ -60,13 +61,13 @@ enum ProceduralPetRenderer {
             for y in stride(from: 70.0, through: 100.0, by: 12) {
                 let line = NSBezierPath(); line.move(to: CGPoint(x: 58, y: y)); line.line(to: CGPoint(x: 124, y: y)); line.lineWidth = 2; line.stroke()
             }
-        } else if character.id == "person-right" {
+        } else if bodyStyle == .jacket {
             accent.setFill()
             NSBezierPath(roundedRect: NSRect(x: 84, y: 64, width: 18, height: 44), xRadius: 7, yRadius: 7).fill()
         }
 
         let faceRect = NSRect(x: 103, y: 81, width: 58, height: 62)
-        if let face = FaceAssetLoader.image(for: character.id) {
+        if let face = FaceAssetLoader.image(for: character) {
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(ovalIn: faceRect).addClip()
             drawAspectFill(face, in: faceRect)

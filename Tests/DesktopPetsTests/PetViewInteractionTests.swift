@@ -52,7 +52,7 @@ final class PetViewInteractionTests: XCTestCase {
         ))
 
         let titles = try XCTUnwrap(view.menu(for: event)).items.map(\.title)
-        XCTAssertTrue(titles.contains("召回四人"))
+        XCTAssertTrue(titles.contains("召回全部人物"))
         XCTAssertTrue(titles.contains("打开总台"))
         XCTAssertTrue(titles.contains("退出桌面伙伴"))
     }

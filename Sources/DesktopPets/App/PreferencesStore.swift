@@ -93,6 +93,8 @@ struct PreferencesStore {
         defaults.set(data, forKey: Self.storageKey)
     }
 
+    var hasStoredPreferences: Bool { defaults.data(forKey: Self.storageKey) != nil }
+
     var shouldShowControlHint: Bool {
         !defaults.bool(forKey: Self.controlHintKey)
     }
@@ -125,4 +127,6 @@ enum VerificationLaunchPolicy {
         visible.petsHidden = false
         return visible
     }
+
+    static func shouldOpenCharacterSettings(value: String?) -> Bool { value == "1" }
 }

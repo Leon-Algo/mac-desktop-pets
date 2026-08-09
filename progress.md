@@ -1,5 +1,17 @@
 # Progress Log
 
+## Session: 2026-08-08 — Claude Code cold-start handoff
+- Read the required `using-superpowers`, `leader`, and `planning-with-files` workflows.
+- Classified the requested deliverable as an exploration/alignment brief with a strict read-only boundary.
+- Began a fresh repository audit; no product code, Git history, branches, or external systems have been changed.
+- Verified the branch split (`feature/custom-character-profiles` at `4e4842e`, `main` at `aad9023`), absence of remotes, repository inventory, and dated acceptance/specification documents.
+- Inspected actual build/package/smoke commands and identified that live smoke is state-changing because it kills the running app and rebuilds the bundle.
+- Ran the non-destructive normal suite: 119/119 passed on 2026-08-08.
+- Ran the strict-concurrency Release build successfully on 2026-08-08.
+- Ran AddressSanitizer successfully: 119/119 passed on 2026-08-08.
+- Audited current bundle signing, process state, release metadata, open-source scaffolding, and avatar-store implementation.
+- Completed the evidence-backed current-state, risk, roadmap, and read-only Claude Code alignment brief. Product source and Git history remain untouched.
+
 ## Session: 2026-08-01
 
 ### Phase 1 — Requirements and feasibility
@@ -15,6 +27,38 @@
 - Final verification: 94/94 normal and 94/94 AddressSanitizer tests pass; strict-concurrency Release, fresh app packaging, signing, smoke test, 14-command interaction self-test, and ordinary live launch pass.
 - The newly packaged app is running as PID 64251 with four pet windows and the fallback controller.
 - **Status:** complete
+
+### Phase 12 — Design configurable character profiles
+
+- Fast-forward merged `feature/action-center-v2` into local `main` at `aad9023`; the merged 94-test suite passed and the feature branch was removed.
+- Created `feature/custom-character-profiles` for design work so the accepted main milestone remains stable.
+- Began architecture inspection. The manifest model is reusable, but face loading, asset storage, fixed-four copy, persistence, and runtime roster rebuilding need explicit design.
+- Confirmed that the renderer can support option-based face/body customization, but current runtime objects are immutable and require an atomic roster rebuild after Save.
+- Confirmed that a native settings window is a new UI surface; no current settings or open-panel implementation can be reused.
+- Recommended a preset-first editor with optional local image import, 1–8 active characters, four synthetic defaults, twelve built-in faces, six outfits, and five personality presets.
+- Prepared the product, storage, migration, and runtime-apply design for user approval before writing the formal spec or implementation plan.
+- **Status:** awaiting_design_approval
+- User approved the recommended design and requested an acceptance-ready implementation without further checkpoints.
+- Wrote the formal specification covering 1–8 limits, native editor UX, procedural presets, local imports, migration, atomic runner rebuild, dynamic copy, diagnostics, and release acceptance.
+- **Status:** design_complete
+- Task 1 RED: roster tests failed on missing profile, preset, avatar-source, and validation types.
+- Task 1 GREEN: four safe defaults, 12 built-in avatar choices, five personalities, six outfits, safe source validation, name normalization, unique IDs, and the 1–8 invariant pass four focused tests.
+- Task 2 RED: store and avatar-processing tests failed on missing APIs.
+- Task 2 GREEN: atomic roster round-trip/recovery, invalid-save protection, safe local avatar import, 512-square PNG normalization, and orphan cleanup pass five focused tests.
+- Task 3 RED: editor and avatar tests failed on absent model/renderer APIs.
+- Task 3 GREEN: 12 distinct procedural avatars, explicit body styles, imported/legacy avatar resolution, roster-to-manifest conversion, and draft add/delete/reorder/template/cancel behavior pass 15 focused tests.
+- Task 4 RED: native-window and menu tests failed on missing settings controller and selector.
+- Task 4 GREEN: a fixed native AppKit editor exposes roster list, preview, add/delete/order controls, 12 avatars, three body styles, six outfits, five templates, five advanced sliders, local import, save/cancel, and menu routing; 15 focused tests pass.
+- Task 5 RED: runtime tests failed on missing state restoration and dynamic-inspection behavior.
+- Task 5 GREEN: app launch loads/migrates a versioned roster, Save atomically replaces the runner, stable IDs restore hidden/pause state, 1/4/8 runners work, stopped panels disappear, all-person copy is count-neutral, and dynamic inspection rejects mixed sets; all 115 tests pass.
+- Task 6 RED/GREEN: packaged self-test now reports `[1,4,8]`, maximum 8, 14 commands, four default pets, and finite state.
+- Release verification passed AddressSanitizer, strict-concurrency Release, fresh packaging, deep signing, dynamic smoke, and packaged 1/4/8 self-test.
+- Visible native-window QA confirmed the complete dark-mode layout and all controls. Real `+`/Cancel interaction exposed and fixed new-row selection; visual QA also exposed and fixed misleading legacy-avatar source copy.
+- The verification launch preserves the user's actual four-person roster and leaves the final settings window available for acceptance.
+- **Status:** implementation_complete
+- Spec gap closed before handoff: local avatar import now opens a crop editor with preview, 1–3× zoom, horizontal position, vertical position, Use, and Cancel.
+- Final acceptance scope is 119 normal and AddressSanitizer tests plus strict-concurrency Release, packaging, signing, dynamic smoke, and packaged `[1,4,8]` self-test.
+- **Status:** in_progress
 - Read the required workflow skills.
 - Inspected the shared workspace and protected unrelated planning records.
 - Captured the confirmed macOS-first scope and Windows-follow-up direction.

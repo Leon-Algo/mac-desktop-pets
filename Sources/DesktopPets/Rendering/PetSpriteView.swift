@@ -137,7 +137,7 @@ final class PetSpriteView: NSView {
         menu.addItem(.separator())
         addMenuItem("隐藏这个人", action: #selector(hideFromMenu(_:)), to: menu)
         menu.addItem(.separator())
-        addMenuItem("召回四人", action: #selector(recallAllFromMenu(_:)), to: menu)
+        addMenuItem("召回全部人物", action: #selector(recallAllFromMenu(_:)), to: menu)
         addMenuItem("打开总台", action: #selector(openControlCenterFromMenu(_:)), to: menu)
         menu.addItem(.separator())
         addMenuItem("退出桌面伙伴", action: #selector(quitFromMenu(_:)), to: menu)

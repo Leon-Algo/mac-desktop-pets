@@ -12,7 +12,7 @@ final class PetActionCatalogTests: XCTestCase {
             "📣 叫爸爸",
         ])
         XCTAssertEqual(PetActionCatalog.individual.last?.feedback, "爸爸！")
-        XCTAssertEqual(PetActionCatalog.group.first?.title, "📣 四人一起喊爸爸")
+        XCTAssertEqual(PetActionCatalog.group.first?.title, "📣 全部人物一起喊爸爸")
         XCTAssertEqual(PetActionCatalog.group.first?.feedback, "爸爸！")
         XCTAssertTrue(PetActionCatalog.all.allSatisfy {
             !$0.explanation.isEmpty && !$0.feedback.isEmpty && $0.duration > 0

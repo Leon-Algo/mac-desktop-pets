@@ -246,6 +246,42 @@ final class WorldRunnerInteractionTests: XCTestCase {
         XCTAssertEqual(runner.diagnostics["activeFeedbackCount"] as? Int, 4)
         runner.stop()
     }
+
+    func testRunnerSupportsOneAndEightCharactersAndStopHidesEveryPanel() {
+        let display = WorldRect(x: 0, y: 0, width: 1400, height: 900)!
+        for count in [1, 8] {
+            let characters = Array(CharacterRoster.default.manifests.prefix(1))
+                + (count > 1 ? (1..<count).map { index in
+                    var profile = CharacterRoster.default.profiles[index % 4]
+                    profile.id = "dynamic-\(index)"
+                    profile.displayName = "人物 \(index)"
+                    return CharacterRoster(version: 1, profiles: [profile]).manifests[0]
+                } : [])
+            let runner = WorldRunner(characters: characters, geometryProvider: FixedGeometryProvider(display: display))
+            runner.start(preferences: .defaults)
+            XCTAssertEqual(runner.diagnostics["petCount"] as? Int, count)
+            XCTAssertEqual(runner.diagnostics["visiblePanelCount"] as? Int, count)
+            runner.stop()
+            XCTAssertEqual(runner.diagnostics["visiblePanelCount"] as? Int, 0)
+        }
+    }
+
+    func testRunnerRestoresHiddenAndPausedStateForStableIdentifiers() {
+        let display = WorldRect(x: 0, y: 0, width: 1000, height: 700)!
+        let runner = WorldRunner(characters: CharacterRoster.default.manifests, geometryProvider: FixedGeometryProvider(display: display))
+        runner.start(preferences: .defaults)
+        runner.handle(.hide(id: "default-orange"))
+        runner.handle(.togglePause(id: "default-blue"))
+        let snapshot = runner.controlSnapshot
+        runner.stop()
+
+        let replacement = WorldRunner(characters: CharacterRoster.default.manifests, geometryProvider: FixedGeometryProvider(display: display))
+        replacement.start(preferences: .defaults)
+        replacement.restoreControlState(snapshot)
+        XCTAssertTrue(replacement.controlSnapshot.first { $0.id == "default-orange" }?.isHidden == true)
+        XCTAssertTrue(replacement.controlSnapshot.first { $0.id == "default-blue" }?.isPaused == true)
+        replacement.stop()
+    }
 }
 
 @MainActor

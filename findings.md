@@ -1,5 +1,26 @@
 # Findings and Decisions
 
+## Claude Code cold-start handoff audit — 2026-08-08
+- This handoff is an exploration/alignment task, not authorization to edit, merge, push, publish, or release.
+- The cold-start prompt must require Claude Code to verify repository facts itself, identify discrepancies, cite file/command evidence, and stop after an alignment report.
+- Private real-person face assets must not be treated as public open-source defaults without explicit likeness and redistribution permission.
+- Fresh Git audit: `HEAD` is `4e4842e` on `feature/custom-character-profiles`; local `main` remains at accepted action-center commit `aad9023`, so the profile feature is nine commits ahead and is not merged.
+- `git remote -v` returned no remotes. The only working-tree changes are this handoff audit's three planning files; product code is clean and `git diff --check` passes.
+- The repository has 67 files under `Sources/` and `Tests/`, totaling 5,637 Swift lines. No TODO/FIXME/HACK/XXX marker was found in the searched product/test/script/docs paths.
+- The dated acceptance record claims 119 normal + 119 AddressSanitizer tests, strict-concurrency Release, local ad-hoc signing, and 1/4/8 roster smoke coverage; those claims still require fresh 2026-08-08 command verification.
+- The public package still contains four identifiable face JPGs under `Sources/DesktopPets/Resources/Characters/Faces/`; open-source preparation must explicitly separate or remove them unless redistribution permission is documented.
+- Verified build entry points: `swift test`; strict Release via `swift build -c release -Xswiftc -strict-concurrency=complete`; local app packaging via `Scripts/package-app.sh`; live smoke via `Scripts/smoke-test.sh`.
+- `Scripts/smoke-test.sh` is not read-only: it packages the app, kills every process named `DesktopPets`, launches a verification instance, and kills it again. A cold-start alignment agent must inspect it but not run it unless later explicitly authorized.
+- The six largest inspected core/UI files total 1,389 lines; `PetWorld.swift` is 384 lines and `CharacterSettingsWindowController.swift` is 317 lines. Future refactoring should be evidence-driven rather than automatic.
+- Current avatar normalization guarantees decodability and 512×512 output, but the inspected search found no explicit source-file byte limit, source-pixel cap, or symlink defense. Treat malicious/huge import hardening as a priority security review, not as a proven vulnerability until traced end-to-end.
+- Fresh `swift test` on 2026-08-08 passed: 119 tests, 0 failures, 0 unexpected failures, in 9.454 test seconds (24.81-second clean debug build before execution).
+- Fresh strict-concurrency Release build on 2026-08-08 passed with `swift build -c release -Xswiftc -strict-concurrency=complete` in 19.35 seconds.
+- Fresh AddressSanitizer run on 2026-08-08 passed with `swift test --sanitize=address`: 119 tests, 0 failures, in 20.821 test seconds.
+- No `DesktopPets` process was running during the fresh audit. The existing `build/DesktopPets.app` is arm64 and ad-hoc signed; `security find-identity` reports 0 valid code-signing identities. No Git tags exist.
+- Open-source/release scaffolding is absent: no README, LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY policy, or GitHub Actions workflow was found.
+- Roster persistence is atomic at the JSON/file-write level and imported names are UUID PNGs, but cleanup errors occur after the new runtime roster is already applied. A future transactional-consistency review should define whether cleanup failure is warning-only or must roll back; do not silently change behavior.
+- Final baseline reconfirmed the feature branch is exactly nine commits ahead of `main`; the only dirty files are the three planning records updated for this handoff, and `git diff --check` is clean.
+
 ## Confirmed intent
 - First deliverable is a macOS desktop application for convenient local testing.
 - A later Windows application may share assets and core behavior but can use a platform-specific shell.
@@ -118,3 +139,23 @@
 - Autonomous sleeping remains valid world behavior and is not removed; only the user-triggered sleep command is being replaced.
 - The completed implementation uses typed IDs `callDad` and `groupCallDad`; no production or test menu copy retains the removed sleep/play labels.
 - Final verification passed 94/94 normal tests, 94/94 AddressSanitizer tests, strict-concurrency Release build, fresh packaging, deep signing, five-window smoke inspection, and the 14-command self-test.
+
+# Phase 12 custom-character findings (2026-08-03)
+
+- The accepted action-center branch was fast-forward merged into local `main` at `aad9023`; 94/94 tests passed on the merged result, and the merged feature branch was deleted.
+- `CharacterManifest` already separates identity, palette, personality, collision geometry, and animation metadata, which is a sound basis for user-editable profiles.
+- Bundled defaults currently come from `characters.json`, but face assets are hard-coded as bundled JPEGs resolved from each fixed character ID. User imports therefore need a separate application-support asset store and a stable asset reference rather than arbitrary external file paths.
+- Rendering composites one face image over a procedural body, so the first customization version can safely offer face, name, palette, and personality choices without building a segmented body rig.
+- Menus and window coordination iterate over the supplied character list, but product copy still says “四人” in several places. Supporting 1–8 active characters requires count-neutral labels and validation at the catalog/profile boundary.
+- `WorldRunner` owns an immutable character array and constructs its world/windows once, so applying roster edits requires a controlled runner rebuild that stops and hides old panels before replacing them; palette/name-only mutation cannot safely be bolted onto the current runner.
+- The packaged smoke inspector and interaction self-test hard-code exactly four pets. They must accept an expected active count in the supported range while retaining a deterministic four-person default fixture.
+- `ProceduralPetRenderer` uses character IDs to special-case two clothing details. Custom profiles need explicit style options (for example `plain`, `plaid`, `jacket`) instead of magic IDs.
+- There is no settings window today. A dedicated native editor window is preferable to placing image import, preview, reordering, and deletion inside nested status menus.
+- Existing preference storage is one JSON blob in `UserDefaults`, which is suitable for lightweight app switches but not imported image bytes. Profile metadata should use versioned Codable storage, while copied/normalized images live under Application Support.
+- Three approaches were assessed: preset-only (simple but not truly customizable), preset-first plus local image import (recommended), and fully external JSON/character packages (powerful but too technical as the primary UX).
+- Recommended initial product defaults: four active, non-identifiable illustrated characters; a twelve-avatar built-in face library; six outfit palettes; five personality presets plus optional advanced sliders; roster add/remove/reorder with a hard 1–8 active-character invariant.
+- Imported images should be copied, normalized, and stored locally only. The app should never retain security-scoped access to an arbitrary original path and should expose Replace/Remove controls.
+- The current four real-person face assets should not be the open-source distribution defaults without explicit likeness and redistribution permission. They can remain a private/local profile set while public defaults use original synthetic illustrations.
+- The implemented upgrade path detects existing preferences and migrates the four bundled identities into versioned local profiles; a clean install receives four procedural defaults from a 12-avatar library.
+- Native visual QA confirmed the 820×560 dark-mode editor fits without clipping and exposes all required controls. It also found two issues that automated model tests alone missed: misleading legacy source copy and selection resetting after Add; both now have UI regression tests.
+- Final package verification covers 119 normal and AddressSanitizer tests, including the added avatar crop editor with zoom and horizontal/vertical positioning, plus strict-concurrency Release, deep signing, dynamic smoke, 14 commands, and finite 1/4/8 roster simulations.

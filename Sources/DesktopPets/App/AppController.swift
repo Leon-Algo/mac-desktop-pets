@@ -9,6 +9,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var runner: WorldRunner?
     private var statusMenu: StatusMenuController?
     private var controlCenterPanel: ControlCenterPanelController?
+    private let rosterStore = CharacterRosterStore()
+    private var roster = CharacterRoster.default
+    private var characterSettings: CharacterSettingsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         preferences = VerificationLaunchPolicy.preferences(
@@ -16,7 +19,12 @@ final class AppController: NSObject, NSApplicationDelegate {
             forceVisibleValue: ProcessInfo.processInfo.environment["DESKTOP_PETS_FORCE_VISIBLE"]
         )
         let catalog = (try? CharacterCatalog.loadBundled()) ?? .fallback
-        runner = WorldRunner(characters: catalog.characters, geometryProvider: CGWindowGeometryProvider())
+        let fallbackRoster = preferenceStore.hasStoredPreferences
+            ? CharacterRoster.legacy(from: catalog.characters)
+            : .default
+        roster = rosterStore.load(fallback: fallbackRoster)
+        if !rosterStore.hasStoredRoster { try? rosterStore.save(roster) }
+        runner = makeRunner(characters: roster.manifests)
         statusMenu = StatusMenuController(target: self)
         if let menu = statusMenu?.controlMenu {
             controlCenterPanel = ControlCenterPanelController(menu: menu)
@@ -26,8 +34,7 @@ final class AppController: NSObject, NSApplicationDelegate {
             self?.controlCenterPanel?.repositionOnCurrentScreen()
             self?.refreshMenuOnly()
         }
-        runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
-        runner?.onUICommand = { [weak self] command in self?.handle(command) }
+        wireRunnerCallbacks()
         refreshControls()
         runner?.start(preferences: preferences)
         controlCenterPanel?.show()
@@ -35,6 +42,11 @@ final class AppController: NSObject, NSApplicationDelegate {
             self?.statusMenu?.checkHealth()
         }
         showControlHintIfNeeded()
+        if VerificationLaunchPolicy.shouldOpenCharacterSettings(
+            value: ProcessInfo.processInfo.environment["DESKTOP_PETS_OPEN_CHARACTER_SETTINGS"]
+        ) {
+            DispatchQueue.main.async { [weak self] in self?.showCharacterSettings(nil) }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -145,6 +157,48 @@ final class AppController: NSObject, NSApplicationDelegate {
     @objc func performPetAction(_ sender: Any?) {
         guard let request = (sender as? NSMenuItem)?.representedObject as? PetActionRequest else { return }
         runner?.handle(.performAction(request))
+    }
+
+    @objc func showCharacterSettings(_ sender: Any?) {
+        if characterSettings == nil {
+            let controller = CharacterSettingsWindowController(roster: roster)
+            controller.onImportAvatar = { [weak self] data in
+                guard let self else { throw CharacterRosterStoreError.applicationSupportUnavailable }
+                return try self.rosterStore.importAvatar(data: data)
+            }
+            controller.onSave = { [weak self] saved in
+                guard let self else { return }
+                try self.applyRoster(saved)
+            }
+            characterSettings = controller
+        }
+        characterSettings?.present(roster: roster)
+    }
+
+    func applyRoster(_ candidate: CharacterRoster) throws {
+        let valid = try candidate.validated()
+        try rosterStore.save(valid)
+        let previousState = runner?.controlSnapshot ?? []
+        runner?.stop()
+        roster = valid
+        runner = makeRunner(characters: valid.manifests)
+        wireRunnerCallbacks()
+        runner?.start(preferences: preferences)
+        runner?.restoreControlState(previousState, restorePause: !preferences.paused)
+        // 先刷新 UI，让用户立即看到已生效的新 roster。
+        refreshControls()
+        // 孤儿头像清理属非关键维护：失败仅遗留无用文件、无数据丢失风险，
+        // 不应让已成功的保存流程误报"保存失败"，故在此非致命化处理。
+        try? rosterStore.removeUnreferencedAvatars(roster: valid)
+    }
+
+    private func makeRunner(characters: [CharacterManifest]) -> WorldRunner {
+        WorldRunner(characters: characters, geometryProvider: CGWindowGeometryProvider())
+    }
+
+    private func wireRunnerCallbacks() {
+        runner?.onControlStateChange = { [weak self] _ in self?.refreshControls() }
+        runner?.onUICommand = { [weak self] command in self?.handle(command) }
     }
 
     private func persistAndRefresh() {

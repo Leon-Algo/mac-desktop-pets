@@ -36,7 +36,7 @@ enum RunningAppInspection {
             $0.name == "桌面伙伴总台" && abs($0.width - 96) <= 1 && abs($0.height - 38) <= 1
         }
         let unnamed = windows.filter { $0.name.isEmpty }
-        var hasFourUniformPets = false
+        var uniformPetCount = 0
         for preset in PetScalePreset.allCases {
             let factors = unnamed.compactMap { descriptor -> Double? in
                 let factor = descriptor.width / preset.panelSize.width
@@ -44,9 +44,10 @@ enum RunningAppInspection {
                       abs(descriptor.height - preset.panelSize.height * factor) <= 2 else { return nil }
                 return factor
             }
-            guard factors.count == 4,
+            guard (1...CharacterRoster.maximumCount).contains(unnamed.count),
+                  factors.count == unnamed.count,
                   (factors.max() ?? 0) - (factors.min() ?? 0) <= 0.03 else { continue }
-            hasFourUniformPets = true
+            uniformPetCount = factors.count
             let factor = factors.reduce(0, +) / Double(factors.count)
             if windows.contains(where: {
                 $0.name == "桌面伙伴总台"
@@ -57,14 +58,14 @@ enum RunningAppInspection {
             }
             break
         }
-        let petWindowCount = hasFourUniformPets ? 4 : PetScalePreset.allCases.reduce(0) { count, preset in
+        let petWindowCount = uniformPetCount > 0 ? uniformPetCount : PetScalePreset.allCases.reduce(0) { count, preset in
             count + unnamed.filter {
                 abs($0.width - preset.panelSize.width) <= 1
                     && abs($0.height - preset.panelSize.height) <= 1
             }.count
         }
         return RunningAppReport(
-            status: fallbackControlPresent && hasFourUniformPets && petWindowCount == 4 ? "ok" : "degraded",
+            status: fallbackControlPresent && uniformPetCount > 0 ? "ok" : "degraded",
             pid: pid,
             windowCount: windows.count,
             petWindowCount: petWindowCount,
@@ -78,6 +79,8 @@ struct InteractionSelfTestReport: Codable, Equatable {
     let commandCount: Int
     let petCount: Int
     let allFinite: Bool
+    let testedPetCounts: [Int]
+    let maximumSupportedPetCount: Int
 }
 
 enum InteractionSelfTest {
@@ -105,11 +108,28 @@ enum InteractionSelfTest {
         world.step(deltaTime: 1.0 / 60.0, obstacles: map)
         let allFinite = world.poses.allSatisfy { $0.position.isFinite }
         let allHandled = !results.contains(.ignored)
+        let testedPetCounts = [1, 4, CharacterRoster.maximumCount]
+        let allRosterSizesFinite = testedPetCounts.allSatisfy { count in
+            let profiles = (0..<count).map { index -> CharacterProfile in
+                var profile = CharacterRoster.default.profiles[index % CharacterRoster.default.profiles.count]
+                profile.id = "self-test-\(count)-\(index)"
+                return profile
+            }
+            var candidate = PetWorld(
+                characters: CharacterRoster(version: 1, profiles: profiles).manifests,
+                display: display,
+                seed: UInt64(count)
+            )
+            candidate.step(deltaTime: 1.0 / 60.0, obstacles: map)
+            return candidate.poses.count == count && candidate.poses.allSatisfy { $0.position.isFinite }
+        }
         return InteractionSelfTestReport(
-            status: allHandled && allFinite && world.poses.count == 4 ? "ok" : "degraded",
+            status: allHandled && allFinite && allRosterSizesFinite && world.poses.count == 4 ? "ok" : "degraded",
             commandCount: commands.count,
             petCount: world.poses.count,
-            allFinite: allFinite
+            allFinite: allFinite,
+            testedPetCounts: testedPetCounts,
+            maximumSupportedPetCount: CharacterRoster.maximumCount
         )
     }
 }

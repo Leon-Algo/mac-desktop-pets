@@ -26,7 +26,7 @@ struct AnimationClip: Codable, Equatable, Sendable {
     var isValid: Bool { !frames.isEmpty && frames.allSatisfy(\.isValid) && fps.isFinite && fps > 0 && fps <= 60 }
 }
 
-struct Personality: Codable, Equatable, Sendable {
+struct Personality: Codable, Equatable, Hashable, Sendable {
     let speed: Double
     let curiosity: Double
     let sociability: Double
@@ -54,6 +54,8 @@ struct CharacterManifest: Codable, Equatable, Sendable {
     let anchor: NormalizedPoint
     let collisionBody: FrameRect
     let animations: [String: AnimationClip]
+    var avatarSource: AvatarSource? = nil
+    var bodyStyle: BodyStyle? = nil
 
     func animation(named name: String) -> AnimationClip? {
         animations[name] ?? animations["idle"]

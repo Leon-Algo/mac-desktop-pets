@@ -84,6 +84,12 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(VerificationLaunchPolicy.preferences(from: hidden, forceVisibleValue: nil), hidden)
     }
 
+    func testVerificationLaunchOpensCharacterSettingsOnlyWhenExplicitlyRequested() {
+        XCTAssertTrue(VerificationLaunchPolicy.shouldOpenCharacterSettings(value: "1"))
+        XCTAssertFalse(VerificationLaunchPolicy.shouldOpenCharacterSettings(value: nil))
+        XCTAssertFalse(VerificationLaunchPolicy.shouldOpenCharacterSettings(value: "0"))
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suite = "DesktopPetsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
