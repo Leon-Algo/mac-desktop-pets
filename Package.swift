@@ -10,7 +10,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "DesktopPets",
-            resources: [.process("Resources")]
+            resources: [
+                .process("Resources/Characters"),
+                .copy("Resources/Localization"),
+            ]
         ),
         .testTarget(name: "DesktopPetsTests", dependencies: ["DesktopPets"]),
     ]

@@ -31,9 +31,9 @@ enum BodyStyle: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .plain: "简约"
-        case .plaid: "格纹"
-        case .jacket: "外套"
+        case .plain: L10n.localized("body.plain", fallback: "简约")
+        case .plaid: L10n.localized("body.plaid", fallback: "格纹")
+        case .jacket: L10n.localized("body.jacket", fallback: "外套")
         }
     }
 }
@@ -43,12 +43,12 @@ enum OutfitPreset: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .orange: "暖橙"
-        case .blue: "海蓝"
-        case .mint: "薄荷"
-        case .violet: "柔紫"
-        case .coral: "珊瑚"
-        case .slate: "岩灰"
+        case .orange: L10n.localized("outfit.orange", fallback: "暖橙")
+        case .blue: L10n.localized("outfit.blue", fallback: "海蓝")
+        case .mint: L10n.localized("outfit.mint", fallback: "薄荷")
+        case .violet: L10n.localized("outfit.violet", fallback: "柔紫")
+        case .coral: L10n.localized("outfit.coral", fallback: "珊瑚")
+        case .slate: L10n.localized("outfit.slate", fallback: "岩灰")
         }
     }
 
@@ -69,11 +69,11 @@ enum PersonalityPreset: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .lively: "活泼"
-        case .calm: "沉稳"
-        case .curious: "好奇"
-        case .social: "社交"
-        case .sleepy: "慵懒"
+        case .lively: L10n.localized("personality.lively", fallback: "活泼")
+        case .calm: L10n.localized("personality.calm", fallback: "沉稳")
+        case .curious: L10n.localized("personality.curious", fallback: "好奇")
+        case .social: L10n.localized("personality.social", fallback: "社交")
+        case .sleepy: L10n.localized("personality.sleepy", fallback: "慵懒")
         }
     }
 
