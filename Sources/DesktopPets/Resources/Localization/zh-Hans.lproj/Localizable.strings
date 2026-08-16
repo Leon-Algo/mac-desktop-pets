@@ -1,0 +1,105 @@
+/* DesktopPets — 简体中文（zh-Hans）本地化
+   与默认界面文案逐字一致，确保现有行为不变。 */
+
+/* 菜单栏 / 总台 */
+"menu.rootTitle"          = "桌宠总台";
+"menu.controlCenterTitle" = "桌面伙伴总台";
+"menu.tooltip"            = "桌面伙伴总台：暂停、召回、设置或退出";
+"menu.recallAll"          = "召回全部人物";
+"menu.actionCenter"       = "动作中心";
+"menu.peopleManagement"   = "人物管理";
+"menu.characterSettings"  = "人物设置…";
+"menu.petSize"            = "人物大小";
+"menu.controlCenter.show" = "显示备用总台";
+"menu.controlCenter.hide" = "隐藏备用总台";
+"menu.controlCenter.keep" = "备用总台保持显示";
+"menu.launchAtLogin"      = "登录时启动";
+"menu.diagnostics"        = "诊断信息…";
+"menu.quit"               = "退出桌面伙伴";
+"menu.doAction"           = "让他做动作…";
+"menu.doActionSubmenu"    = "让他做动作";
+"menu.recall"             = "召回";
+
+/* 菜单状态文案 */
+"state.pauseActive"    = "暂停活动";
+"state.pauseInactive"  = "继续活动";
+"state.hidePets"       = "隐藏宠物";
+"state.showPets"       = "显示宠物";
+"state.clickThroughOn"  = "启用人物交互";
+"state.clickThroughOff" = "完全点击穿透";
+
+/* 单人物快照文案 */
+"state.show"   = "显示";
+"state.hide"   = "隐藏";
+"state.resume" = "继续";
+"state.pause"  = "暂停";
+
+/* 尺寸预设 */
+"scale.quarter"  = "25%（最小）";
+"scale.half"     = "50%（推荐）";
+"scale.original" = "100%（原样）";
+
+/* 设置窗口 */
+"settings.title"            = "人物设置";
+"settings.heading"          = "我的人物";
+"settings.detailTitle"      = "人物外观与性格";
+"settings.columnName"       = "人物";
+"settings.avatarCurrent"    = "当前头像";
+"settings.avatarImported"   = "当前：本地导入头像";
+"settings.avatarLegacy"     = "当前：原头像";
+"settings.builtInAvatar"    = "内置头像 %d";
+"settings.fieldName"        = "名称";
+"settings.fieldAvatar"      = "头像";
+"settings.fieldBodyStyle"   = "服装样式";
+"settings.fieldOutfit"      = "服装配色";
+"settings.fieldPersonality" = "性格模板";
+"settings.advanced"         = "高级性格参数";
+"settings.sliderSpeed"      = "速度";
+"settings.sliderCuriosity"  = "好奇";
+"settings.sliderSociability" = "社交";
+"settings.sliderCourage"    = "勇气";
+"settings.sliderSleepiness" = "困倦";
+"settings.moveUp"           = "上移";
+"settings.moveDown"         = "下移";
+"settings.importAvatar"     = "导入本地头像…";
+"settings.save"             = "保存并应用";
+"settings.cancel"           = "取消";
+"settings.count"            = "%d/8";
+"settings.importPanelMessage" = "选择一张头像照片，应用会在本机裁切并保存副本。";
+"settings.importFailed"     = "头像导入失败：%@";
+"settings.saveFailed"       = "无法保存：请检查名称和人物数量";
+
+/* 头像裁剪窗口 */
+"crop.title"      = "调整头像";
+"crop.heading"    = "裁剪头像";
+"crop.help"       = "调整缩放和位置，头像只会保存在这台 Mac 上。";
+"crop.zoom"       = "缩放";
+"crop.horizontal" = "水平位置";
+"crop.vertical"   = "垂直位置";
+"crop.use"        = "使用这个头像";
+"crop.cancel"     = "取消";
+"crop.useFailed"  = "无法使用这张头像";
+
+/* 备用总台面板 */
+"panel.buttonTitle" = "🐾 总台";
+
+/* 操作提示 */
+"hint.guidance" = "使用顶部菜单栏的 🐾 图标，或桌面上的 🐾 总台，可以暂停、召回、设置或退出桌面伙伴。";
+
+/* 预设展示名 */
+"body.plain"  = "简约";
+"body.plaid"  = "格纹";
+"body.jacket" = "外套";
+
+"outfit.orange" = "暖橙";
+"outfit.blue"   = "海蓝";
+"outfit.mint"   = "薄荷";
+"outfit.violet" = "柔紫";
+"outfit.coral"  = "珊瑚";
+"outfit.slate"  = "岩灰";
+
+"personality.lively"  = "活泼";
+"personality.calm"    = "沉稳";
+"personality.curious" = "好奇";
+"personality.social"  = "社交";
+"personality.sleepy"  = "慵懒";

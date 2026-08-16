@@ -6,8 +6,8 @@ struct PetControlState: Equatable, Sendable {
     let isHidden: Bool
     let isPaused: Bool
 
-    var visibilityTitle: String { isHidden ? "显示" : "隐藏" }
-    var pauseTitle: String { isPaused ? "继续" : "暂停" }
+    var visibilityTitle: String { isHidden ? L10n.localized("state.show", fallback: "显示") : L10n.localized("state.hide", fallback: "隐藏") }
+    var pauseTitle: String { isPaused ? L10n.localized("state.resume", fallback: "继续") : L10n.localized("state.pause", fallback: "暂停") }
 }
 
 enum ControlCenterVisibilityPolicy {

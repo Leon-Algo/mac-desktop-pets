@@ -1,0 +1,105 @@
+/* DesktopPets — English (en) localization
+   Mirrors the default Chinese UI. Add/adjust keys as features grow. */
+
+/* Menu bar / control center */
+"menu.rootTitle"          = "Pet Desk";
+"menu.controlCenterTitle" = "Desktop Pets Console";
+"menu.tooltip"            = "Desktop Pets Console: pause, recall, configure, or quit";
+"menu.recallAll"          = "Recall All Characters";
+"menu.actionCenter"       = "Action Center";
+"menu.peopleManagement"   = "Manage Characters";
+"menu.characterSettings"  = "Character Settings…";
+"menu.petSize"            = "Character Size";
+"menu.controlCenter.show" = "Show Backup Console";
+"menu.controlCenter.hide" = "Hide Backup Console";
+"menu.controlCenter.keep" = "Keep Backup Console Visible";
+"menu.launchAtLogin"      = "Launch at Login";
+"menu.diagnostics"        = "Diagnostics…";
+"menu.quit"               = "Quit Desktop Pets";
+"menu.doAction"           = "Make It Act…";
+"menu.doActionSubmenu"    = "Make It Act";
+"menu.recall"             = "Recall";
+
+/* Menu state titles */
+"state.pauseActive"    = "Pause Activity";
+"state.pauseInactive"  = "Resume Activity";
+"state.hidePets"       = "Hide Pets";
+"state.showPets"       = "Show Pets";
+"state.clickThroughOn"  = "Enable Character Interaction";
+"state.clickThroughOff" = "Full Click-Through";
+
+/* Per-character snapshot titles */
+"state.show"   = "Show";
+"state.hide"   = "Hide";
+"state.resume" = "Resume";
+"state.pause"  = "Pause";
+
+/* Size presets */
+"scale.quarter"  = "25% (Smallest)";
+"scale.half"     = "50% (Recommended)";
+"scale.original" = "100% (Original)";
+
+/* Settings window */
+"settings.title"            = "Character Settings";
+"settings.heading"          = "My Characters";
+"settings.detailTitle"      = "Appearance & Personality";
+"settings.columnName"       = "Character";
+"settings.avatarCurrent"    = "Current Avatar";
+"settings.avatarImported"   = "Current: Imported Avatar";
+"settings.avatarLegacy"     = "Current: Original Avatar";
+"settings.builtInAvatar"    = "Built-in Avatar %d";
+"settings.fieldName"        = "Name";
+"settings.fieldAvatar"      = "Avatar";
+"settings.fieldBodyStyle"   = "Outfit Style";
+"settings.fieldOutfit"      = "Outfit Color";
+"settings.fieldPersonality" = "Personality";
+"settings.advanced"         = "Advanced Personality";
+"settings.sliderSpeed"      = "Speed";
+"settings.sliderCuriosity"  = "Curiosity";
+"settings.sliderSociability" = "Sociability";
+"settings.sliderCourage"    = "Courage";
+"settings.sliderSleepiness" = "Sleepiness";
+"settings.moveUp"           = "Move Up";
+"settings.moveDown"         = "Move Down";
+"settings.importAvatar"     = "Import Local Avatar…";
+"settings.save"             = "Save & Apply";
+"settings.cancel"           = "Cancel";
+"settings.count"            = "%d/8";
+"settings.importPanelMessage" = "Choose an avatar photo; the app crops and saves a local copy on this Mac.";
+"settings.importFailed"     = "Avatar import failed: %@";
+"settings.saveFailed"       = "Cannot save: check the name and character count";
+
+/* Avatar crop window */
+"crop.title"      = "Adjust Avatar";
+"crop.heading"    = "Crop Avatar";
+"crop.help"       = "Adjust zoom and position; the avatar is stored only on this Mac.";
+"crop.zoom"       = "Zoom";
+"crop.horizontal" = "Horizontal";
+"crop.vertical"   = "Vertical";
+"crop.use"        = "Use This Avatar";
+"crop.cancel"     = "Cancel";
+"crop.useFailed"  = "Cannot use this avatar";
+
+/* Fallback panel */
+"panel.buttonTitle" = "🐾 Console";
+
+/* Control hint */
+"hint.guidance" = "Use the 🐾 icon in the menu bar, or the 🐾 console on the desktop, to pause, recall, configure, or quit Desktop Pets.";
+
+/* Preset display names */
+"body.plain"  = "Plain";
+"body.plaid"  = "Plaid";
+"body.jacket" = "Jacket";
+
+"outfit.orange" = "Warm Orange";
+"outfit.blue"   = "Ocean Blue";
+"outfit.mint"   = "Mint";
+"outfit.violet" = "Soft Violet";
+"outfit.coral"  = "Coral";
+"outfit.slate"  = "Slate";
+
+"personality.lively"  = "Lively";
+"personality.calm"    = "Calm";
+"personality.curious" = "Curious";
+"personality.social"  = "Social";
+"personality.sleepy"  = "Sleepy";

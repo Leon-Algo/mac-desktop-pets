@@ -15,8 +15,8 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     let moveUpButton = NSButton(title: "上移", target: nil, action: nil)
     let moveDownButton = NSButton(title: "下移", target: nil, action: nil)
     let importButton = NSButton(title: "导入本地头像…", target: nil, action: nil)
-    let saveButton = NSButton(title: "保存并应用", target: nil, action: nil)
-    let cancelButton = NSButton(title: "取消", target: nil, action: nil)
+        let saveButton = NSButton(title: L10n.localized("settings.save", fallback: "保存并应用"), target: nil, action: nil)
+        let cancelButton = NSButton(title: L10n.localized("settings.cancel", fallback: "取消"), target: nil, action: nil)
     private let countLabel = NSTextField(labelWithString: "")
     private let errorLabel = NSTextField(labelWithString: "")
     private var sliders: [NSSlider] = []
@@ -33,7 +33,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
             backing: .buffered,
             defer: false
         )
-        window.title = "人物设置"
+        window.title = L10n.localized("settings.title", fallback: "人物设置")
         window.minSize = NSSize(width: 820, height: 560)
         window.maxSize = NSSize(width: 820, height: 560)
         window.isReleasedWhenClosed = false
@@ -90,7 +90,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         left.layer?.backgroundColor = NSColor.windowBackgroundColor.blended(withFraction: 0.08, of: .black)?.cgColor
         root.addSubview(left)
 
-        let heading = NSTextField(labelWithString: "我的人物")
+        let heading = NSTextField(labelWithString: L10n.localized("settings.heading", fallback: "我的人物"))
         heading.font = .systemFont(ofSize: 16, weight: .semibold)
         heading.frame = NSRect(x: 18, y: 518, width: 120, height: 24)
         left.addSubview(heading)
@@ -100,7 +100,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         left.addSubview(countLabel)
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
-        column.title = "人物"
+        column.title = L10n.localized("settings.columnName", fallback: "人物")
         column.width = 190
         tableView.addTableColumn(column)
         tableView.headerView = nil
@@ -119,7 +119,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         configureButton(moveUpButton, action: #selector(moveCharacterUp(_:)), frame: NSRect(x: 108, y: 70, width: 50, height: 30), parent: left)
         configureButton(moveDownButton, action: #selector(moveCharacterDown(_:)), frame: NSRect(x: 162, y: 70, width: 54, height: 30), parent: left)
 
-        let detailTitle = NSTextField(labelWithString: "人物外观与性格")
+        let detailTitle = NSTextField(labelWithString: L10n.localized("settings.detailTitle", fallback: "人物外观与性格"))
         detailTitle.font = .systemFont(ofSize: 18, weight: .semibold)
         detailTitle.frame = NSRect(x: 258, y: 518, width: 240, height: 26)
         root.addSubview(detailTitle)
@@ -131,18 +131,20 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         previewImageView.layer?.cornerRadius = 12
         root.addSubview(previewImageView)
 
-        avatarPopUp.addItem(withTitle: "当前头像")
-        avatarPopUp.addItems(withTitles: BuiltInAvatarPreset.allCases.enumerated().map { "内置头像 \($0.offset + 1)" })
+        avatarPopUp.addItem(withTitle: L10n.localized("settings.avatarCurrent", fallback: "当前头像"))
+        avatarPopUp.addItems(withTitles: BuiltInAvatarPreset.allCases.enumerated().map {
+            String(format: L10n.localized("settings.builtInAvatar", fallback: "内置头像 %d"), $0.offset + 1)
+        })
         bodyStylePopUp.addItems(withTitles: BodyStyle.allCases.map(\.displayName))
         outfitPopUp.addItems(withTitles: OutfitPreset.allCases.map(\.displayName))
         personalityPopUp.addItems(withTitles: PersonalityPreset.allCases.map(\.displayName))
         nameField.delegate = self
         let rows: [(String, NSView)] = [
-            ("名称", nameField),
-            ("头像", avatarPopUp),
-            ("服装样式", bodyStylePopUp),
-            ("服装配色", outfitPopUp),
-            ("性格模板", personalityPopUp),
+            (L10n.localized("settings.fieldName", fallback: "名称"), nameField),
+            (L10n.localized("settings.fieldAvatar", fallback: "头像"), avatarPopUp),
+            (L10n.localized("settings.fieldBodyStyle", fallback: "服装样式"), bodyStylePopUp),
+            (L10n.localized("settings.fieldOutfit", fallback: "服装配色"), outfitPopUp),
+            (L10n.localized("settings.fieldPersonality", fallback: "性格模板"), personalityPopUp),
         ]
         for (index, row) in rows.enumerated() {
             let y = 450 - CGFloat(index) * 48
@@ -158,11 +160,17 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         personalityPopUp.target = self; personalityPopUp.action = #selector(personalityChanged(_:))
         configureButton(importButton, action: #selector(importAvatar(_:)), frame: NSRect(x: 260, y: 282, width: 180, height: 30), parent: root)
 
-        let advanced = NSTextField(labelWithString: "高级性格参数")
+        let advanced = NSTextField(labelWithString: L10n.localized("settings.advanced", fallback: "高级性格参数"))
         advanced.font = .systemFont(ofSize: 14, weight: .semibold)
         advanced.frame = NSRect(x: 260, y: 244, width: 140, height: 22)
         root.addSubview(advanced)
-        let sliderNames = ["速度", "好奇", "社交", "勇气", "困倦"]
+        let sliderNames = [
+            L10n.localized("settings.sliderSpeed", fallback: "速度"),
+            L10n.localized("settings.sliderCuriosity", fallback: "好奇"),
+            L10n.localized("settings.sliderSociability", fallback: "社交"),
+            L10n.localized("settings.sliderCourage", fallback: "勇气"),
+            L10n.localized("settings.sliderSleepiness", fallback: "困倦"),
+        ]
         for (index, name) in sliderNames.enumerated() {
             let y = 207 - CGFloat(index) * 34
             let label = NSTextField(labelWithString: name)
@@ -206,13 +214,13 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         nameField.stringValue = profile.displayName
         switch profile.avatarSource {
         case let .builtIn(preset):
-            avatarPopUp.item(at: 0)?.title = "当前头像"
+            avatarPopUp.item(at: 0)?.title = L10n.localized("settings.avatarCurrent", fallback: "当前头像")
             avatarPopUp.selectItem(at: preset.index + 1)
         case .imported:
-            avatarPopUp.item(at: 0)?.title = "当前：本地导入头像"
+            avatarPopUp.item(at: 0)?.title = L10n.localized("settings.avatarImported", fallback: "当前：本地导入头像")
             avatarPopUp.selectItem(at: 0)
         case .legacyBundled:
-            avatarPopUp.item(at: 0)?.title = "当前：原头像"
+            avatarPopUp.item(at: 0)?.title = L10n.localized("settings.avatarLegacy", fallback: "当前：原头像")
             avatarPopUp.selectItem(at: 0)
         }
         bodyStylePopUp.selectItem(withTitle: profile.bodyStyle.displayName)
@@ -230,7 +238,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
     }
 
     private func refreshButtons() {
-        countLabel.stringValue = "\(model.draft.profiles.count)/8"
+        countLabel.stringValue = String(format: L10n.localized("settings.count", fallback: "%d/8"), model.draft.profiles.count)
         addButton.isEnabled = model.canAdd
         deleteButton.isEnabled = model.canDelete
         moveUpButton.isEnabled = model.selectedIndex > 0
@@ -282,7 +290,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.image]
         panel.allowsMultipleSelection = false
-        panel.message = "选择一张头像照片，应用会在本机裁切并保存副本。"
+        panel.message = L10n.localized("settings.importPanelMessage", fallback: "选择一张头像照片，应用会在本机裁切并保存副本。")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let crop = try AvatarCropWindowController(imageData: Data(contentsOf: url))
@@ -294,7 +302,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
             }
             crop.runModal()
         } catch {
-            errorLabel.stringValue = "头像导入失败：\(error.localizedDescription)"
+            errorLabel.stringValue = String(format: L10n.localized("settings.importFailed", fallback: "头像导入失败：%@"), error.localizedDescription)
         }
     }
 
@@ -306,7 +314,7 @@ final class CharacterSettingsWindowController: NSWindowController, NSTableViewDa
             errorLabel.stringValue = ""
             close()
         } catch {
-            errorLabel.stringValue = "无法保存：请检查名称和人物数量"
+            errorLabel.stringValue = L10n.localized("settings.saveFailed", fallback: "无法保存：请检查名称和人物数量")
         }
     }
 

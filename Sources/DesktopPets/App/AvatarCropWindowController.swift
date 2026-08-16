@@ -6,8 +6,8 @@ final class AvatarCropWindowController: NSWindowController {
     let zoomSlider = NSSlider(value: 1, minValue: 1, maxValue: 3, target: nil, action: nil)
     let horizontalSlider = NSSlider(value: 0, minValue: -1, maxValue: 1, target: nil, action: nil)
     let verticalSlider = NSSlider(value: 0, minValue: -1, maxValue: 1, target: nil, action: nil)
-    let useButton = NSButton(title: "使用这个头像", target: nil, action: nil)
-    let cancelButton = NSButton(title: "取消", target: nil, action: nil)
+        let useButton = NSButton(title: L10n.localized("crop.use", fallback: "使用这个头像"), target: nil, action: nil)
+        let cancelButton = NSButton(title: L10n.localized("crop.cancel", fallback: "取消"), target: nil, action: nil)
     private let sourceData: Data
     private let errorLabel = NSTextField(labelWithString: "")
     var onUse: ((Data) throws -> Void)?
@@ -21,7 +21,7 @@ final class AvatarCropWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "调整头像"
+        window.title = L10n.localized("crop.title", fallback: "调整头像")
         window.isReleasedWhenClosed = false
         super.init(window: window)
         buildInterface()
@@ -38,12 +38,12 @@ final class AvatarCropWindowController: NSWindowController {
 
     private func buildInterface() {
         guard let root = window?.contentView else { return }
-        let heading = NSTextField(labelWithString: "裁剪头像")
+        let heading = NSTextField(labelWithString: L10n.localized("crop.heading", fallback: "裁剪头像"))
         heading.font = .systemFont(ofSize: 18, weight: .semibold)
         heading.frame = NSRect(x: 30, y: 525, width: 160, height: 26)
         root.addSubview(heading)
 
-        let help = NSTextField(labelWithString: "调整缩放和位置，头像只会保存在这台 Mac 上。")
+        let help = NSTextField(labelWithString: L10n.localized("crop.help", fallback: "调整缩放和位置，头像只会保存在这台 Mac 上。"))
         help.textColor = .secondaryLabelColor
         help.frame = NSRect(x: 30, y: 500, width: 410, height: 20)
         root.addSubview(help)
@@ -56,9 +56,9 @@ final class AvatarCropWindowController: NSWindowController {
         previewImageView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         root.addSubview(previewImageView)
 
-        configureSlider(zoomSlider, title: "缩放", y: 158, parent: root)
-        configureSlider(horizontalSlider, title: "水平位置", y: 116, parent: root)
-        configureSlider(verticalSlider, title: "垂直位置", y: 74, parent: root)
+        configureSlider(zoomSlider, title: L10n.localized("crop.zoom", fallback: "缩放"), y: 158, parent: root)
+        configureSlider(horizontalSlider, title: L10n.localized("crop.horizontal", fallback: "水平位置"), y: 116, parent: root)
+        configureSlider(verticalSlider, title: L10n.localized("crop.vertical", fallback: "垂直位置"), y: 74, parent: root)
         [zoomSlider, horizontalSlider, verticalSlider].forEach {
             $0.target = self
             $0.action = #selector(sliderChanged(_:))
@@ -104,7 +104,7 @@ final class AvatarCropWindowController: NSWindowController {
             try onUse?(renderedPNG())
             finishModal()
         } catch {
-            errorLabel.stringValue = "无法使用这张头像"
+            errorLabel.stringValue = L10n.localized("crop.useFailed", fallback: "无法使用这张头像")
         }
     }
 

@@ -15,9 +15,9 @@ enum PetScalePreset: String, Codable, CaseIterable, Sendable {
 
     var menuTitle: String {
         switch self {
-        case .quarter: "25%（最小）"
-        case .half: "50%（推荐）"
-        case .original: "100%（原样）"
+        case .quarter: L10n.localized("scale.quarter", fallback: "25%（最小）")
+        case .half: L10n.localized("scale.half", fallback: "50%（推荐）")
+        case .original: L10n.localized("scale.original", fallback: "100%（原样）")
         }
     }
 
@@ -107,13 +107,13 @@ struct PreferencesStore {
 struct MenuState: Equatable, Sendable {
     let preferences: AppPreferences
 
-    var pauseTitle: String { preferences.paused ? "继续活动" : "暂停活动" }
-    var visibilityTitle: String { preferences.petsHidden ? "显示宠物" : "隐藏宠物" }
-    var clickThroughTitle: String { preferences.clickThrough ? "启用人物交互" : "完全点击穿透" }
+    var pauseTitle: String { preferences.paused ? L10n.localized("state.pauseInactive", fallback: "继续活动") : L10n.localized("state.pauseActive", fallback: "暂停活动") }
+    var visibilityTitle: String { preferences.petsHidden ? L10n.localized("state.showPets", fallback: "显示宠物") : L10n.localized("state.hidePets", fallback: "隐藏宠物") }
+    var clickThroughTitle: String { preferences.clickThrough ? L10n.localized("state.clickThroughOn", fallback: "启用人物交互") : L10n.localized("state.clickThroughOff", fallback: "完全点击穿透") }
 }
 
 enum ControlHintPolicy {
-    static let guidance = "使用顶部菜单栏的 🐾 图标，或桌面上的 🐾 总台，可以暂停、召回、设置或退出桌面伙伴。"
+    static let guidance = L10n.localized("hint.guidance", fallback: "使用顶部菜单栏的 🐾 图标，或桌面上的 🐾 总台，可以暂停、召回、设置或退出桌面伙伴。")
 
     static func shouldShow(storedHintNeeded: Bool, suppressionValue: String?) -> Bool {
         storedHintNeeded && suppressionValue != "1"

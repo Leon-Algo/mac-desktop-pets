@@ -20,12 +20,12 @@ final class ControlCenterPanelController: NSObject {
             backing: .buffered,
             defer: false
         )
-        button = NSButton(title: "🐾 总台", target: nil, action: nil)
+        button = NSButton(title: L10n.localized("panel.buttonTitle", fallback: "🐾 总台"), target: nil, action: nil)
         super.init()
 
         panel.identifier = NSUserInterfaceItemIdentifier("desktop-pets-control-center")
-        panel.title = "桌面伙伴总台"
-        panel.setAccessibilityLabel("桌面伙伴总台")
+        panel.title = L10n.localized("menu.controlCenterTitle", fallback: "桌面伙伴总台")
+        panel.setAccessibilityLabel(L10n.localized("menu.controlCenterTitle", fallback: "桌面伙伴总台"))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
@@ -50,7 +50,7 @@ final class ControlCenterPanelController: NSObject {
         button.target = self
         button.action = #selector(openMenu(_:))
         button.toolTip = ControlHintPolicy.guidance
-        button.setAccessibilityLabel("桌面伙伴总台")
+        button.setAccessibilityLabel(L10n.localized("menu.controlCenterTitle", fallback: "桌面伙伴总台"))
         material.addSubview(button)
         panel.contentView = material
         reposition(on: NSScreen.main)
