@@ -7,15 +7,13 @@ import Foundation
 /// module bundle into the shipped `.app`, so the same lookup works in tests, via
 /// `swift run`, and in the packaged application.
 ///
-/// User-facing chrome should call `L10n.localized(_:)`. English is shown only when the
-/// system language is explicitly English; otherwise the Chinese translation is used so
-/// the existing (Chinese) UI behavior is preserved by default.
+/// User-facing chrome should call `L10n.localized(_:)`. The default UI language is
+/// Chinese (`zh-Hans`) to preserve the original behavior on every system; English
+/// resources remain embedded for a future in-app language picker.
 enum L10n {
-    /// Resolves the current UI language. Defaults to Chinese unless English is explicitly preferred.
-    static var currentLanguage: String {
-        let preferred = Locale.preferredLanguages.first ?? "zh-Hans"
-        return preferred.lowercased().hasPrefix("en") ? "en" : "zh-Hans"
-    }
+    /// Resolves the current UI language. The UI stays Chinese by default to preserve the
+    /// original behavior; English resources remain embedded for a future language switch.
+    static var currentLanguage: String { "zh-Hans" }
 
     /// Localized string for the running UI language.
     /// - Parameter fallback: returned verbatim when the key is missing; defaults to the key itself.
