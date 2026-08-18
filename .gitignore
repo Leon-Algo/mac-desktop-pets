@@ -4,3 +4,4 @@
 .build-arm64e/
 .swiftpm/
 .workbuddy/
+*.mov
