@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DesktopPets · GitHub 开源分发方案（路线 B）</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+    --amber:#d29922; --red:#f85149; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;line-height:1.6;padding:32px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:26px;margin-bottom:6px}
+  h2{font-size:19px;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:8px}
+  .badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:20px;border:1px solid var(--border);margin-right:6px}
+  .b-me{color:var(--green);border-color:var(--green)}
+  .b-ext{color:var(--amber);border-color:var(--amber)}
+  .b-done{color:var(--accent);border-color:var(--accent)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:12px 0}
+  .decision{background:linear-gradient(135deg,#1c2330,#161b22);border-left:4px solid var(--green)}
+  .decision b{color:var(--green)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .todo{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border)}
+  .todo:last-child{border-bottom:none}
+  .pri{font-size:11px;font-weight:700;padding:1px 8px;border-radius:4px;flex-shrink:0;margin-top:2px}
+  .p0{background:rgba(248,81,73,.15);color:var(--red)}
+  .p1{background:rgba(210,153,34,.15);color:var(--amber)}
+  .p2{background:rgba(88,166,255,.15);color:var(--accent)}
+  .p3{background:rgba(188,140,255,.15);color:var(--purple)}
+  .todo .body{flex:1}
+  .todo .t{font-weight:600}
+  .todo .d{color:var(--muted);font-size:13px}
+  .lane{display:flex;align-items:center;gap:8px;padding:8px 0}
+  .num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0d1117;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+  code{background:var(--panel2);padding:2px 6px;border-radius:4px;font-size:13px;color:#79c0ff}
+  .risk{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:10px;padding:14px 18px}
+  .risk li{margin:6px 0 6px 18px}
+  .foot{color:var(--muted);font-size:13px;margin-top:26px;text-align:center}
+  .legend{font-size:12px;color:var(--muted);margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>DesktopPets · GitHub 开源分发方案</h1>
+  <div class="sub">决策日期 2026-08-18 ｜ 路线 B：不签名、免费分发（无需 $99 Apple 开发者会员）</div>
+
+  <div class="card decision">
+    <div><span class="badge b-done">已确认</span><b>路线 B 生效。</b> 不在 Mac App Store 上架，直接 GitHub 开源，用户从 GitHub Releases 下载安装包。不做 Developer ID 签名与公证 → 零证书成本，但用户首次打开会被 Gatekeeper 拦截（需手动绕过，见文末风险项）。</div>
+  </div>
+
+  <h2>① 待办清单（按优先级）</h2>
+  <div class="legend">标记：<span class="badge b-me">我来做</span> 我能直接落地　<span class="badge b-ext">外部项</span> 需你账号侧操作　<span class="badge b-done">已完成</span> 已并入 main</div>
+
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin-bottom:8px;color:var(--red)">P0 · 发版前置（必做）</h3>
+      <div class="todo"><span class="pri p0">P0</span><div class="body"><div class="t">接 git remote + push 到 GitHub</div><div class="d"><span class="badge b-ext">外部项</span> 仓库当前无 remote。我可准备好所有配置，但 <code>git push</code> 需你授权 GitHub 账号。</div></div></div>
+      <div class="todo"><span class="pri p0">P0</span><div class="body"><div class="t">package-app.sh 加 DMG 打包</div><div class="d"><span class="badge b-me">我来做</span> 用 macOS 自带 <code>hdiutil</code> 出 DMG（零依赖），保留 ad-hoc 签名保证完整性。本地可测。</div></div></div>
+      <div class="todo"><span class="pri p0">P0</span><div class="body"><div class="t">release.yml 发布自动化</div><div class="d"><span class="badge b-me">我来做</span> 打 <code>v*</code> tag → 构建 → 出 DMG → 自动上传 GitHub Releases。无公证步骤。</div></div></div>
+      <div class="todo"><span class="pri p0">P0</span><div class="body"><div class="t">README 双路径安装说明</div><div class="d"><span class="badge b-me">我来做</span> DMG 安装（右键打开 / xattr 解除）+ 源码编译两种路径。</div></div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px;color:var(--amber)">P1 · 发布前验证（建议跑）</h3>
+      <div class="todo"><span class="pri p1">P1</span><div class="body"><div class="t">实机冒烟</div><div class="d">5 窗口、1/4/8 人 roster 切换，确认无崩溃。</div></div></div>
+      <div class="todo"><span class="pri p1">P1</span><div class="body"><div class="t">多屏 / 刘海 / Stage Manager</div><div class="d">仅文档声称，需实机复测。</div></div></div>
+      <div class="todo"><span class="pri p1">P1</span><div class="body"><div class="t">长时运行 ≥ 4h</div><div class="d">8 人满载资源基线，确认无内存泄漏。</div></div></div>
+      <div class="todo"><span class="pri p1">P1</span><div class="body"><div class="t">VoiceOver + 全键盘导航</div><div class="d">已有 accessibilityLabel，未实测。</div></div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px;color:var(--accent)">P2 · 质量增强</h3>
+      <div class="todo"><span class="pri p2">P2</span><div class="body"><div class="t">CI main 分支保护</div><div class="d"><span class="badge b-ext">外部项</span> 依赖 git remote；需在 GitHub 开启分支保护规则。</div></div></div>
+      <div class="todo"><span class="pri p2">P2</span><div class="body"><div class="t">长时资源基线固化进 CI</div><div class="d">把 P1 长时测试自动化。</div></div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px;color:var(--purple)">P3 · 产品方向</h3>
+      <div class="todo"><span class="pri p3">P3</span><div class="body"><div class="t">骨骼动画评估</div><div class="d">当前为程序化绘制，非骨骼。</div></div></div>
+      <div class="todo"><span class="pri p3">P3</span><div class="body"><div class="t">动作与反馈扩展（音效）</div><div class="d">callDad 等动作目前无音频/口型。</div></div></div>
+      <div class="todo"><span class="pri p3">P3</span><div class="body"><div class="t">多语言发布</div><div class="d"><span class="badge b-done">已完成</span> 本地化骨架已并入 main，可在此之上扩展英文文案。</div></div></div>
+    </div>
+  </div>
+
+  <h2>② 推荐执行顺序</h2>
+  <div class="card">
+    <div class="lane"><span class="num">1</span><div><b>你接 git remote（外部）</b> — 并行：我写 DMG 打包 + release.yml + README</div></div>
+    <div class="lane"><span class="num">2</span><div><b>我落地脚手架</b> — 本地验证 <code>package-app.sh</code> 能产出 DMG</div></div>
+    <div class="lane"><span class="num">3</span><div><b>你 push main + 打首个 tag v0.1.0</b> — CI 自动构建并上传 DMG 到 GitHub Releases</div></div>
+    <div class="lane"><span class="num">4</span><div><b>你跑 P1 实机验证</b> — 多屏 / 长时 / VoiceOver</div></div>
+    <div class="lane"><span class="num">5</span><div><b>后续 P2 / P3 迭代</b> — 在日常开发分支上推进</div></div>
+  </div>
+
+  <h2>③ 依赖关系</h2>
+  <div class="card">
+    <div class="todo"><div class="body"><div class="t">release.yml 依赖 git remote + tag</div><div class="d">没有 remote，自动化发布无法上传到你的 GitHub。</div></div></div>
+    <div class="todo"><div class="body"><div class="t">公证已从路线移除</div><div class="d">路线 B 不需要 Developer ID，<code>notarytool</code>/<code>stapler</code> 全部跳过。</div></div></div>
+    <div class="todo"><div class="body"><div class="t">本地化骨架 = 已满足的发版前置</div><div class="d">已并入 main，不阻塞发布。</div></div></div>
+  </div>
+
+  <h2>④ 风险与注意（路线 B 固有）</h2>
+  <div class="risk">
+    <ul>
+      <li><b>Gatekeeper 警告不可避免：</b>从 GitHub 下载的 DMG/.app 带 <code>com.apple.quarantine</code> 标记，首次打开会被拦。这是路线 B 的固有代价。</li>
+      <li><b>解除方式（写进 README）：</b>右键 → 「打开」；或终端执行 <code>xattr -dr com.apple.quarantine /Applications/DesktopPets.app</code>。</li>
+      <li><b>源码编译路径零摩擦：</b><code>git clone</code> + <code>swift build -c release</code> 本地编译的 app 不受 quarantine，适合开发者。</li>
+      <li><b>保留 ad-hoc 签名：</b><code>package-app.sh</code> 维持 <code>--sign -</code>，保证二进制完整性；它不改变 Gatekeeper 行为，但仍是好习惯。</li>
+      <li><b>DMG 也建议 ad-hoc 签名：</b>虽不消除警告，但保证传输完整。</li>
+    </ul>
+  </div>
+
+  <div class="foot">确认无误后回复「开始」，我即落地 P0 脚手架（DMG + release.yml + README），并在本地验证打包。</div>
+
+</div>
+</body>
+</html>

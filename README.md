@@ -19,6 +19,27 @@ swift test --sanitize=address                                   # 地址消毒�
 > `sandbox-exec: sandbox_apply: Operation not permitted`，追加 SwiftPM 官方参数
 > `--disable-sandbox` 即可（仅关闭 SwiftPM 自身的清单沙箱，不影响语义）。
 
+## 安装
+
+### 方式一：下载 DMG（推荐普通用户）
+1. 到 [Releases](https://github.com/Leon-Algo/mac-desktop-pets/releases) 下载 `DesktopPets.dmg`
+2. 打开 DMG，把 `DesktopPets.app` 拖入 `Applications`
+3. 首次打开若被 Gatekeeper 拦截（提示「无法验证开发者」），任选一种解除方式：
+   - 右键 `DesktopPets.app` → 「打开」；或
+   - 终端执行 `sudo xattr -dr com.apple.quarantine /Applications/DesktopPets.app`
+
+> 本项目采用**路线 B 免费分发**：未做 Developer ID 签名与公证，因此首次打开会出现上述提示，属正常行为，不影响使用。
+
+### 方式二：源码编译（开发者）
+本地编译的 app 不受 quarantine 隔离限制，无需解除：
+
+```bash
+git clone https://github.com/Leon-Algo/mac-desktop-pets.git
+cd mac-desktop-pets
+swift build -c release
+swift run -c release
+```
+
 ## 目录结构
 
 - `Sources/DesktopPets/App/` — 应用委托、窗口控制器、菜单栏

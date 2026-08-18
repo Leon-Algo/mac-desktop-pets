@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build DMG and publish to GitHub Releases
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build app and DMG (route B: unsigned, free distribution)
+        run: bash Scripts/package-app.sh
+      - name: Upload DMG to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/DesktopPets.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
