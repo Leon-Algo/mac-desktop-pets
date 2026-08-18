@@ -7,6 +7,15 @@ macOS 桌面宠物：一群会走动、会互动的桌面小精灵，常驻在�
 - **人物**：内置 12 个头像，支持导入本地照片裁剪为 512×512 头像，最多 8 个角色
 - **渲染**：透明无激活边框窗口、形状感知点击穿透、确定性固定步长世界模拟
 
+![DesktopPets 效果预览](docs/assets/deskpet.png)
+
+*动态效果：*
+
+![deskpet1](docs/assets/deskpet1.gif)
+![deskpet2](docs/assets/deskpet2.gif)
+
+> 上图：桌面动态效果与人物设置界面。录屏见 [Releases](https://github.com/Leon-Algo/mac-desktop-pets/releases) 页面。
+
 ## 构建与测试
 
 ```bash
