@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DesktopPets · 发布状态（路线 B）</title>
+<title>DesktopPets · 现状与最佳实践路线图</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d;
@@ -36,51 +36,60 @@
   .risk li{margin:6px 0 6px 18px}
   .foot{color:var(--muted);font-size:13px;margin-top:26px;text-align:center}
   a{color:var(--accent)}
+  .highlight{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:10px;padding:14px 18px;margin:12px 0}
+  .highlight li{margin:6px 0 6px 18px}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>DesktopPets · GitHub 开源发布状态</h1>
-  <div class="sub">路线 B：不签名免费分发 ｜ 更新于 2026-08-18 ｜ 仓库已建、流水线已跑通、CI 全绿</div>
+  <h1>DesktopPets · 现状与最佳实践路线图</h1>
+  <div class="sub">更新于 2026-08-19 ｜ 仓库已开源、v0.1.1 已发布、CI 全绿</div>
 
+  <div class="highlight">
+    <b>当前状态一句话：</b>代码已开源到 GitHub，DMG 已发布，README 有效果图/GIF，CI 129/129 全绿。接下来按 P1→P2→P3 推进质量与产品增强。
+  </div>
+
+  <h2>① 已交付（发布前置最佳实践）</h2>
   <div class="card done">
-    <div><span class="badge b-done">已完成</span> 公开仓库 <b>https://github.com/Leon-Algo/mac-desktop-pets</b> 已建，main 已上线，含完整源码与四张已授权真人照片。</div>
+    <div class="row"><span class="ok">✓</span><div><b>开源仓库</b>：<a href="https://github.com/Leon-Algo/mac-desktop-pets">github.com/Leon-Algo/mac-desktop-pets</a> 已公开，main 分支推送完成</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>v0.1.1 Release</b>：DMG 已上传到 GitHub Releases，含效果图与录屏 GIF</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>README 效果图</b>：首屏静态预览 + 2 张动态 GIF 已嵌入，访客一眼可见产品形态</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>CI 自动化</b>：GitHub Actions 跑 <code>swift test</code> + 严格并发 Release，129/129 全绿</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>本地化骨架</b>：菜单/设置/裁剪窗全量 L10n，中文默认，英文 .lproj 内嵌备用</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>安全加固</b>：头像导入字节/像素上限、roster 损坏备份、applyRoster 事务语义修复，均配测试</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>开源脚手架</b>：LICENSE（MIT + 真人照片条款）、README、CONTRIBUTING、.gitignore、CI workflow</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>分支策略</b>：feature 分支已合并回 main 并删除，后续新功能开 <code>feat/</code> 分支，避免漂移</div></div>
   </div>
 
-  <h2>① 已完成（P0 发版前置）</h2>
+  <h2>② 剩余最佳实践（按优先级）</h2>
+
+  <div class="todo"><span class="pri p1">P1</span><div class="t">实机冒烟 + 多屏 / 刘海 / Stage Manager</div><div class="d">仅有文档声称，需你在本机实际跑一遍确认</div></div>
+  <div class="todo"><span class="pri p1">P1</span><div class="t">长时运行 ≥ 4h（8 人满载资源基线）</div><div class="d">确认无内存泄漏、CPU 占用稳定</div></div>
+  <div class="todo"><span class="pri p1">P1</span><div class="t">VoiceOver + 全键盘导航实测</div><div class="d">已有 accessibilityLabel，需实际开启 VoiceOver 验证读屏顺序</div></div>
+  <div class="todo"><span class="pri p2">P2</span><div class="t">GitHub main 分支保护</div><div class="d">需在仓库 Settings 开启（你账号侧操作）</div></div>
+  <div class="todo"><span class="pri p2">P2</span><div class="t">长时资源监控面板</div><div class="d">诊断信息里加内存/CPU 趋势图，方便用户反馈</div></div>
+  <div class="todo"><span class="pri p3">P3</span><div class="t">骨骼动画 / 动作反馈（音效）</div><div class="d">产品方向，需评估程序化绘制 vs 骨骼动画的成本收益</div></div>
+  <div class="todo"><span class="pri p3">P3</span><div class="t">多语言切换 UI</div><div class="d">当前 L10n 已内嵌中英，但缺语言切换入口；前置 P1-3 无障碍实测</div></div>
+
+  <h2>③ 推荐执行顺序</h2>
   <div class="card">
-    <div class="row"><span class="ok">✓</span><div>接 git remote + 推送 main 到 GitHub（公开）</div></div>
-    <div class="row"><span class="ok">✓</span><div><code>package-app.sh</code> 加 <code>hdiutil</code> DMG 打包（保留 ad-hoc 签名）</div></div>
-    <div class="row"><span class="ok">✓</span><div><code>release.yml</code>：打 tag → 构建 DMG → 自动上传 GitHub Releases（无公证）</div></div>
-    <div class="row"><span class="ok">✓</span><div>README 双路径安装说明（DMG + 源码编译 + Gatekeeper 解除）</div></div>
-    <div class="row"><span class="ok">✓</span><div>CI 全绿：<b>129/129 测试通过</b>，严格并发 Release 构建通过</div></div>
-    <div class="row"><span class="ok">✓</span><div><b>v0.1.1</b> Release 已发布，含 <code>DesktopPets.dmg</code>（默认中文，已修英文环境 bug）</div></div>
+    <div class="row"><span class="ok">1</span><div><b>P1 实机验证</b>（你现在就能做）—— 多屏/刘海/Stage Manager/长时/VoiceOver，把结果回填到 docs/verification/final-acceptance.md</div></div>
+    <div class="row"><span class="ok">2</span><div><b>P2 分支保护</b>（你账号侧 2 分钟开启）—— GitHub Settings → Branches → Add rule → Require status checks to pass before merging（选 CI）</div></div>
+    <div class="row"><span class="ok">3</span><div><b>P2 资源监控</b>（我来做，TDD）—— 诊断窗口加内存/CPU 采样，不影响主流程</div></div>
+    <div class="row"><span class="ok">4</span><div><b>P3 产品评估</b>（讨论后决定）—— 骨骼动画 vs 程序化绘制的 ROI 分析</div></div>
   </div>
 
-  <h2>② 待办（发布后）</h2>
-  <div class="todo"><span class="pri p1">P1</span><div class="t">实机冒烟 + 多屏 / 刘海 / Stage Manager</div><div class="d">仅文档声称，需你在本机验证</div></div>
-  <div class="todo"><span class="pri p1">P1</span><div class="t">长时运行 ≥ 4h（8 人满载资源基线）</div><div class="d">确认无内存泄漏</div></div>
-  <div class="todo"><span class="pri p1">P1</span><div class="t">VoiceOver + 全键盘导航实测</div><div class="d">已有 accessibilityLabel，未实测</div></div>
-  <div class="todo"><span class="pri p2">P2</span><div class="t">GitHub main 分支保护</div><div class="d">需在仓库 Settings 开启（你账号侧）</div></div>
-  <div class="todo"><span class="pri p3">P3</span><div class="t">骨骼动画 / 动作反馈（音效）/ 多语言切换 UI</div><div class="d">产品方向，按需推进</div></div>
-
-  <h2>③ 本次踩坑与修复（已解决）</h2>
+  <h2>④ 关键提醒</h2>
   <div class="risk">
     <ul>
-      <li><b>GitHub runner 无 Swift 6</b>：<code>macos-14</code> 自带 Swift 5.10，项目要求 6.0 → 两个 workflow 加 <code>swift-actions/setup-swift@v2</code>（6.0）。</li>
-      <li><b>workflow 文件含中文导致解析失败</b>：release.yml 的 <code>--notes</code> 含中文，GitHub 工作流校验直接 0s 失败 → 改为纯英文，Release 才跑通。</li>
-      <li><b>本地化默认语言 bug</b>：L10n 在英文系统自动切英文，导致 30 个中文断言测试在英文 CI 上失败 → 改为默认 <code>zh-Hans</code>（零行为变化），英文 <code>.lproj</code> 仍内嵌备用。本地 129/129、CI 129/129。</li>
+      <li><b>GitHub README 效果图已生效</b>：你本地可能还没刷新 CDN 缓存，等 1–2 分钟刷新 <a href="https://github.com/Leon-Algo/mac-desktop-pets">github.com/Leon-Algo/mac-desktop-pets</a> 就能看到。</li>
+      <li><b>实机验证是当前最大风险</b>：多屏/刘海/Stage Manager/长时/VoiceOver 目前仅有文档声称，如果有人提 issue 说"在 Stage Manager 下窗口错位"，你还没实测过，无法快速响应。</li>
+      <li><b>路线 B 分发的代价</b>：用户首次打开需右键或 <code>xattr</code> 绕过 Gatekeeper，README 已写清楚，但普通用户仍有摩擦。后续如果用户量上来，再考虑 $99/年 Developer ID 公证。</li>
     </ul>
   </div>
 
-  <h2>④ 下载指引（给最终用户）</h2>
-  <div class="card">
-    <div class="row"><span class="ok">●</span><div>前往 <a href="https://github.com/Leon-Algo/mac-desktop-pets/releases">Releases</a> 下载 <b>v0.1.1</b> 的 <code>DesktopPets.dmg</code>（v0.1.0 在英文环境有显示 bug，勿用）。</div></div>
-    <div class="row"><span class="ok">●</span><div>拖入 Applications；首次打开若被 Gatekeeper 拦截：右键「打开」或 <code>sudo xattr -dr com.apple.quarantine /Applications/DesktopPets.app</code>。</div></div>
-  </div>
-
-  <div class="foot">路线 B 已交付：代码开源、自动出 DMG、CI 守护质量。下一步由你在本机做 P1 实机验证。</div>
+  <div class="foot">下一步：你确认 P1 实机验证结果，或直接让我先做 P2 资源监控面板。</div>
 
 </div>
 </body>
