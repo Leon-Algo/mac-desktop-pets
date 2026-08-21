@@ -48,13 +48,15 @@ final class WorldRunner: NSObject {
         hiddenPetIDs = preferences.petsHidden ? Set(characters.map(\.id)) : []
         preferences.petsHidden ? windows.hide() : windows.show()
         lastTick = ProcessInfo.processInfo.systemUptime
-        timer = Timer.scheduledTimer(
-            timeInterval: 1.0 / Double(Self.simulationFramesPerSecond),
-            target: self,
-            selector: #selector(tick),
-            userInfo: nil,
-            repeats: true
-        )
+        // 使用 block-based 定时器并捕获 [weak self]：从根上打破
+        // `WorldRunner → Timer → WorldRunner` 的强引用循环。
+        // 这样即使某条路径忘记调用 stop()，定时器也不会强持有 WorldRunner，
+        // 对象可在引用归零后正常释放，避免整组宠物窗口泄漏。
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / Double(Self.simulationFramesPerSecond), repeats: true) { [weak self] _ in
+            // 定时器 block 运行于主运行循环（主线程），但编译器无法推断其处于 MainActor 上下文，
+            // 故显式 assumeIsolated 切回主 actor 以调用 tick()。
+            MainActor.assumeIsolated { self?.tick() }
+        }
         RunLoop.main.add(timer!, forMode: .common)
         logger.info("Started world runner with \(self.characters.count) characters")
         notifyControlStateChanged()
@@ -64,6 +66,13 @@ final class WorldRunner: NSObject {
         timer?.invalidate()
         timer = nil
         windows.hide()
+    }
+
+    /// 彻底释放：停止模拟循环并关闭所有宠物面板，断开与窗口服务器的关联。
+    /// 在 roster 重建（applyRoster）与退出时调用，确保旧 WorldRunner 不会残留孤儿窗口。
+    func dispose() {
+        stop()
+        windows.closeAll()
     }
 
     func setPaused(_ paused: Bool) { world.setPaused(paused) }
@@ -191,7 +200,7 @@ final class WorldRunner: NSObject {
         onControlStateChange?(controlSnapshot)
     }
 
-    @objc private func tick() {
+    private func tick() {
         let now = ProcessInfo.processInfo.systemUptime
         let delta = min(max(now - lastTick, 0), 0.1)
         lastTick = now

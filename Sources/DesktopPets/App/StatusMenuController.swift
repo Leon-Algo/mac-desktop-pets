@@ -9,6 +9,7 @@ final class StatusMenuController: NSObject {
     private var healthPolicy = StatusItemHealthPolicy()
     private let logger = Logger(subsystem: "com.codex.DesktopPets", category: "ControlCenter")
     private var pendingHealthCheck: DispatchWorkItem?
+    private let workspaceNotifications: NotificationCenter
     var onFallbackRequired: (() -> Void)?
     var onStatusContextChanged: (() -> Void)?
 
@@ -16,10 +17,18 @@ final class StatusMenuController: NSObject {
 
     init(target: AppController) {
         self.target = target
+        workspaceNotifications = NSWorkspace.shared.notificationCenter
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureStatusItem()
         observeStatusContext()
+    }
+
+    deinit {
+        // 移除全部 Observer，避免控制器释放后通知仍向野指针发消息（崩溃）
+        // 或形成隐式持有（泄漏）。best practice：有 addObserver 必须有对称的移除。
+        NotificationCenter.default.removeObserver(self)
+        workspaceNotifications.removeObserver(self)
     }
 
     func refresh(

@@ -50,7 +50,7 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        runner?.stop()
+        runner?.dispose()
         controlCenterPanel?.hide()
         ProcessInfo.processInfo.enableSuddenTermination()
         ProcessInfo.processInfo.enableAutomaticTermination("Desktop pets are quitting")
@@ -179,7 +179,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         let valid = try candidate.validated()
         try rosterStore.save(valid)
         let previousState = runner?.controlSnapshot ?? []
-        runner?.stop()
+        runner?.dispose()
         roster = valid
         runner = makeRunner(characters: valid.manifests)
         wireRunnerCallbacks()

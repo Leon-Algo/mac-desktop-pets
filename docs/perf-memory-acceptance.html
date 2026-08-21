@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发布前内存与性能验收报告 · Desktop Pets</title>
+<style>
+  :root {
+    --bg: #ffffff; --card: #f7f8fa; --ink: #1d1d1f; --muted: #6b7280;
+    --line: #e5e7eb; --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .verdict { border-radius: 12px; padding: 18px 20px; margin: 18px 0 28px; font-size: 15px; }
+  .verdict.ok { background: #ecfdf5; border: 1px solid #a7f3d0; }
+  .verdict b { color: var(--ok); }
+  h2 { font-size: 19px; margin: 34px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 15px; margin: 20px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 11px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--card); font-weight: 600; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  code { background: var(--card); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .tag.ok { background: #dcfce7; color: var(--ok); }
+  .tag.warn { background: #fef3c7; color: var(--warn); }
+  .tag.bad { background: #fee2e2; color: var(--bad); }
+  .file { color: var(--accent); font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .cmd { background: #0b1020; color: #d6e2ff; padding: 14px 16px; border-radius: 10px; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; overflow-x: auto; white-space: pre; }
+  .note { background: var(--card); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13.5px; }
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .foot { color: var(--muted); font-size: 12.5px; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>发布前内存与性能验收报告</h1>
+  <div class="sub">项目：mac-desktop-pets（macOS 桌宠） · 检查范围：内存泄漏 / 长时间运行卡顿 · 生成日期：2026-08-22</div>
+
+  <div class="verdict ok">
+    <b>验收结论：通过（内存与性能层面具备发布条件）。</b>
+    经系统化排查，定位并修复 4 处真实根因（含 1 处 Timer 强引用循环泄漏），新增 3 项可自动验收的测试。
+    全量测试 <b>132/132 通过</b>；模拟 1 小时 @20fps 长期运行下状态有界、坐标有限、平均单步耗时远低于 1ms 预算；
+    关键生命周期测试确认 <code>WorldRunner</code> 在引用归零后即可释放，<b>不再被定时器强持有</b>。
+    仅余「实机 Instruments/活动监视器」一类需真机交互的验证项，见文末建议。
+  </div>
+
+  <h2>1. 排查方法</h2>
+  <ul>
+    <li>静态走查核心循环与渲染路径（<span class="file">WorldRunner → PetWorld.step → PetWindowCoordinator.apply → PetSpriteView</span>），定位泄漏/空转高发区。</li>
+    <li>全局检索 <code>Timer</code>、<code>NotificationCenter.addObserver</code>、<code>[weak self]</code> / 闭包捕获，识别强引用循环与未移除的 Observer。</li>
+    <li>审查窗口生命周期（<span class="file">PetPanel / NSPanel</span> 的 <code>orderOut</code> vs <code>close</code>），确认窗口对象在运行实例切换时是否被孤立。</li>
+    <li>用可自动执行的测试替代口头声明：长期稳定性 + 对象释放验证 + 已有 129 项回归测试。</li>
+  </ul>
+
+  <h2>2. 发现的问题与根因</h2>
+  <table>
+    <thead><tr><th style="width:30px">#</th><th>问题</th><th>根因</th><th>风险</th><th>处置</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><b>Timer 强引用循环泄漏</b><br><span class="file">WorldRunner.start()</span></td>
+        <td><code>Timer.scheduledTimer(target: self, selector:)</code> 让 Timer 强持有 self，形成 <code>WorldRunner → Timer → WorldRunner</code> 循环，仅依赖 <code>stop()</code> 解环。</td>
+        <td><span class="tag bad">高</span> 若某路径未调用 stop()，WorldRunner 及其全部宠物窗口永不释放（内存泄漏）。</td>
+        <td><span class="tag ok">已修复</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><b>通知 Observer 从不移除</b><br><span class="file">StatusMenuController.observeStatusContext()</span></td>
+        <td>注册 3 个通知（<code>didBecomeActive</code> / <code>didChangeScreenParameters</code> / <code>activeSpaceDidChange</code>），但无 <code>removeObserver</code> 也无 <code>deinit</code>。</td>
+        <td><span class="tag warn">中</span> 控制器一旦被释放会向野指针发消息（崩溃）；且形成隐式持有。</td>
+        <td><span class="tag ok">已修复</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><b>宠物面板未真正关闭</b><br><span class="file">PetWindowCoordinator / WorldRunner</span></td>
+        <td>roster 切换/退出时仅 <code>orderOut</code>（隐藏），未 <code>close()</code>；窗口可能被窗口服务器持有成为孤儿窗口。</td>
+        <td><span class="tag warn">中</span> 多次切换 roster 累积孤儿窗口，长期占用资源。</td>
+        <td><span class="tag ok">已修复</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><b>每帧重复 setRenderScale（空转开销）</b><br><span class="file">PetWindowCoordinator.apply(poses:)</span></td>
+        <td>每个 tick（20fps）对所有宠物无条件调用 <code>setRenderScale</code>，其内部重设 frame、<code>petLayer.bounds</code> 并整层重排反馈层，即便 scale 未变。</td>
+        <td><span class="tag warn">中</span> 长期运行下的纯空转 CPU 开销，计入「长时间占用卡顿」隐患。</td>
+        <td><span class="tag ok">已修复</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><b>空闲期仍全速运行 20fps 主循环</b><br><span class="file">WorldRunner.tick()</span></td>
+        <td>即使全局暂停/无交互，主循环每帧仍执行 <code>apply</code> 与 <code>updateMouseAcceptance</code>（坐标转换 + alpha 命中查询）。</td>
+        <td><span class="tag warn">低</span> 桌面宠物的固有交互开销；命中查询为 O(1) 数组查表，影响很小。</td>
+        <td><span class="tag warn">建议项</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. 已落地的修复</h2>
+  <table>
+    <thead><tr><th style="width:30px">#</th><th>修复</th><th>文件 / 位置</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>打破 Timer 强引用循环</td>
+        <td class="file">Sources/DesktopPets/App/WorldRunner.swift · start()</td>
+        <td>改为 <code>Timer.scheduledTimer(withTimeInterval:repeats:block:)</code> 并以 <code>[weak self]</code> 捕获；block 内用 <code>MainActor.assumeIsolated</code> 切回主 actor 调 <code>tick()</code>。新增 <code>dispose()</code>（stop + 关闭面板）。</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Observer 对称移除</td>
+        <td class="file">Sources/DesktopPets/App/StatusMenuController.swift · deinit</td>
+        <td>新增 <code>deinit</code>，对 <code>NotificationCenter.default</code> 与 <code>NSWorkspace.shared.notificationCenter</code> 调用 <code>removeObserver(self)</code>。</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>面板彻底关闭 + 切换清理</td>
+        <td class="file">PetWindowCoordinator.swift · closeAll()<br>AppController.swift · applyRoster / applicationWillTerminate</td>
+        <td>新增 <code>closeAll()</code> 关闭所有宠物面板；<code>applyRoster</code> 与退出改调 <code>dispose()</code>，旧实例不再残留孤儿窗口。</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>scale 重算去冗余</td>
+        <td class="file">PetWindowCoordinator.swift · apply(poses:)</td>
+        <td>仅当 <code>scalePreset</code> 相对缓存的 <code>appliedScalePreset</code> 变化时才调用 <code>setRenderScale</code>；每帧仅保留必要的 <code>setFrame</code> + <code>apply</code>。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. 验收证据（可复现）</h2>
+
+  <h3>4.1 全量单元测试</h3>
+  <div class="cmd">$ swift test
+Test Suite 'All tests' passed at 2026-08-22 ...
+    Executed 132 tests, with 0 failures (0 unexpected) in 7.39 seconds</div>
+  <div class="note">相较修复前 129 项，新增 3 项内存/生命周期测试，全量 <b>0 失败、无回归</b>。</div>
+
+  <h3>4.2 新增关键测试</h3>
+  <table>
+    <thead><tr><th>测试</th><th>验证点</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td><code>testSustainedLongRunStaysBoundedAndFast</code></td><td>模拟 1 小时 @20fps：状态有界、坐标有限、单步 &lt;1ms</td><td><span class="tag ok">通过 (1.87s)</span></td></tr>
+      <tr><td><code>testWorldRunnerDeallocatesWhenReferenceDroppedWithoutStop</code></td><td>引用归零（不调 stop）后 WorldRunner 必须释放 → 证明 Timer 不再强持有</td><td><span class="tag ok">通过</span></td></tr>
+      <tr><td><code>testWorldRunnerDeallocatesAfterStop</code></td><td>正常 stop 后正常释放（对照）</td><td><span class="tag ok">通过</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note">判别说明：第 2 项测试在「旧 Timer(target:self)」实现下会 <b>失败</b>（循环导致无法释放），在现行 <code>[weak self]</code> 实现下 <b>通过</b>，因此是真实有效的回归护栏。</div>
+
+  <h3>4.3 运行时 CLI 自检（release 构建）</h3>
+  <div class="cmd">$ DesktopPets --self-test
+{"status":"ok","architecture":"arm64","version":"0.1.0","windowEnumerationAvailable":true}
+
+$ DesktopPets --interaction-self-test
+{"status":"ok","allFinite":true,"maximumSupportedPetCount":8,"testedPetCounts":[1,4,8],"petCount":4}
+
+$ DesktopPets --render-snapshot /tmp/desktoppets_selfcheck.png
+{"status":"ok","path":"/tmp/desktoppets_selfcheck.png"}  (345 KB)</div>
+
+  <h2>5. 残留建议（非阻塞，可后续迭代）</h2>
+  <ul>
+    <li><b>实机 Instruments 验证（推荐）</b>：在真机以「Allocations + Leaks」模板运行 ≥10 分钟，确认无持续增长；本环境为无头沙箱，GUI 层无法自动跑 Instruments。</li>
+    <li><b>长时实机观察</b>：实机挂机 ≥4 小时，用「活动监视器」观察内存是否平稳（逻辑层已由 4.2 的 1 小时模拟证明无退化）。</li>
+    <li><b>空闲节流（可选优化）</b>：全局暂停且无交互时，可将主循环从 20fps 降频或暂停 <code>updateMouseAcceptance</code>，进一步降低空闲 CPU（当前命中查询为 O(1)，影响极小，不阻塞发布）。</li>
+    <li><b>多屏 / Stage Manager / VoiceOver</b>：仍建议实机走查一次（功能正确性，非内存泄漏范畴）。</li>
+  </ul>
+
+  <h2>6. 一键复现</h2>
+  <div class="cmd"># 全量测试（含新增内存/生命周期验收）
+swift test
+
+# 仅跑新增验收项
+swift test --filter MemoryAndLifecycleTests
+
+# release 构建 + 运行时自检
+swift build -c release
+.build/release/DesktopPets --self-test
+.build/release/DesktopPets --interaction-self-test</div>
+
+  <div class="foot">
+    本报告由自动化排查 + 测试生成，结论基于 132 项单元测试、3 项新增生命周期/性能测试与 release 运行时自检。
+    涉及文件：WorldRunner.swift、StatusMenuController.swift、PetWindowCoordinator.swift、AppController.swift、MemoryAndLifecycleTests.swift。
+  </div>
+</div>
+</body>
+</html>
