@@ -44,10 +44,10 @@
 <div class="wrap">
 
   <h1>DesktopPets · 现状与最佳实践路线图</h1>
-  <div class="sub">更新于 2026-08-19 ｜ 仓库已开源、v0.1.1 已发布、CI 全绿</div>
+  <div class="sub">更新于 2026-08-23 ｜ 仓库已开源、v0.1.1 已发布、CI 132/132 全绿、发布前内存/性能审计完成</div>
 
   <div class="highlight">
-    <b>当前状态一句话：</b>代码已开源到 GitHub，DMG 已发布，README 有效果图/GIF，CI 129/129 全绿。接下来按 P1→P2→P3 推进质量与产品增强。
+    <b>当前状态一句话：</b>代码已开源到 GitHub，DMG 已发布，README 效果图/GIF 已上线，CI 132/132 全绿，发布前内存/性能审计已通过（修复 4 处泄漏/卡顿根因）。接下来按 P1→P2→P3 推进实机验证与产品增强。
   </div>
 
   <h2>① 已交付（发布前置最佳实践）</h2>
@@ -55,11 +55,12 @@
     <div class="row"><span class="ok">✓</span><div><b>开源仓库</b>：<a href="https://github.com/Leon-Algo/mac-desktop-pets">github.com/Leon-Algo/mac-desktop-pets</a> 已公开，main 分支推送完成</div></div>
     <div class="row"><span class="ok">✓</span><div><b>v0.1.1 Release</b>：DMG 已上传到 GitHub Releases，含效果图与录屏 GIF</div></div>
     <div class="row"><span class="ok">✓</span><div><b>README 效果图</b>：首屏静态预览 + 2 张动态 GIF 已嵌入，访客一眼可见产品形态</div></div>
-    <div class="row"><span class="ok">✓</span><div><b>CI 自动化</b>：GitHub Actions 跑 <code>swift test</code> + 严格并发 Release，129/129 全绿</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>CI 自动化</b>：GitHub Actions 跑 <code>swift test</code> + 严格并发 Release，132/132 全绿</div></div>
     <div class="row"><span class="ok">✓</span><div><b>本地化骨架</b>：菜单/设置/裁剪窗全量 L10n，中文默认，英文 .lproj 内嵌备用</div></div>
     <div class="row"><span class="ok">✓</span><div><b>安全加固</b>：头像导入字节/像素上限、roster 损坏备份、applyRoster 事务语义修复，均配测试</div></div>
     <div class="row"><span class="ok">✓</span><div><b>开源脚手架</b>：LICENSE（MIT + 真人照片条款）、README、CONTRIBUTING、.gitignore、CI workflow</div></div>
     <div class="row"><span class="ok">✓</span><div><b>分支策略</b>：feature 分支已合并回 main 并删除，后续新功能开 <code>feat/</code> 分支，避免漂移</div></div>
+    <div class="row"><span class="ok">✓</span><div><b>发布前内存/性能审计</b>：修复 WorldRunner Timer 强引用循环、StatusMenuController 未移除 Observer、面板孤儿窗口、每帧 scale 空转 4 处根因；新增 1h@20fps 长时稳定性测试 + WorldRunner 释放测试，全量 132/132 通过，详见 <a href="perf-memory-acceptance.html">验收报告</a></div></div>
   </div>
 
   <h2>② 剩余最佳实践（按优先级）</h2>
