@@ -1,17 +1,17 @@
 import Foundation
 
-struct PetAgent: Sendable {
-    let id: String
-    let personality: Personality
-    var position: WorldPoint
-    var state: PetState
-    var velocity: WorldVector
-    var facing: Facing
-    var stateTime: Double
-    var supportID: String?
-    var manualActionID: PetActionID?
+public struct PetAgent: Sendable {
+    public let id: String
+    public let personality: Personality
+    public var position: WorldPoint
+    public var state: PetState
+    public var velocity: WorldVector
+    public var facing: Facing
+    public var stateTime: Double
+    public var supportID: String?
+    public var manualActionID: PetActionID?
 
-    init(
+    public init(
         id: String,
         personality: Personality,
         position: WorldPoint,
@@ -33,7 +33,7 @@ struct PetAgent: Sendable {
         self.manualActionID = manualActionID
     }
 
-    var pose: PetPose {
+    public var pose: PetPose {
         PetPose(
             id: id,
             position: position,

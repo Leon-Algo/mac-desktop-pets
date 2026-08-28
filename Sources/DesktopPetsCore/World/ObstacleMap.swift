@@ -1,10 +1,10 @@
 import Foundation
 
-struct ObstacleMap: Sendable {
-    let displays: [WorldRect]
-    let obstacles: [Obstacle]
+public struct ObstacleMap: Sendable {
+    public let displays: [WorldRect]
+    public let obstacles: [Obstacle]
 
-    init(displays: [WorldRect], obstacles: [Obstacle]) {
+    public init(displays: [WorldRect], obstacles: [Obstacle]) {
         self.displays = displays
         self.obstacles = obstacles.sorted {
             if $0.rect.maxY == $1.rect.maxY { return $0.id < $1.id }
@@ -12,7 +12,7 @@ struct ObstacleMap: Sendable {
         }
     }
 
-    func supportingSurface(below point: WorldPoint, within maxDrop: Double) -> SupportSurface? {
+    public func supportingSurface(below point: WorldPoint, within maxDrop: Double) -> SupportSurface? {
         guard point.isFinite, maxDrop >= 0 else { return nil }
         var candidates = obstacles.compactMap { obstacle -> SupportSurface? in
             let top = obstacle.rect.maxY
@@ -49,7 +49,7 @@ struct ObstacleMap: Sendable {
         }
     }
 
-    func nearestClimbableEdge(to point: WorldPoint, within maxDistance: Double) -> ClimbableEdge? {
+    public func nearestClimbableEdge(to point: WorldPoint, within maxDistance: Double) -> ClimbableEdge? {
         guard point.isFinite, maxDistance >= 0 else { return nil }
         return obstacles
             .flatMap { obstacle in
@@ -79,7 +79,7 @@ struct ObstacleMap: Sendable {
             }
     }
 
-    func crossedClimbableEdge(fromX: Double, toX: Double, atY y: Double) -> ClimbableEdge? {
+    public func crossedClimbableEdge(fromX: Double, toX: Double, atY y: Double) -> ClimbableEdge? {
         guard fromX.isFinite, toX.isFinite, y.isFinite, fromX != toX else { return nil }
         let movingRight = toX > fromX
         return obstacles.compactMap { obstacle -> ClimbableEdge? in
@@ -99,14 +99,14 @@ struct ObstacleMap: Sendable {
         .min { abs(fromX - $0.x) < abs(fromX - $1.x) }
     }
 
-    func clamped(_ point: WorldPoint, margin: Double) -> WorldPoint {
+    public func clamped(_ point: WorldPoint, margin: Double) -> WorldPoint {
         guard let display = displays.min(by: {
             $0.squaredDistance(to: point) < $1.squaredDistance(to: point)
         }) else { return point }
         return display.clamped(point, margin: margin)
     }
 
-    func clampedPetAnchor(_ point: WorldPoint, halfWidth: Double, topClearance: Double) -> WorldPoint {
+    public func clampedPetAnchor(_ point: WorldPoint, halfWidth: Double, topClearance: Double) -> WorldPoint {
         guard let display = displays.min(by: {
             $0.squaredDistance(to: point) < $1.squaredDistance(to: point)
         }) else { return point }

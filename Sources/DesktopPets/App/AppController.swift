@@ -9,7 +9,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var runner: WorldRunner?
     private var statusMenu: StatusMenuController?
     private var controlCenterPanel: ControlCenterPanelController?
-    private let rosterStore = CharacterRosterStore()
+    private let rosterStore = CharacterRosterStore(normalizePNG: { data in
+        try AvatarImageProcessor.normalizedPNG(from: data)
+    })
     private var roster = CharacterRoster.default
     private var characterSettings: CharacterSettingsWindowController?
 

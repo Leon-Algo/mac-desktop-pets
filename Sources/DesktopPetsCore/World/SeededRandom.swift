@@ -1,13 +1,13 @@
 import Foundation
 
-struct SeededRandom: Sendable {
+public struct SeededRandom: Sendable {
     private var state: UInt64
 
-    init(seed: UInt64) {
+    public init(seed: UInt64) {
         state = seed == 0 ? 0x9E3779B97F4A7C15 : seed
     }
 
-    mutating func nextDouble() -> Double {
+    public mutating func nextDouble() -> Double {
         state ^= state << 13
         state ^= state >> 7
         state ^= state << 17

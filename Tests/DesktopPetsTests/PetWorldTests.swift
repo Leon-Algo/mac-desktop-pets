@@ -84,11 +84,11 @@ final class PetWorldTests: XCTestCase {
             display: largeDisplay,
             seed: 1
         )
-        quarterWorld.setScale(.quarter, obstacles: map)
+        quarterWorld.setScale(factor: PetScalePreset.quarter.factor, obstacles: map)
         _ = quarterWorld.handle(.beginDrag(id: "person-left", position: target), obstacles: map)
         XCTAssertEqual(quarterWorld.poses[0].position, WorldPoint(x: 22.5, y: 765))
 
-        quarterWorld.setScale(.original, obstacles: map)
+        quarterWorld.setScale(factor: PetScalePreset.original.factor, obstacles: map)
         XCTAssertEqual(quarterWorld.poses[0].position, WorldPoint(x: 90, y: 660))
     }
 

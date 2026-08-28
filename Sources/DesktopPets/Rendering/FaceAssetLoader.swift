@@ -16,7 +16,10 @@ enum FaceAssetLoader {
         case let .builtIn(preset):
             return BuiltInAvatarRenderer.image(for: preset, size: NSSize(width: 256, height: 256))
         case let .imported(filename):
-            return CharacterRosterStore().image(for: .imported(filename: filename))
+            guard let url = CharacterRosterStore(normalizePNG: { data in
+                try AvatarImageProcessor.normalizedPNG(from: data)
+            }).importedAvatarURL(for: .imported(filename: filename)) else { return nil }
+            return NSImage(contentsOf: url)
         case let .legacyBundled(identifier):
             return legacyBundledImage(identifier: identifier)
         case nil:

@@ -1,0 +1,44 @@
+name: Windows Feasibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    name: Core on Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Swift on Windows
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.0.3"
+
+      - name: Swift version
+        run: swift --version
+
+      # Deep source paths break SwiftPM on Windows; map a short drive path.
+      - name: Map short build path
+        shell: pwsh
+        run: |
+         subst X: "D:\a\${{ github.event.repository.name }}\${{ github.event.repository.name }}"
+          if ($LASTEXITCODE -ne 0) { subst X: "D:\a\_temp" ; if ($LASTEXITCODE -ne 0) { Write-Host "subst unavailable, continuing in place" } }
+          if (Test-Path "X:\Package.swift") { Set-Location X:\ ; Write-Host "Using X:\ short path" }
+          swift --version
+
+      - name: Build CoreProbe
+        run: swift build --product CoreProbe
+
+      - name: Run CoreProbe self-check
+        run: |
+          $exe = Get-ChildItem -Path .build -Recurse -Filter "CoreProbe.exe" | Select-Object -First 1
+          if (-not $exe) { Write-Error "CoreProbe.exe not found"; exit 1 }
+          & $exe.FullName
+          exit $LASTEXITCODE

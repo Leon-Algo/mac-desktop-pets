@@ -1,6 +1,6 @@
 import Foundation
 
-enum PetInteraction: Equatable, Sendable {
+public enum PetInteraction: Equatable, Sendable {
     case performAction(PetActionRequest)
     case react(id: String)
     case gatherAndPlay(leaderID: String)
@@ -15,7 +15,7 @@ enum PetInteraction: Equatable, Sendable {
     case quitApplication
 }
 
-enum PetInteractionResult: Equatable, Sendable {
+public enum PetInteractionResult: Equatable, Sendable {
     case action(PetActionOutcome)
     case handled
     case pauseChanged(id: String, paused: Bool)

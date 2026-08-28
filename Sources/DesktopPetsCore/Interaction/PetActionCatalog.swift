@@ -1,6 +1,6 @@
 import Foundation
 
-enum PetActionID: String, Codable, CaseIterable, Hashable, Sendable {
+public enum PetActionID: String, Codable, CaseIterable, Hashable, Sendable {
     case wave
     case hop
     case roll
@@ -8,32 +8,37 @@ enum PetActionID: String, Codable, CaseIterable, Hashable, Sendable {
     case groupCallDad
 }
 
-enum PetActionScope: String, Codable, Sendable {
+public enum PetActionScope: String, Codable, Sendable {
     case individual
     case group
 }
 
-struct PetActionDefinition: Equatable, Sendable {
-    let id: PetActionID
-    let scope: PetActionScope
-    let title: String
-    let explanation: String
-    let feedback: String
-    let duration: Double
+public struct PetActionDefinition: Equatable, Sendable {
+    public let id: PetActionID
+    public let scope: PetActionScope
+    public let title: String
+    public let explanation: String
+    public let feedback: String
+    public let duration: Double
 }
 
-struct PetActionRequest: Equatable, Sendable {
-    let actionID: PetActionID
-    let targetID: String?
+public struct PetActionRequest: Equatable, Sendable {
+    public let actionID: PetActionID
+    public let targetID: String?
+
+    public init(actionID: PetActionID, targetID: String?) {
+        self.actionID = actionID
+        self.targetID = targetID
+    }
 }
 
-enum PetActionOutcome: Equatable, Sendable {
+public enum PetActionOutcome: Equatable, Sendable {
     case performed(affectedIDs: [String], feedback: String, duration: Double)
     case unavailable(targetID: String?, feedback: String, duration: Double)
 }
 
-enum PetActionCatalog {
-    static let individual = [
+public enum PetActionCatalog {
+    public static let individual = [
         PetActionDefinition(
             id: .wave,
             scope: .individual,
@@ -68,7 +73,7 @@ enum PetActionCatalog {
         ),
     ]
 
-    static let group = [
+    public static let group = [
         PetActionDefinition(
             id: .groupCallDad,
             scope: .group,
@@ -79,9 +84,9 @@ enum PetActionCatalog {
         ),
     ]
 
-    static let all = individual + group
+    public static let all = individual + group
 
-    static func definition(for id: PetActionID) -> PetActionDefinition? {
+    public static func definition(for id: PetActionID) -> PetActionDefinition? {
         all.first { $0.id == id }
     }
 }

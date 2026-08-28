@@ -1,6 +1,6 @@
 import Foundation
 
-enum CharacterRosterError: Error, Equatable {
+public enum CharacterRosterError: Error, Equatable {
     case unsupportedVersion(Int)
     case invalidCount(Int)
     case duplicateIdentifier(String)
@@ -10,14 +10,19 @@ enum CharacterRosterError: Error, Equatable {
     case invalidPersonality(String)
 }
 
-struct CharacterRoster: Codable, Equatable, Sendable {
-    static let currentVersion = 1
-    static let maximumCount = 8
+public struct CharacterRoster: Codable, Equatable, Sendable {
+    public static let currentVersion = 1
+    public static let maximumCount = 8
 
-    var version: Int
-    var profiles: [CharacterProfile]
+    public var version: Int
+    public var profiles: [CharacterProfile]
 
-    func validated() throws -> CharacterRoster {
+    public init(version: Int, profiles: [CharacterProfile]) {
+        self.version = version
+        self.profiles = profiles
+    }
+
+    public func validated() throws -> CharacterRoster {
         guard version == Self.currentVersion else { throw CharacterRosterError.unsupportedVersion(version) }
         guard (1...Self.maximumCount).contains(profiles.count) else {
             throw CharacterRosterError.invalidCount(profiles.count)
@@ -43,14 +48,14 @@ struct CharacterRoster: Codable, Equatable, Sendable {
         return CharacterRoster(version: version, profiles: normalized)
     }
 
-    static let `default` = CharacterRoster(version: currentVersion, profiles: [
+    public static let `default` = CharacterRoster(version: currentVersion, profiles: [
         profile(id: "default-orange", name: "橙仔", avatar: .sunny, outfit: .orange, personality: .lively),
         profile(id: "default-blue", name: "蓝豆", avatar: .ocean, outfit: .blue, personality: .calm),
         profile(id: "default-mint", name: "薄荷", avatar: .mint, outfit: .mint, personality: .social),
         profile(id: "default-violet", name: "紫团", avatar: .violet, outfit: .violet, personality: .curious),
     ])
 
-    var manifests: [CharacterManifest] {
+    public var manifests: [CharacterManifest] {
         let frame = FrameRect(x: 0, y: 0, width: 1, height: 1)
         let clip = AnimationClip(frames: [frame], fps: 8)
         let animations = Dictionary(uniqueKeysWithValues: [
@@ -90,7 +95,7 @@ struct CharacterRoster: Codable, Equatable, Sendable {
         )
     }
 
-    static func legacy(from manifests: [CharacterManifest]) -> CharacterRoster {
+    public static func legacy(from manifests: [CharacterManifest]) -> CharacterRoster {
         CharacterRoster(version: currentVersion, profiles: manifests.prefix(maximumCount).enumerated().map { index, manifest in
             CharacterProfile(
                 id: manifest.id,

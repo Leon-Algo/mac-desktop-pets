@@ -1,14 +1,14 @@
 import Foundation
 
-struct PetWorld: Sendable {
-    private(set) var agents: [PetAgent]
+public struct PetWorld: Sendable {
+    public private(set) var agents: [PetAgent]
     private var random: SeededRandom
     private var paused = false
     private var pausedAgentIDs: Set<String> = []
     private var draggingAgentIDs: Set<String> = []
     private var petScaleFactor = 1.0
 
-    init(characters: [CharacterManifest], display: WorldRect, seed: UInt64) {
+    public init(characters: [CharacterManifest], display: WorldRect, seed: UInt64) {
         let spacing = min(180, display.width / Double(max(characters.count + 1, 1)))
         agents = characters.enumerated().map { index, character in
             PetAgent(
@@ -22,29 +22,31 @@ struct PetWorld: Sendable {
         random = SeededRandom(seed: seed)
     }
 
-    init(agents: [PetAgent], seed: UInt64) {
+    public init(agents: [PetAgent], seed: UInt64) {
         self.agents = agents
         random = SeededRandom(seed: seed)
     }
 
-    var poses: [PetPose] { agents.map(\.pose) }
+    public var poses: [PetPose] { agents.map(\.pose) }
 
-    func isPaused(id: String) -> Bool {
+    public func isPaused(id: String) -> Bool {
         pausedAgentIDs.contains(id)
     }
 
-    mutating func setPaused(_ value: Bool) {
+    public mutating func setPaused(_ value: Bool) {
         paused = value
     }
 
-    mutating func setScale(_ preset: PetScalePreset, obstacles: ObstacleMap) {
-        petScaleFactor = preset.factor
+    /// 缩放安全边界。接收纯数值 factor（如 0.25/0.5/1.0），
+    /// 由各平台外壳从自己的缩放枚举映射，保持核心平台无关。
+    public mutating func setScale(factor: Double, obstacles: ObstacleMap) {
+        petScaleFactor = factor
         for index in agents.indices {
             agents[index].position = clampedPetAnchor(agents[index].position, obstacles: obstacles)
         }
     }
 
-    mutating func recall(to display: WorldRect) {
+    public mutating func recall(to display: WorldRect) {
         let spacing = display.width / Double(max(agents.count + 1, 1))
         for index in agents.indices {
             agents[index].position = WorldPoint(x: display.minX + spacing * Double(index + 1), y: display.minY)
@@ -57,7 +59,7 @@ struct PetWorld: Sendable {
         draggingAgentIDs.removeAll()
     }
 
-    mutating func handle(_ interaction: PetInteraction, obstacles: ObstacleMap) -> PetInteractionResult {
+    public mutating func handle(_ interaction: PetInteraction, obstacles: ObstacleMap) -> PetInteractionResult {
         switch interaction {
         case let .performAction(request):
             return performAction(request, obstacles: obstacles)
@@ -133,7 +135,7 @@ struct PetWorld: Sendable {
         }
     }
 
-    mutating func step(deltaTime: Double, obstacles: ObstacleMap) {
+    public mutating func step(deltaTime: Double, obstacles: ObstacleMap) {
         guard !paused, deltaTime.isFinite, deltaTime > 0, !obstacles.displays.isEmpty else { return }
         var remaining = min(deltaTime, 1)
         while remaining > 0 {
