@@ -483,6 +483,16 @@ enum WICSupport {
                 bgra[i + 3] = 255
             }
         }
+        // createFactory 诊断：直接展开 CoInitializeEx + CoCreateInstance 看 HRESULT。
+        _ = CoInitializeEx(nil, UINT(0x2))
+        do {
+            var probeClsid = wicFactoryCLSID
+            var probeIid = wicFactoryIID
+            var probeOut: UnsafeMutableRawPointer? = nil
+            let probeHr = CoCreateInstance(&probeClsid, nil, DWORD(CLSCTX_INPROC_SERVER.rawValue), &probeIid, &probeOut)
+            trace.append("diag CoInitializeEx+CoCreateInstance hr=0x\(String(UInt32(bitPattern: probeHr), radix: 16)) out=\(probeOut != nil)")
+            if let p = probeOut { _ = ComObject(p) }
+        }
         guard let factory = createFactory() else {
             trace.append("FAIL createFactory")
             return false
