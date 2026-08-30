@@ -580,8 +580,9 @@ enum WICSupport {
             step("FAIL frame.commit")
             return false
         }
-        guard encoder.commitEncoder() else {
-            step("FAIL encoder.commit")
+        let encoderHr = encoder.commitEncoder()
+        guard comOK(encoderHr) else {
+            step("FAIL encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
             return false
         }
         let size = stream.streamSize()
