@@ -16,6 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Swift on Windows links against MSVC; the developer environment
+      # (INCLUDE/LIB for UCRT and Windows SDK headers) must be active
+      # before swift build runs, otherwise C modules like ucrt fail.
+      - name: Enable MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Install Swift on Windows
         uses: SwiftyLab/setup-swift@v1
         with:
@@ -23,15 +29,6 @@ jobs:
 
       - name: Swift version
         run: swift --version
-
-      # Deep source paths break SwiftPM on Windows; map a short drive path.
-      - name: Map short build path
-        shell: pwsh
-        run: |
-         subst X: "D:\a\${{ github.event.repository.name }}\${{ github.event.repository.name }}"
-          if ($LASTEXITCODE -ne 0) { subst X: "D:\a\_temp" ; if ($LASTEXITCODE -ne 0) { Write-Host "subst unavailable, continuing in place" } }
-          if (Test-Path "X:\Package.swift") { Set-Location X:\ ; Write-Host "Using X:\ short path" }
-          swift --version
 
       - name: Build CoreProbe
         run: swift build --product CoreProbe
