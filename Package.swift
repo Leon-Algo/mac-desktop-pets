@@ -17,6 +17,12 @@ let package = Package(
             dependencies: ["DesktopPetsCore"],
             path: "Sources/CoreProbe"
         ),
+        // Windows 壳：Win32 分层透明窗口 + 软件光栅器，驱动共享核心。
+        // macOS/CI 上编译为纯逻辑桩（--self-test 可跑），Windows 上提供 GUI。
+        .executableTarget(
+            name: "WindowsShell",
+            dependencies: ["DesktopPetsCore"]
+        ),
         // macOS 壳：AppKit 窗口/菜单/渲染，驱动共享核心。
         .executableTarget(
             name: "DesktopPets",

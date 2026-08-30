@@ -8,7 +8,7 @@ on:
 
 jobs:
   probe:
-    name: Core on Windows
+    name: Core + Shell on Windows
     runs-on: windows-latest
     defaults:
       run:
@@ -33,12 +33,19 @@ jobs:
       - name: Swift version
         run: swift --version
 
-      - name: Build CoreProbe
-        run: swift build --product CoreProbe
+      - name: Build all Windows targets
+        run: swift build --product CoreProbe --product WindowsShell
 
       - name: Run CoreProbe self-check
         run: |
           $exe = Get-ChildItem -Path .build -Recurse -Filter "CoreProbe.exe" | Select-Object -First 1
           if (-not $exe) { Write-Error "CoreProbe.exe not found"; exit 1 }
           & $exe.FullName
+          exit $LASTEXITCODE
+
+      - name: Run WindowsShell self-test
+        run: |
+          $exe = Get-ChildItem -Path .build -Recurse -Filter "WindowsShell.exe" | Select-Object -First 1
+          if (-not $exe) { Write-Error "WindowsShell.exe not found"; exit 1 }
+          & $exe.FullName --self-test
           exit $LASTEXITCODE
