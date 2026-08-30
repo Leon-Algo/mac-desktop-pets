@@ -152,7 +152,7 @@ final class ShellAppDelegate {
         var running = true
         while running {
             var hasMessage = PeekMessageW(&msg, nil, 0, 0, UINT(PM_REMOVE))
-            while hasMessage != 0 {
+            while hasMessage {
                 if msg.message == UINT(WM_QUIT) { running = false }
                 TranslateMessage(&msg)
                 DispatchMessageW(&msg)
