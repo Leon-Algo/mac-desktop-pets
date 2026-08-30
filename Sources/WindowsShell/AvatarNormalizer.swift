@@ -392,10 +392,12 @@ extension ComObject {
 
 // MARK: - GUID 常量（let 全局，传参时经 withUnsafePointer 取址）
 
-/// CLSID_WICImagingFactory {cacaf262-9370-4615-a13b-9f5539dae4c4}
+/// CLSID_WICImagingFactory1 {cacaf262-9370-4615-a13b-9f5539da4c0a}
+/// （经典工厂 CLSID，Vista 起始终注册；Win8+ 头文件宏 CLSID_WICImagingFactory
+///  指向 Factory2 {317d06e8-5f24-433d-bdf7-79ce68d8abc2}，两者实现同一接口可互换）
 private let wicFactoryCLSID = GUID(
     Data1: 0xcacaf262, Data2: 0x9370, Data3: 0x4615,
-    Data4: (0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0xe4, 0xc4)
+    Data4: (0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0x0a)
 )
 /// IID_IWICImagingFactory —— 复制 SDK 导出的 let 全局（全局 let 不能直接取址）。
 private let wicFactoryIID = IID_IWICImagingFactory
