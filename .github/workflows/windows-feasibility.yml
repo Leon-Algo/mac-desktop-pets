@@ -25,7 +25,10 @@ jobs:
       - name: Install Swift on Windows
         uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "6.0.3"
+          # 6.3.1 fixes the ucrt/_Builtin_intrinsics cyclic module
+          # dependency triggered by Windows SDK 10.0.26100 (swift#79745).
+          # Patch-pinned for deterministic installs on hosted runners.
+          swift-version: "6.3.1"
 
       - name: Swift version
         run: swift --version
