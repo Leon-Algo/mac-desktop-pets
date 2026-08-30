@@ -20,6 +20,15 @@ struct WindowsShell {
         let arguments = CommandLine.arguments
         if arguments.contains("--self-test") {
             let failures = ShellModel.runSelfCheck()
+            #if os(Windows)
+            // WIC 手写 COM vtable 绑定的运行期验证：PNG 编解码往返逐像素核对。
+            // 槽位错位 / GUID 传参错误在此崩溃或数据不符（真机 CI 上才有意义）。
+            if WICSupport.roundTripSelfTest() {
+                print("WIC round-trip: ok")
+            } else {
+                failures.append("WIC round-trip self-test failed")
+            }
+            #endif
             if failures.isEmpty {
                 print("WindowsShell self-test: ok (render + coords + hit-test + interactions + monitors + 600 frames + determinism + avatar + session)")
             } else {
@@ -53,6 +62,11 @@ private nonisolated(unsafe) var g_monitorRects: [WorldRect] = []
 /// - 逐像素命中：不透明像素接收点击，透明区域穿透（WM_NCHITTEST）。
 /// - 托盘图标 + 右键菜单（开机自启开关、退出）。
 /// - 多显示器枚举 + 显示配置变化时召回宠物。
+///
+/// 整类 @MainActor：Win32 消息循环本就运行在进程主线程，所有状态（窗口、
+/// 托盘、名册）只在主线程触碰；C 回调（WndProc / EnumDisplayMonitors）经
+/// MainActor.assumeIsolated 跳回，与 CharacterRosterStore 的隔离标注对齐。
+@MainActor
 final class ShellAppDelegate {
     private var model: ShellModel!
     private var windows: [PetWindowEntry] = []
@@ -70,8 +84,9 @@ final class ShellAppDelegate {
     private var roster: CharacterRoster = .default
     /// 托盘动态图标上次刷新时间（秒级时间戳）。
     private var lastTrayRefresh: Double = 0
-    /// 托盘动态图标当前帧号（在姿态帧序列中轮转）。
-    private var trayFrameIndex: Int = 0
+    /// 当前托盘 HICON 由 makeTrayIcon 新建，属非共享 GDI 句柄，必须轮换销毁，
+    /// 否则约 2 小时触顶 GDI 句柄上限后托盘静默失效。
+    private var currentTrayIcon: HICON? = nil
     /// 托盘图标刷新间隔（秒）。过低无意义（托盘刷新有系统开销）。
     private static let trayRefreshInterval: Double = 0.8
 
@@ -111,18 +126,16 @@ final class ShellAppDelegate {
         persistSession()
     }
 
-    /// Windows 数据目录：%APPDATA%\DesktopPets（SHGetKnownFolderPath FOLDERID_RoamingAppData）。
+    /// Windows 数据目录：%APPDATA%（FOLDERID_RoamingAppData）。
+    /// 用 ProcessInfo 环境变量取值：SDK 导出的 FOLDERID_RoamingAppData 是
+    /// let 常量，不能作 SHGetKnownFolderPath 的 inout 实参，与其绕弯不如
+    /// 直接读标准环境变量（用户级 Roaming 目录等价）。
     /// nil = 目录定位失败（理论罕见），名册功能整体回退默认。
     private func makeRosterStore() -> CharacterRosterStore? {
-        var path: PWSTR? = nil
-        let status = SHGetKnownFolderPath(
-            &FOLDERID_RoamingAppData, DWORD(KF_FLAG_DEFAULT), nil, &path
-        )
-        guard status == S_OK, let path else { return nil }
-        defer { CoTaskMemFree(path) }
-        let root = String(decodingCString: path, as: UTF16.self)
+        guard let appData = ProcessInfo.processInfo.environment["APPDATA"],
+              !appData.isEmpty else { return nil }
         return CharacterRosterStore(
-            rootDirectory: URL(fileURLWithPath: root, isDirectory: true)
+            rootDirectory: URL(fileURLWithPath: appData, isDirectory: true)
                 .appendingPathComponent("DesktopPets", isDirectory: true),
             normalizePNG: { data in
                 let decoded = WICSupport.decodeBGRA(data: data)
@@ -191,7 +204,9 @@ final class ShellAppDelegate {
                 width: Double(rect.right - rect.left),
                 height: Double(rect.bottom - rect.top)
             ) {
-                g_monitorRects.append(world)
+                MainActor.assumeIsolated {
+                    g_monitorRects.append(world)
+                }
             }
             return true
         }, 0)
@@ -229,9 +244,12 @@ final class ShellAppDelegate {
     }
 
     /// 统一消息分发（WndProc 回调参数句柄是 Optional，统一在此解包）。
+    /// C 回调在主线程被系统调用，assumeIsolated 跳回 @MainActor 隔离域。
     private static func wndProc(hwnd: HWND?, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         guard let delegate = g_delegate else { return DefWindowProcW(hwnd, msg, wparam, lparam) }
-        return delegate.handleMessage(hwnd: hwnd, msg: msg, wparam: wparam, lparam: lparam)
+        return MainActor.assumeIsolated {
+            delegate.handleMessage(hwnd: hwnd, msg: msg, wparam: wparam, lparam: lparam)
+        }
     }
 
     private func createPetWindow(id: String) -> PetWindowEntry? {
@@ -365,7 +383,7 @@ final class ShellAppDelegate {
         trayData.uID = 1
         trayData.uFlags = UINT(NIF_MESSAGE | NIF_ICON | NIF_TIP)
         trayData.uCallbackMessage = UINT(WM_APP_TRAY)
-        trayData.hIcon = makeTrayIcon()
+        trayData.hIcon = initialTrayIcon()
         writeTooltip("桌面伙伴 DesktopPets")
         // swift-win-sdk 把 BOOL 返回桥接为 Swift Bool。
         trayCreated = Shell_NotifyIconW(UINT(NIM_ADD), &trayData)
@@ -400,6 +418,11 @@ final class ShellAppDelegate {
         return LoadIconW(nil, name)
     }
 
+    /// 初次挂托盘的图标（共享系统句柄，不参与轮换销毁）。
+    private func initialTrayIcon() -> HICON? {
+        fallbackIcon()
+    }
+
     /// 用 PetCanvas 软件光栅器渲染第一个宠物头像为 32×32 托盘图标。
     private func makeTrayIcon() -> HICON? {
         guard let character = model.characters.first,
@@ -409,18 +432,20 @@ final class ShellAppDelegate {
     }
 
     /// 托盘动态图标：按当前帧重建并 NIM_MODIFY。失败静默保持旧图标。
+    /// 动感来源：直接用 world 当前 pose（phase 随模拟 tick 自然推进），
+    /// PetPose.phase 是 let 不可外部变异。旧图标轮换 DestroyIcon 防 GDI 泄漏。
     private func refreshTrayIcon() {
         guard trayCreated, let character = model.characters.first,
               let pose = model.world.poses.first else { return }
-        // 32×32 下单帧图标已能辨识；这里做姿态相位驱动的轻微变化
-        //（bob 相位推进），产生「活着」的低频动感。
-        var animatedPose = pose
-        trayFrameIndex = (trayFrameIndex + 1) % 8
-        animatedPose.phase = Double(trayFrameIndex) / 8
-        let canvas = PetCanvas.render(character: character, pose: animatedPose, avatar: avatars[character.id], width: 32, height: 32)
+        let canvas = PetCanvas.render(character: character, pose: pose, avatar: avatars[character.id], width: 32, height: 32)
         guard let icon = hicon(from: canvas) else { return }
         trayData.hIcon = icon
-        _ = Shell_NotifyIconW(UINT(NIM_MODIFY), &trayData)
+        guard Shell_NotifyIconW(UINT(NIM_MODIFY), &trayData) else {
+            DestroyIcon(icon)
+            return
+        }
+        if let previous = currentTrayIcon { DestroyIcon(previous) }
+        currentTrayIcon = icon
     }
 
     private func hicon(from canvas: PetCanvas) -> HICON? {

@@ -54,7 +54,7 @@ enum AvatarNormalizer {
         return (output, pixelSize, pixelSize)
     }
 
-    /// 编码为 PNG 字节（Windows 用 WIC 编码器；非 Windows 桩返回原始字节，
+    /// 编码为 PNG 字节（Windows 用 WIC 编码器；非 Windows 桩返回 nil，
     /// 桩路径仅用于纯逻辑单测，不落盘）。
     static func encodePNG(bgra: [UInt8], width: Int, height: Int) -> Data? {
         #if os(Windows)
@@ -71,148 +71,446 @@ enum AvatarNormalizer {
 #if os(Windows)
 import WinSDK
 
+// MARK: - WIC 手写 COM vtable 绑定
+//
+// swift-win-sdk 的 C importer 只导入 wincodec.h 的 C 表面：接口类型名
+// （IWICImagingFactory 等）以不透明结构存在，C++ 虚方法不导入，也没有
+// SUCCEEDED/E_FAIL 宏。因此按 swift.org 官方博客《Swift Everywhere: Windows
+// Interop》展示的 IUnknownVtbl 模式手写绑定：
+//
+// - vtable 结构体字段顺序 = 头文件方法声明顺序（C++ 单继承布局：基类方法在前）。
+//   同模块 fragile struct 按声明序布局，指针各 8 字节无对齐空洞。
+//   槽位错位不会在编译期暴露、会直接造成运行期内存错乱，因此每条实际调用的
+//   方法都对照 wincodec.h / MSDN 方法顺序逐一核对，并由 --self-test 的
+//   WIC PNG 编解码往返在 CI Windows 真机上执行验证（错位会当场崩溃或报错）。
+// - 只声明到最后一个被调用槽位的前缀；未调用的中间槽位用指针尺寸占位
+//   （不解引用，ABI 上只需 8 字节对齐），把签名书写错误面降到最小。
+// - COM 对象以裸指针 + RAII（ComObject.deinit 调 Release）管理，
+//   异常路径不泄漏；全程在主线程单线程上下文使用。
+
+/// 未调用槽位占位：与真实方法同为 8 字节函数指针，永不解引用。
+private typealias UnusedComSlot = @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
+
+/// SUCCEEDED 宏等价：COM HRESULT 失败 = 负值（高位为 1）。
+private func comOK(_ hr: HRESULT) -> Bool { hr >= 0 }
+/// E_FAIL（0x80004005 不适配 Int32 字面量，按位模式构造）。
+private let comEFail: HRESULT = Int32(bitPattern: 0x8000_4005)
+
+private struct IUnknownVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+}
+
+/// IWICImagingFactory 前缀（槽位 0–9）。实际调用：
+/// CreateDecoderFromStream(4)、CreateEncoder(8)、CreateFormatConverter(9)。
+private struct IWICImagingFactoryVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var CreateDecoderFromFilename: UnusedComSlot
+    var CreateDecoderFromStream: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeRawPointer?, UINT, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var CreateDecoderFromFileHandle: UnusedComSlot
+    var CreateComponentInfo: UnusedComSlot
+    var CreateDecoder: UnusedComSlot
+    var CreateEncoder: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var CreateFormatConverter: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+}
+
+/// IStream 前缀（槽位 0–12，ISequentialStream 在前）。实际调用：
+/// Read(3)、Write(4)、Stat(12)。
+private struct IStreamVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Read: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, ULONG, UnsafeMutablePointer<ULONG>?) -> HRESULT
+    var Write: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, ULONG, UnsafeMutablePointer<ULONG>?) -> HRESULT
+    var Seek: UnusedComSlot
+    var SetSize: UnusedComSlot
+    var CopyTo: UnusedComSlot
+    var Commit: UnusedComSlot
+    var Revert: UnusedComSlot
+    var LockRegion: UnusedComSlot
+    var UnlockRegion: UnusedComSlot
+    var Stat: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<STATSTG>?, UINT) -> HRESULT
+}
+
+/// IWICBitmapDecoder 前缀（槽位 0–13）。实际调用：GetFrame(13)。
+private struct IWICBitmapDecoderVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var QueryCapability: UnusedComSlot
+    var Initialize: UnusedComSlot
+    var GetContainerFormat: UnusedComSlot
+    var GetDecoderInfo: UnusedComSlot
+    var CopyPalette: UnusedComSlot
+    var GetMetadataQueryReader: UnusedComSlot
+    var GetPreview: UnusedComSlot
+    var GetColorContexts: UnusedComSlot
+    var GetThumbnail: UnusedComSlot
+    var GetFrameCount: UnusedComSlot
+    var GetFrame: @convention(c) (UnsafeMutableRawPointer?, UINT, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+}
+
+/// IWICBitmapFrameDecode（基类 IWICBitmapSource 的 5 方法在前，槽位 0–10）。
+/// 实际调用：GetSize(3)、CopyPixels(7)。
+private struct IWICBitmapFrameDecodeVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var GetSize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UINT>?, UnsafeMutablePointer<UINT>?) -> HRESULT
+    var GetPixelFormat: UnusedComSlot
+    var GetResolution: UnusedComSlot
+    var CopyPalette: UnusedComSlot
+    var CopyPixels: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UINT, UINT32, UnsafeMutableRawPointer?) -> HRESULT
+    var GetMetadataQueryReader: UnusedComSlot
+    var GetColorContexts: UnusedComSlot
+    var GetThumbnail: UnusedComSlot
+}
+
+/// IWICFormatConverter（基类 IWICBitmapSource 在前，槽位 0–9）。
+/// 实际调用：CopyPixels(7)、Initialize(8)。
+private struct IWICFormatConverterVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var GetSize: UnusedComSlot
+    var GetPixelFormat: UnusedComSlot
+    var GetResolution: UnusedComSlot
+    var CopyPalette: UnusedComSlot
+    var CopyPixels: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UINT, UINT32, UnsafeMutableRawPointer?) -> HRESULT
+    var Initialize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeRawPointer?, UINT, UnsafeRawPointer?, Double, UINT) -> HRESULT
+    var CanConvert: UnusedComSlot
+}
+
+/// IWICBitmapEncoder 前缀（槽位 0–10）。实际调用：Initialize(3)、CreateNewFrame(10)。
+private struct IWICBitmapEncoderVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Initialize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UINT) -> HRESULT
+    var GetContainerFormat: UnusedComSlot
+    var GetEncoderInfo: UnusedComSlot
+    var SetColorContexts: UnusedComSlot
+    var SetPalette: UnusedComSlot
+    var SetThumbnail: UnusedComSlot
+    var SetPreview: UnusedComSlot
+    var CreateNewFrame: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+}
+
+/// IWICBitmapFrameEncode 前缀（槽位 0–14）。实际调用：
+/// Initialize(3)、SetSize(4)、SetPixelFormat(6)、WritePixels(10)、Commit(14)。
+private struct IWICBitmapFrameEncodeVtbl {
+    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
+    var Initialize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> HRESULT
+    var SetSize: @convention(c) (UnsafeMutableRawPointer?, UINT32, UINT32) -> HRESULT
+    var SetResolution: UnusedComSlot
+    var SetPixelFormat: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<GUID>?) -> HRESULT
+    var SetColorContexts: UnusedComSlot
+    var SetPalette: UnusedComSlot
+    var SetThumbnail: UnusedComSlot
+    var WritePixels: @convention(c) (UnsafeMutableRawPointer?, UINT, UINT32, UINT32, UnsafeMutableRawPointer?) -> HRESULT
+    var WriteSource: UnusedComSlot
+    var WriteMetadata: UnusedComSlot
+    var SetMetadata: UnusedComSlot
+    var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
+}
+
+/// 极简 COM 对象包装：持有裸指针，deinit 统一 Release（RAII，异常路径不泄漏）。
+/// vtable 经对象首字段（C++ vptr）重绑定到对应槽位结构体后按字段调用。
+private final class ComObject {
+    let raw: UnsafeMutableRawPointer
+
+    init(_ raw: UnsafeMutableRawPointer) { self.raw = raw }
+    deinit { _ = vtbl(IUnknownVtbl.self).pointee.Release(raw) }
+
+    func vtbl<T>(_ type: T.Type) -> UnsafeMutablePointer<T> {
+        raw.load(as: UnsafeMutableRawPointer.self).assumingMemoryBound(to: T.self)
+    }
+}
+
+// MARK: - 各接口包装（仅暴露用到的调用）
+
+extension ComObject {
+    fileprivate var factory: UnsafeMutablePointer<IWICImagingFactoryVtbl> {
+        vtbl(IWICImagingFactoryVtbl.self)
+    }
+
+    func createDecoderFromStream(_ stream: ComObject, metadataOptions: UINT) -> ComObject? {
+        var out: UnsafeMutableRawPointer? = nil
+        let hr = factory.pointee.CreateDecoderFromStream(raw, stream.raw, nil, metadataOptions, &out)
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
+    }
+
+    func createEncoder(containerFormat: GUID) -> ComObject? {
+        var out: UnsafeMutableRawPointer? = nil
+        let hr = withUnsafePointer(to: containerFormat) { fmt in
+            factory.pointee.CreateEncoder(raw, UnsafeRawPointer(fmt), nil, &out)
+        }
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
+    }
+
+    func createFormatConverter() -> ComObject? {
+        var out: UnsafeMutableRawPointer? = nil
+        let hr = factory.pointee.CreateFormatConverter(raw, &out)
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
+    }
+}
+
+extension ComObject {
+    fileprivate var stream: UnsafeMutablePointer<IStreamVtbl> { vtbl(IStreamVtbl.self) }
+
+    func write(_ bytes: Data) -> Bool {
+        let hr = bytes.withUnsafeBytes { buffer -> HRESULT in
+            guard let base = buffer.baseAddress else { return comEFail }
+            var written: ULONG = 0
+            return stream.pointee.Write(raw, base, ULONG(buffer.count), &written)
+        }
+        return comOK(hr)
+    }
+
+    func streamSize() -> Int {
+        var stat = STATSTG()
+        // STATFLAG_NONAME = 0x1（固定常量，避免依赖 SDK 符号导入形态）。
+        guard comOK(stream.pointee.Stat(raw, &stat, UINT(1))) else { return 0 }
+        return stat.cbSize.QuadPart > 0 ? Int(stat.cbSize.QuadPart) : 0
+    }
+
+    func readAll(_ count: Int) -> Data? {
+        guard count > 0 else { return nil }
+        var data = Data(count: count)
+        var got: ULONG = 0
+        let hr = data.withUnsafeMutableBytes { buffer -> HRESULT in
+            guard let base = buffer.baseAddress else { return comEFail }
+            return stream.pointee.Read(raw, base, ULONG(count), &got)
+        }
+        guard comOK(hr), got > 0 else { return nil }
+        return data.prefix(Int(got))
+    }
+}
+
+extension ComObject {
+    fileprivate func frame(at index: UINT) -> ComObject? {
+        var out: UnsafeMutableRawPointer? = nil
+        let hr = vtbl(IWICBitmapDecoderVtbl.self).pointee.GetFrame(raw, index, &out)
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
+    }
+}
+
+extension ComObject {
+    fileprivate func getSize() -> (width: UINT, height: UINT)? {
+        var width: UINT = 0
+        var height: UINT = 0
+        let hr = vtbl(IWICBitmapFrameDecodeVtbl.self).pointee.GetSize(raw, &width, &height)
+        guard comOK(hr), width > 0, height > 0 else { return nil }
+        return (width, height)
+    }
+
+    /// prc 传 nil = 全图拷贝。
+    fileprivate func copyPixels(stride: UINT32, bufferSize: UINT32, buffer: UnsafeMutableRawPointer) -> HRESULT {
+        vtbl(IWICBitmapFrameDecodeVtbl.self).pointee.CopyPixels(raw, nil, stride, bufferSize, buffer)
+    }
+}
+
+extension ComObject {
+    fileprivate func initializeToBGRA(from source: ComObject, pixelFormat: GUID) -> Bool {
+        let hr = withUnsafePointer(to: pixelFormat) { fmt in
+            vtbl(IWICFormatConverterVtbl.self).pointee.Initialize(
+                raw, source.raw, UnsafeRawPointer(fmt),
+                UINT(WICBitmapDitherTypeNone.rawValue), nil, 0.0,
+                UINT(WICBitmapPaletteTypeCustom.rawValue)
+            )
+        }
+        return comOK(hr)
+    }
+
+    /// 解码帧像素到 BGRA（强制经 FormatConverter，不依赖源格式）。
+    fileprivate func copyPixelsAsBGRA(width: UINT, height: UINT) -> [UInt8]? {
+        var pixels = [UInt8](repeating: 0, count: Int(width) * Int(height) * 4)
+        let stride = Int(width) * 4
+        let hr = pixels.withUnsafeMutableBytes { raw -> HRESULT in
+            guard let base = raw.baseAddress else { return comEFail }
+            return copyPixels(stride: UINT32(stride), bufferSize: UINT32(raw.count), buffer: base)
+        }
+        return comOK(hr) ? pixels : nil
+    }
+}
+
+extension ComObject {
+    fileprivate func initialize(stream: ComObject, cacheOption: UINT) -> Bool {
+        comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Initialize(raw, stream.raw, cacheOption))
+    }
+
+    func createNewFrame() -> ComObject? {
+        var out: UnsafeMutableRawPointer? = nil
+        // 属性袋（编码器选项）传 nil：WIC 文档允许，免去 IPropertyBag2 绑定。
+        let hr = vtbl(IWICBitmapEncoderVtbl.self).pointee.CreateNewFrame(raw, &out, nil)
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
+    }
+}
+
+extension ComObject {
+    fileprivate func initialize() -> Bool {
+        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Initialize(raw, nil))
+    }
+
+    func setSize(width: UINT32, height: UINT32) -> Bool {
+        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.SetSize(raw, width, height))
+    }
+
+    func setPixelFormat(_ desired: GUID) -> Bool {
+        var actual = desired
+        guard comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.SetPixelFormat(raw, &actual)) else {
+            return false
+        }
+        // SetPixelFormat 回写「最接近的受支持格式」；编码器必须确实落在 32bppBGRA，
+        // 否则后续 WritePixels 的缓冲布局假设不成立。逐字段比较（GUID 无 == 约定）。
+        return actual.Data1 == desired.Data1 && actual.Data2 == desired.Data2
+            && actual.Data3 == desired.Data3 && actual.Data4.0 == desired.Data4.0
+            && actual.Data4.1 == desired.Data4.1 && actual.Data4.2 == desired.Data4.2
+            && actual.Data4.3 == desired.Data4.3 && actual.Data4.4 == desired.Data4.4
+            && actual.Data4.5 == desired.Data4.5 && actual.Data4.6 == desired.Data4.6
+            && actual.Data4.7 == desired.Data4.7
+    }
+
+    func writePixels(lineCount: UINT, stride: UINT32, bufferSize: UINT32, buffer: UnsafeMutableRawPointer) -> HRESULT {
+        vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.WritePixels(raw, lineCount, stride, bufferSize, buffer)
+    }
+
+    func commit() -> Bool {
+        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Commit(raw))
+    }
+}
+
+// MARK: - GUID 常量（let 全局，传参时经 withUnsafePointer 取址）
+
+/// CLSID_WICImagingFactory {cacaf262-9370-4615-a13b-9f5539dae4c4}
+private let wicFactoryCLSID = GUID(
+    Data1: 0xcacaf262, Data2: 0x9370, Data3: 0x4615,
+    Data4: (0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0xe4, 0xc4)
+)
+/// IID_IWICImagingFactory —— 复制 SDK 导出的 let 全局（全局 let 不能直接取址）。
+private let wicFactoryIID = IID_IWICImagingFactory
+/// GUID_WICPixelFormat32bppBGRA {6fddc324-4e03-4bfe-b185-3d77768dc90e}
+private let wicBGRAFormatGUID = GUID(
+    Data1: 0x6fddc324, Data2: 0x4e03, Data3: 0x4bfe,
+    Data4: (0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0e)
+)
+/// GUID_ContainerFormatPng {1b7cfaf4-713f-473c-bbcd-6137425faeaf}
+private let wicPNGContainerGUID = GUID(
+    Data1: 0x1b7cfaf4, Data2: 0x713f, Data3: 0x473c,
+    Data4: (0xbb, 0xcd, 0x61, 0x37, 0x42, 0x5f, 0xae, 0xaf)
+)
+
 /// WIC（Windows Imaging Component）封装：解码任意格式图像 → BGRA，
-/// 以及 BGRA → PNG 编码。COM 以局部初始化 + 手动 Release 管理，
+/// 以及 BGRA → PNG 编码。COM 以局部初始化 + RAII Release 管理，
 /// 全部调用发生在启动/导入的单线程上下文。
 enum WICSupport {
-    /// CLSID_WICImagingFactory {cacaf262-9370-4615-a13b-9f5539dae4c4}
-    static let imagingFactoryCLSID = CLSID(
-        Data1: 0xcacaf262, Data2: 0x9370, Data3: 0x4615,
-        Data4: (0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0xe4, 0xc4)
-    )
-    /// GUID_WICPixelFormat32bppBGRA {6fddc324-4e03-4bfe-b185-3d77768dc90e}
-    static let bgraPixelFormatGUID = GUID(
-        Data1: 0x6fddc324, Data2: 0x4e03, Data3: 0x4bfe,
-        Data4: (0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0e)
-    )
-    /// GUID_ContainerFormatPng {1b7cfaf4-713f-473c-bbcd-6137425faeaf}
-    static let pngContainerGUID = GUID(
-        Data1: 0x1b7cfaf4, Data2: 0x713f, Data3: 0x473c,
-        Data4: (0xbb, 0xcd, 0x61, 0x37, 0x42, 0x5f, 0xae, 0xaf)
-    )
-
     /// 解码图像字节（PNG/JPEG/BMP/GIF 首帧）为 BGRA 像素缓冲。
     static func decodeBGRA(data: Data) -> (pixels: [UInt8], width: Int, height: Int)? {
         guard data.count <= AvatarNormalizer.maxSourceBytes else { return nil }
-        guard let factory = createFactory() else { return nil }
-        defer { factory.Release() }
-
-        // 内存流。
-        var stream: IStream? = nil
-        guard SUCCEEDED(CreateStreamOnHGlobal(nil, BOOL(true), &stream)), let stream else { return nil }
-        defer { stream.Release() }
-        let ok = data.withUnsafeBytes { raw -> HRESULT in
-            guard let base = raw.baseAddress else { return E_FAIL }
-            var written: ULONG = 0
-            return stream.Write(base, UINT32(raw.count), &written)
+        guard let factory = createFactory(),
+              let stream = memoryStream(containing: data),
+              let decoder = factory.createDecoderFromStream(
+                  stream, metadataOptions: UINT(WICDecodeMetadataCacheOnDemand.rawValue)),
+              let decodedFrame = decoder.frame(at: 0),
+              let (width, height) = decodedFrame.getSize(),
+              Int(width) * Int(height) <= AvatarNormalizer.maxSourcePixels,
+              let converter = factory.createFormatConverter(),
+              converter.initializeToBGRA(from: decodedFrame, pixelFormat: wicBGRAFormatGUID),
+              // 拷贝走 converter（源是已转换的 32bppBGRA 位图）。
+              let pixels = converter.copyPixelsAsBGRA(width: width, height: height) else {
+            return nil
         }
-        guard SUCCEEDED(ok) else { return nil }
-
-        guard let decoder = tryQuery(factory, { p in
-            factory.CreateDecoderFromStream(OpaquePointer(stream), nil, UINT(WICDecodeMetadataCacheOnDemand), p)
-        }) else { return nil }
-        defer { decoder.Release() }
-
-        var frame: IWICBitmapFrameDecode? = nil
-        guard SUCCEEDED(decoder.GetFrame(0, &frame)), let bitmapFrame else { return nil }
-        defer { bitmapFrame.Release() }
-
-        var width: UINT = 0
-        var height: UINT = 0
-        guard SUCCEEDED(bitmapFrame.GetSize(&width)), SUCCEEDED(bitmapFrame.GetSize2(&height)),
-              width > 0, height > 0 else { return nil }
-        guard Int(width) * Int(height) <= AvatarNormalizer.maxSourcePixels else { return nil }
-
-        guard let converter = tryQuery(factory, { p in
-            factory.CreateFormatConverter(p)
-        }) else { return nil }
-        defer { converter.Release() }
-        guard SUCCEEDED(converter.Initialize(
-            OpaquePointer(bitmapFrame), bgraPixelFormatGUID,
-            UINT(WICBitmapDitherTypeNone), nil, 0, UINT(WICBitmapPaletteTypeCustom)
-        )) else { return nil }
-
-        var pixels = [UInt8](repeating: 0, count: Int(width) * Int(height) * 4)
-        let stride = Int(width) * 4
-        let result = pixels.withUnsafeMutableBytes { raw -> HRESULT in
-            guard let base = raw.baseAddress else { return E_FAIL }
-            return converter.CopyPixels(nil, UINT32(stride), UINT32(raw.count), base)
-        }
-        guard SUCCEEDED(result) else { return nil }
         return (pixels, Int(width), Int(height))
     }
 
-    /// BGRA 像素编码为 PNG 字节。
+    /// BGRA 像素编码为 PNG 字节。帧像素格式显式锁定 32bppBGRA。
     static func encodePNG(bgra: [UInt8], width: Int, height: Int) -> Data? {
-        guard width > 0, height > 0, bgra.count == width * height * 4 else { return nil }
-        guard let factory = createFactory() else { return nil }
-        defer { factory.Release() }
-
-        var bitmap: IWICBitmap? = nil
-        guard SUCCEEDED(factory.CreateBitmapFromMemory(
-            UINT32(width), UINT32(height), bgraPixelFormatGUID,
-            UINT32(width * 4), UInt32(bgra.count), bgra, &bitmap
-        )), let bitmap else { return nil }
-        defer { bitmap.Release() }
-
-        var stream: IWICStream? = nil
-        guard let created = tryQuery(factory, { p in factory.CreateStream(p) }) else { return nil }
-        stream = unsafeDownCast(created, to: IWICStream.self)
-        defer { stream?.Release() }
-        guard SUCCEEDED(stream!.InitializeAsInMemory()) else { return nil }
-
-        var encoder: IWICBitmapEncoder? = nil
-        guard SUCCEEDED(factory.CreateEncoder(pngContainerGUID, nil, &encoder)), let encoder else { return nil }
-        defer { encoder.Release() }
-        guard SUCCEEDED(encoder.Initialize(OpaquePointer(stream!), UINT(WICBitmapEncoderNoCache))) else { return nil }
-
-        var frame: IWICBitmapFrameEncode? = nil
-        var props: IPropertyBag2? = nil
-        guard SUCCEEDED(encoder.CreateNewFrame(&frame, &props)), let frameEncode = frame else { return nil }
-        defer { frameEncode.Release() }
-        props?.Release()
-        guard SUCCEEDED(frameEncode.Initialize(nil)) else { return nil }
-        guard SUCCEEDED(frameEncode.SetSize(UINT32(width), UINT32(height))) else { return nil }
+        guard width > 0, height > 0,
+              width * height <= AvatarNormalizer.maxSourcePixels,
+              bgra.count == width * height * 4 else { return nil }
+        guard let factory = createFactory(),
+              let stream = memoryStream(),
+              let encoder = factory.createEncoder(containerFormat: wicPNGContainerGUID),
+              encoder.initialize(stream: stream, cacheOption: UINT(WICBitmapEncoderNoCache.rawValue)),
+              let frame = encoder.createNewFrame(),
+              frame.initialize(),
+              frame.setSize(width: UINT32(width), height: UINT32(height)),
+              frame.setPixelFormat(wicBGRAFormatGUID) else {
+            return nil
+        }
         let stride = width * 4
-        let result = bgra.withUnsafeBytes { raw -> HRESULT in
-            guard let base = raw.baseAddress else { return E_FAIL }
-            return frameEncode.WritePixels(UINT32(height), UINT32(stride), UINT32(raw.count), base)
+        let hr = bgra.withUnsafeBytes { raw -> HRESULT in
+            guard let base = raw.baseAddress else { return comEFail }
+            return frame.writePixels(
+                lineCount: UINT(height), stride: UINT32(stride),
+                bufferSize: UINT32(raw.count), buffer: base
+            )
         }
-        guard SUCCEEDED(result) else { return nil }
-        guard SUCCEEDED(frameEncode.Commit()) else { return nil }
-        guard SUCCEEDED(encoder.Commit()) else { return nil }
+        guard comOK(hr), frame.commit(), encoder.commit() else { return nil }
+        return stream.readAll(stream.streamSize())
+    }
 
-        // 从 IStream 读回全部字节。
-        var stat = STATSTG()
-        guard SUCCEEDED(stream!.Stat(&stat, UINT(STATFLAG_NONAME))), stat.cbSize.QuadPart > 0 else { return nil }
-        let size = Int(stat.cbSize.QuadPart)
-        var data = Data(count: size)
-        var read: ULONG = 0
-        let readOK = data.withUnsafeMutableBytes { raw -> HRESULT in
-            guard let base = raw.baseAddress else { return E_FAIL }
-            return stream!.Read(base, UINT32(size), &read)
+    /// CI 自检：合成 8×8 渐变 → PNG 编码 → 解码 → 逐像素核对。
+    /// PNG 无损，BGRA 32bpp 全程直通，解码结果必须逐字节一致。
+    /// 这是手写 COM vtable 绑定的运行期正确性验证（槽位错位/GUID 错误在此暴露）。
+    static func roundTripSelfTest() -> Bool {
+        let side = 8
+        var bgra = [UInt8](repeating: 0, count: side * side * 4)
+        for y in 0..<side {
+            for x in 0..<side {
+                let i = (y * side + x) * 4
+                bgra[i] = UInt8(truncatingIfNeeded: x * 30)
+                bgra[i + 1] = UInt8(truncatingIfNeeded: y * 30)
+                bgra[i + 2] = 0x40
+                bgra[i + 3] = 255
+            }
         }
-        guard SUCCEEDED(readOK), read > 0 else { return nil }
-        return data.prefix(Int(read))
+        guard let png = encodePNG(bgra: bgra, width: side, height: side), png.count > 8,
+              let (pixels, width, height) = decodeBGRA(data: png),
+              width == side, height == side, pixels.count == side * side * 4 else {
+            return false
+        }
+        let probes = [(0, 0), (side - 1, 0), (0, side - 1), (side - 1, side - 1), (3, 5)]
+        for (x, y) in probes {
+            let i = (y * side + x) * 4
+            guard pixels[i] == UInt8(truncatingIfNeeded: x * 30),
+                  pixels[i + 1] == UInt8(truncatingIfNeeded: y * 30),
+                  pixels[i + 2] == 0x40, pixels[i + 3] == 255 else {
+                return false
+            }
+        }
+        return true
     }
 
-    // MARK: - COM 基础设施
+    // MARK: - 基础设施
 
-    private static func createFactory() -> IWICImagingFactory? {
-        var factory: IWICImagingFactory? = nil
-        let status = CoCreateInstance(
-            imagingFactoryCLSID, nil, DWORD(CLSCTX_INPROC_SERVER),
-            &IID_IWICImagingFactory, &factory
-        )
-        guard status == S_OK, let factory else { return nil }
-        return factory
+    private static func createFactory() -> ComObject? {
+        // CLSID/IID 以可变局部副本取址传入（SDK 导出的全局 let 不能作 inout）。
+        var clsid = wicFactoryCLSID
+        var iid = wicFactoryIID
+        var out: UnsafeMutableRawPointer? = nil
+        let hr = CoCreateInstance(&clsid, nil, DWORD(CLSCTX_INPROC_SERVER.rawValue), &iid, &out)
+        guard comOK(hr), let p = out else { return nil }
+        return ComObject(p)
     }
 
-    /// QueryInterface + CoCreateInstance 输出参数模式收敛。
-    private static func tryQuery<T>(_ factory: IWICImagingFactory, _ create: (UnsafeMutablePointer<T?>) -> HRESULT) -> T? {
-        var output: T? = nil
-        guard SUCCEEDED(create(&output)), let value = output else { return nil }
-        return value
-    }
-}
+    /// 进程内内存 IStream（HGLOBAL 承载）。fDeleteOnRelease = true 随对象释放。
+    private static func memoryStream(containing data: Data? = nil) -> ComObject? {
+        var rawStream: LPSTREAM? = nil
+        let hr = CreateStreamOnHGlobal(nil, true, &rawStream)
+        guard comOK(hr), let p = rawStream else { return nil }
+        let stream = ComObject(UnsafeMutableRawPointer(p))
+        if let data, !stream.write(data) { return nil }
+        return stream
+    }}
 #endif
