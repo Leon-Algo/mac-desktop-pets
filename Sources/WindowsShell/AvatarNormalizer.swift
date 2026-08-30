@@ -391,8 +391,9 @@ extension ComObject {
     }
 
     /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 13）。
-    func commitEncoder() -> Bool {
-        comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Commit(raw))
+    /// 返回原始 HRESULT 供诊断。
+    func commitEncoder() -> HRESULT {
+        vtbl(IWICBitmapEncoderVtbl.self).pointee.Commit(raw)
     }
 }
 
@@ -482,9 +483,16 @@ enum WICSupport {
               let frame = encoder.createNewFrame(),
               frame.initialize(),
               frame.setSize(width: UINT32(width), height: UINT32(height)),
-              frame.writeSource(bitmap),
-              frame.commit(),
-              encoder.commitEncoder() else {
+              frame.writeSource(bitmap) else {
+            return nil
+        }
+        guard frame.commit() else {
+            log("encodePNG: frame.commit failed")
+            return nil
+        }
+        let encoderHr = encoder.commitEncoder()
+        guard comOK(encoderHr) else {
+            log("encodePNG: encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
             return nil
         }
         return stream.readAll(stream.streamSize())
