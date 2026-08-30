@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows 跨平台可行性 · 可验收结论</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel2: #1d212d; --border: #2a2f3e;
+    --text: #e6e8ee; --muted: #9aa1b2; --ok: #3fb96b; --bad: #e05d5d;
+    --accent: #6c9ef8; --amber: #d9a441;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65; padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  h2 { font-size: 19px; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .verdict {
+    background: linear-gradient(135deg, rgba(63,185,107,.12), rgba(63,185,107,.04));
+    border: 1px solid rgba(63,185,107,.4); border-radius: 12px;
+    padding: 18px 22px; margin: 18px 0 8px;
+  }
+  .verdict b { color: var(--ok); font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .bad { color: var(--bad); font-weight: 600; white-space: nowrap; }
+  .warn { color: var(--amber); font-weight: 600; white-space: nowrap; }
+  code, pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; background: var(--panel2); border-radius: 6px;
+  }
+  code { padding: 2px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; border: 1px solid var(--border); margin: 10px 0; color: #c8d3ea; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  .steps td:first-child { white-space: nowrap; width: 46px; color: var(--ok); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🪟 Windows 跨平台可行性 · 可验收结论</h1>
+  <div class="sub">mac-desktop-pets ｜ 验收时间 2026-08-30 ｜ 路线 A：Swift on Windows（共享核心 + 平台外壳）</div>
+
+  <div class="verdict">
+    <b>结论：路线 A 验证通过。</b> 同一份纯 Foundation 模拟核心（DesktopPetsCore）已在 GitHub 真实 Windows 工具链（windows-latest + Swift 6.3.1）上完成编译并运行自检，输出
+    <code>CoreProbe: ok (determinism + 2h longrun + interactions + roster roundtrip)</code>。
+    macOS 端 132/132 测试零回归。下一步（WindowsShell 外壳）已在无架构风险的前提下解锁。
+  </div>
+
+  <h2>① 验收证据（CI 实测，非口头声明）</h2>
+  <table>
+    <tr><th>验证项</th><th>结果</th><th>证据</th></tr>
+    <tr><td>macOS 全量测试（拆分后）</td><td class="ok">✅ 132/132</td><td>GitHub Actions <code>CI</code>：success（本地 + 远端双验证）</td></tr>
+    <tr><td>严格并发 Release 构建</td><td class="ok">✅ 通过</td><td><code>-strict-concurrency=complete</code> 0 错误</td></tr>
+    <tr><td>Windows 编译</td><td class="ok">✅ 通过</td><td>windows-latest + SwiftyLab/setup-swift 6.3.1 + MSVC 环境</td></tr>
+    <tr><td>Windows 运行自检</td><td class="ok">✅ ok</td><td>CoreProbe 退出码 0，四组断言全过（见下）</td></tr>
+    <tr><td>确定性（跨实例）</td><td class="ok">✅</td><td>同种子双实例 600 tick 逐位一致</td></tr>
+    <tr><td>长时稳定性</td><td class="ok">✅</td><td>2 小时 @60fps 加速模拟：状态有界、坐标有限、无 NaN、不出屏</td></tr>
+    <tr><td>交互语义</td><td class="ok">✅</td><td>拖拽→释放→落地→挥手动作，全部按预期处理</td></tr>
+    <tr><td>名册持久化</td><td class="ok">✅</td><td>临时目录读写回环一致（Windows 文件系统实测）</td></tr>
+  </table>
+
+  <h2>② 本次完成的架构改造</h2>
+  <div class="card">
+    <b>核心/外壳分离</b>：新增 <code>DesktopPetsCore</code> 库目标（15 个纯 Foundation 文件），
+    macOS 壳与未来 Windows 壳共享同一模拟核心与同一测试断言。
+    <table>
+      <tr><th>层次</th><th>内容</th><th>平台依赖</th></tr>
+      <tr><td><b>DesktopPetsCore</b>（新）</td><td>PetWorld 模拟、ObstacleMap 几何、名册存储、动作目录、点击解释、确定性随机</td><td class="ok">仅 Foundation</td></tr>
+      <tr><td><b>DesktopPets</b>（macOS 壳）</td><td>AppKit 窗口/菜单/渲染、NSImage 头像管线</td><td class="muted">AppKit</td></tr>
+      <tr><td><b>CoreProbe</b>（新）</td><td>跨平台自检可执行：确定性 + 长时 + 交互 + 持久化</td><td class="ok">双端可编译</td></tr>
+    </table>
+    <div class="muted">解耦点：PetWorld.setScale 改收纯数值 factor；AvatarSource/BodyStyle/预设枚举下沉核心（中文文案内嵌）；名册存储改为注入式 PNG 归一化（macOS 注 NSImage 实现，Windows 未来注 WIC 实现）。</div>
+  </div>
+
+  <h2>③ Windows CI 踩坑与修复（已固化）</h2>
+  <table class="steps">
+    <tr><th></th><th>问题</th><th>根因</th><th>修复</th></tr>
+    <tr><td>1</td><td><code>could not build module 'ucrt'</code></td><td>未初始化 MSVC 开发环境，clang 找不到 Windows SDK 头</td><td>构建前启用 <code>ilammy/msvc-dev-cmd@v1</code></td></tr>
+    <tr><td>2</td><td><code>cyclic dependency ucrt → _Builtin_intrinsics → ucrt</code></td><td>Windows SDK 10.0.26100 与 Swift 6.0.x modulemap 冲突（swiftlang/swift#79745）</td><td>升级 Swift 至 <b>6.3.1</b>（已修复该问题，SwiftyLab 安装器稳定）</td></tr>
+  </table>
+  <div class="muted">两轮修复均已提交进 <code>.github/workflows/windows-feasibility.yml</code>，后续 Windows 构建直接复用此模板。</div>
+
+  <h2>④ 接下来的最佳实践（按序）</h2>
+  <table>
+    <tr><th>优先级</th><th>事项</th><th>说明</th></tr>
+    <tr><td class="warn">P1</td><td>WindowsShell 外壳实现</td><td>Win32 分层透明窗口（WS_EX_LAYERED）+ 精灵逐帧 blit + 消息循环 + 托盘图标，驱动已验证的 DesktopPetsCore；CI 模板已就绪</td></tr>
+    <tr><td class="warn">P1</td><td>Windows 安装包 + Release 集成</td><td>Inno Setup 产出 .exe 安装包，release.yml 与 Mac DMG 并列上传 GitHub Releases</td></tr>
+    <tr><td>P2</td><td>README 双平台安装说明</td><td>补 Windows 下载入口、杀软误报提示、DPI 缩放说明</td></tr>
+    <tr><td>P2</td><td>Mac 端实机验证（遗留）</td><td>多屏/Stage Manager/VoiceOver/≥4h 长时，仍需真机走查</td></tr>
+  </table>
+
+  <h2>⑤ 提交记录</h2>
+  <pre>650d993 ci(windows): bump Swift to 6.3.1 to fix ucrt cyclic module dependency (SDK 26100)
+7ec9698 ci(windows): enable MSVC dev env before swift build (fix ucrt module errors)
+f8ed84b feat: extract DesktopPetsCore shared kernel and add Windows feasibility probe</pre>
+  <div class="muted">全部已推送 GitHub main。仓库：github.com/Leon-Algo/mac-desktop-pets</div>
+
+</div>
+</body>
+</html>
