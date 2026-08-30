@@ -36,7 +36,14 @@ struct WindowsShell {
 import WinSDK
 
 /// 全局回跳指针：WndProc 是 C 函数指针，无法捕获 self。
-private var g_delegate: ShellAppDelegate?
+/// 进程单线程消息循环内初始化一次、只读使用；
+/// Swift 6 严格并发不识别该模式，故显式标注 unsafe。
+private nonisolated(unsafe) var g_delegate: ShellAppDelegate?
+
+/// EnumDisplayMonitors 回调暂存（同 g_delegate 的单线程 unsafe 模式）。
+private nonisolated(unsafe) enum MonitorEnumScratch {
+    static var results: [WorldRect] = []
+}
 
 /// Win32 壳：
 /// - 每宠物一个 WS_EX_LAYERED 顶层窗口，每 tick UpdateLayeredWindow 提交画布。
@@ -88,22 +95,21 @@ final class ShellAppDelegate {
     // MARK: - 多显示器
 
     private func enumerateMonitors() -> [WorldRect] {
-        var rects: [WorldRect] = []
-        withUnsafeMutablePointer(to: &rects) { pointer in
-            EnumDisplayMonitors(nil, nil, { rawMonitor, rawDC, rawRect, rawData in
-                let rect = rawRect!.pointee
-                guard let data = rawData?.assumingMemoryBound(to: [WorldRect].self) else { return 1 }
-                if let world = WorldRect(
-                    x: Double(rect.left), y: Double(rect.top),
-                    width: Double(rect.right - rect.left),
-                    height: Double(rect.bottom - rect.top)
-                ) {
-                    data.pointee.append(world)
-                }
-                return 1
-            }, pointer)
-        }
-        return MonitorLayout.resolve(rects)
+        // MONITORENUMPROC 是 C 函数指针不能捕获 self；lparam 只是 Int64 也塞不下
+        // 指针携带的上下文。进程单线程内同步枚举，用全局暂存最直接。
+        MonitorEnumScratch.results.removeAll(keepingCapacity: true)
+        _ = EnumDisplayMonitors(nil, nil, { _, _, rawRect, _ in
+            let rect = rawRect.pointee
+            if let world = WorldRect(
+                x: Double(rect.left), y: Double(rect.top),
+                width: Double(rect.right - rect.left),
+                height: Double(rect.bottom - rect.top)
+            ) {
+                MonitorEnumScratch.results.append(world)
+            }
+            return 1
+        }, 0)
+        return MonitorEnumScratch.results
     }
 
     /// WM_DISPLAYCHANGE 后重新枚举显示器；主屏变化时召回全部宠物到新主屏。

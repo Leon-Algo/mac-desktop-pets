@@ -15,6 +15,11 @@ enum AutostartPolicy {
 #if os(Windows)
 import WinSDK
 
+/// String → NUL 结尾 UTF-16 数组（Windows API 宽字符串传参通用工具）。
+func wideString(_ string: String) -> [WCHAR] {
+    Array(string.utf16) + [0]
+}
+
 /// HKCU\...\CurrentVersion\Run 读写。每次写入即生效，无需管理员权限。
 enum RegistryAutostart {
     private static let runKeyPath = "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
