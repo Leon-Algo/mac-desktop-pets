@@ -381,6 +381,11 @@ extension ComObject {
             && actual.Data4.7 == desired.Data4.7
     }
 
+    /// 诊断用：原始 HRESULT 版本（不经 Bool 收敛）。
+    fileprivate func rawSetPixelFormat(_ format: inout GUID) -> HRESULT {
+        vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.SetPixelFormat(raw, &format)
+    }
+
     func writePixels(lineCount: UINT, stride: UINT32, bufferSize: UINT32, buffer: UnsafeMutableRawPointer) -> HRESULT {
         vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.WritePixels(raw, lineCount, stride, bufferSize, buffer)
     }
@@ -526,8 +531,11 @@ enum WICSupport {
             trace.append("FAIL frame.setSize")
             return false
         }
-        guard frame.setPixelFormat(wicBGRAFormatGUID) else {
-            trace.append("FAIL frame.setPixelFormat")
+        if !frame.setPixelFormat(wicBGRAFormatGUID) {
+            // 诊断：区分「HRESULT 失败」与「回读格式不符」，并打印回读格式尾字节。
+            var probe = wicBGRAFormatGUID
+            let phr = frame.rawSetPixelFormat(&probe)
+            trace.append("FAIL frame.setPixelFormat hr=0x\(String(UInt32(bitPattern: phr), radix: 16)) gotTail=\(probe.Data4.7)")
             return false
         }
         trace.append("ok frame setup (initialize/setSize/setPixelFormat)")
