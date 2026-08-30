@@ -430,6 +430,11 @@ extension ComObject {
     func commit() -> Bool {
         comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Commit(raw))
     }
+
+    /// 诊断用：FrameEncode Commit 原始 HRESULT。
+    func rawCommit() -> HRESULT {
+        vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Commit(raw)
+    }
 }
 
 // MARK: - GUID 常量（let 全局，传参时经 withUnsafePointer 取址）
@@ -594,7 +599,7 @@ enum WICSupport {
         }
         step("ok writeSource")
         step("diag stream size after writeSource = \(stream.streamSize())")
-        let frameCommitHr = created.frame.commit()
+        let frameCommitHr = created.frame.rawCommit()
         step("diag frame.commit hr=0x\(String(UInt32(bitPattern: frameCommitHr), radix: 16))")
         guard comOK(frameCommitHr) else {
             step("FAIL frame.commit")
