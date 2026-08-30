@@ -197,7 +197,10 @@ private struct IWICFormatConverterVtbl {
     var CanConvert: UnusedComSlot
 }
 
-/// IWICBitmapEncoder 前缀（槽位 0–10）。实际调用：Initialize(3)、CreateNewFrame(10)。
+/// IWICBitmapEncoder 前缀（槽位 0–11，wincodec.idl 声明序）。实际调用：
+/// Initialize(3)、CreateNewFrame(10)、Commit(11)。
+/// 注意：Commit 在 Encoder 是槽位 11，在 FrameEncode 是槽位 14 —— 不同接口
+/// 不同槽位，ComObject 的方法必须显式区分，不能复用同名方法。
 private struct IWICBitmapEncoderVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
     var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
@@ -210,6 +213,7 @@ private struct IWICBitmapEncoderVtbl {
     var SetThumbnail: UnusedComSlot
     var SetPreview: UnusedComSlot
     var CreateNewFrame: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
 }
 
 /// IWICBitmapFrameEncode 前缀（槽位 0–14，wincodec.idl 声明序）。实际调用：
@@ -385,6 +389,11 @@ extension ComObject {
         guard comOK(hr), let p = out else { return nil }
         return ComObject(p)
     }
+
+    /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 14）。
+    func commitEncoder() -> Bool {
+        comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Commit(raw))
+    }
 }
 
 extension ComObject {
@@ -475,7 +484,7 @@ enum WICSupport {
               frame.setSize(width: UINT32(width), height: UINT32(height)),
               frame.writeSource(bitmap),
               frame.commit(),
-              encoder.commit() else {
+              encoder.commitEncoder() else {
             return nil
         }
         return stream.readAll(stream.streamSize())
@@ -563,7 +572,7 @@ enum WICSupport {
             step("FAIL frame.commit")
             return false
         }
-        guard encoder.commit() else {
+        guard encoder.commitEncoder() else {
             step("FAIL encoder.commit")
             return false
         }
