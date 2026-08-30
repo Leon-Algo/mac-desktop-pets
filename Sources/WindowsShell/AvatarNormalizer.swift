@@ -597,10 +597,11 @@ enum WICSupport {
     // MARK: - 基础设施
 
     private static func createFactory() -> ComObject? {
-        // COM 必须先初始化：WIC 工厂是进程内 COM 组件。 apartment threaded
+        // COM 必须先初始化：WIC 工厂是进程内 COM 组件。apartment threaded
         // 单线程模式（进程单线程消息循环，符合约定）；已初始化则幂等跳过
-        // （S_FALSE 同样算成功）。
-        _ = CoInitializeEx(nil, UINT(COINIT_APARTMENTTHREADED))
+        // （S_FALSE 同样算成功）。COINIT_APARTMENTTHREADED = 0x2（固定常量，
+        // SDK 的 tagCOINIT 枚举不能直接转 UINT）。
+        _ = CoInitializeEx(nil, UINT(0x2))
         var clsid = wicFactoryCLSID
         var iid = wicFactoryIID
         var out: UnsafeMutableRawPointer? = nil
