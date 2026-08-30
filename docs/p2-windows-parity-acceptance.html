@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P2 Windows 壳功能对齐 · 可验收结论</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel2: #1d212d; --border: #2a2f3e;
+    --text: #e6e8ee; --muted: #9aa1b2; --ok: #3fb96b; --bad: #e05d5d;
+    --accent: #6c9ef8; --amber: #d9a441;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65; padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  h2 { font-size: 19px; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .verdict {
+    background: linear-gradient(135deg, rgba(63,185,107,.12), rgba(63,185,107,.04));
+    border: 1px solid rgba(63,185,107,.4); border-radius: 12px;
+    padding: 18px 22px; margin: 18px 0 8px;
+  }
+  .verdict b { color: var(--ok); font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .bad { color: var(--bad); font-weight: 600; white-space: nowrap; }
+  .warn { color: var(--amber); font-weight: 600; white-space: nowrap; }
+  code, pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; background: var(--panel2); border-radius: 6px;
+  }
+  code { padding: 2px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; border: 1px solid var(--border); margin: 10px 0; color: #c8d3ea; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .arch { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+  .arch .box { flex: 1; min-width: 260px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .arch .box b { display: block; margin-bottom: 6px; font-size: 14px; }
+  .arch .box span { font-size: 13px; color: var(--muted); }
+  .arch .core { border-color: rgba(108,158,248,.5); background: rgba(108,158,248,.06); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🐾 P2 Windows 壳功能对齐 · 可验收结论</h1>
+  <div class="sub">mac-desktop-pets ｜ 验收时间 2026-08-30 ｜ v0.3.0 ｜ Windows 壳补齐 macOS 壳全部核心能力</div>
+
+  <div class="verdict">
+    <b>结论：P2 全部落地，Windows 壳功能对齐完成，v0.3.0 已发布。</b>
+    五大能力（点击交互、开机自启、托盘菜单、多显示器、双平台 README）全部实现并经无头自检验证；
+    macOS 132/132 测试三配置全绿（debug / release 严格并发 / ASan），Windows CI 经 5 轮迭代修复全绿；
+    v0.3.0 Release 双资产（DMG + 便携 zip）已上线。
+    过程中发现并修复了 v0.2.0 遗留的 <b>Y 轴映射埋底 120px bug</b>，已用自检断言钉死。
+  </div>
+
+  <h2>① 验收证据（全部为 CI / 本地实测）</h2>
+  <table>
+    <tr><th>验证项</th><th>结果</th><th>证据</th></tr>
+    <tr><td>macOS 全量测试（debug）</td><td class="ok">✅ 132/132</td><td>本地 swift test + GitHub Actions CI（run 33319540394）</td></tr>
+    <tr><td>macOS release 严格并发</td><td class="ok">✅ 132/132</td><td>swift test -c release 本地实测</td></tr>
+    <tr><td>macOS AddressSanitizer</td><td class="ok">✅ 132/132</td><td>本地实测无失败；CI 一次瞬时编译器崩溃（见③）重跑后绿</td></tr>
+    <tr><td>CoreProbe 自检（Windows CI）</td><td class="ok">✅ ok</td><td>确定性 + 2h 长时 + 交互 + 名册持久化，run 33319540361</td></tr>
+    <tr><td>WindowsShell 自检（Windows CI）</td><td class="ok">✅ ok</td><td>渲染 + 坐标桥 + 命中 + 手势 + 多显示器 + 600 帧 + 确定性</td></tr>
+    <tr><td>Release 工作流双 job</td><td class="ok">✅</td><td>run 33319727451：macOS DMG + Windows zip 均成功</td></tr>
+    <tr><td>Y 轴映射修复钉死</td><td class="ok">✅</td><td>自检断言 petY=0 时 origin.y == 901（精确值）</td></tr>
+  </table>
+
+  <h2>② P2 五大能力清单</h2>
+  <table>
+    <tr><th>能力</th><th>实现方式</th><th>核心文件</th></tr>
+    <tr>
+      <td><b>点击交互</b></td>
+      <td>WM_NCHITTEST 逐像素 alpha 命中（阈值 24）→ 不透明 HTCLIENT / 透明 HTTRANSPARENT 穿透；PointerModel 手势状态机：press → 5px 拖拽阈值 → dragging / tap / 双击（GetDoubleClickTime 窗口内）</td>
+      <td><code>PointerModel.swift</code>、<code>Main.swift</code></td>
+    </tr>
+    <tr>
+      <td><b>开机自启</b></td>
+      <td>HKCU\Software\Microsoft\Windows\CurrentVersion\Run 写入带引号可执行路径；托盘菜单 checkbox 实时开关与回读</td>
+      <td><code>AutostartPolicy.swift</code></td>
+    </tr>
+    <tr>
+      <td><b>托盘图标与菜单</b></td>
+      <td>Shell_NotifyIconW + PetCanvas 软件光栅 32×32 头像（CreateDIBSection 32bpp + 1bpp 掩码 CreateIconIndirect）；右键菜单：开机自启（勾选态）/ 分隔线 / 退出</td>
+      <td><code>Main.swift</code></td>
+    </tr>
+    <tr>
+      <td><b>多显示器</b></td>
+      <td>EnumDisplayMonitors 枚举 → MonitorLayout 纯逻辑（&lt;100px 过滤、去重、含原点优先选主屏、窗口越界自动召回、坐标夹紧不越出显示器并集）</td>
+      <td><code>MonitorLayout.swift</code></td>
+    </tr>
+    <tr>
+      <td><b>双平台 README</b></td>
+      <td>Windows 便携 zip 安装指南（SmartScreen「更多信息→仍要运行」）、macOS Gatekeeper 说明、双平台功能对比表、Swift 6.3+ 源码编译指引</td>
+      <td><code>README.md</code></td>
+    </tr>
+  </table>
+
+  <h2>③ 过程中修复的 bug 与踩坑</h2>
+  <table>
+    <tr><th>#</th><th>问题</th><th>修复</th></tr>
+    <tr>
+      <td class="warn">BUG</td>
+      <td colspan="2"><b>Y 轴映射埋底 120px（v0.2.0 遗留）</b>：原 <code>maxY - y - 20</code> 把窗口高度（100）与地面偏移（20）混算，宠物实际悬浮在地面上方 120px。修正为 <code>originY = displayBottomY - petY - (windowHeight - 1) - groundOffset</code>，自检断言 <code>origin.y == 901</code> 钉死精确值，杜绝回归。</td>
+    </tr>
+    <tr><td>CI-1</td><td>Swift 6 严格并发：全局 delegate / 枚举上下文不可捕获进 C 函数指针</td><td>文件级 <code>nonisolated(unsafe) var</code>（单线程消息循环内安全）</td></tr>
+    <tr><td>CI-2</td><td>swift-win-sdk 回调句柄是 Optional（<code>HWND?</code>/<code>LPRECT?</code>）</td><td>回调参数声明为 Optional，<code>handleMessage</code> 统一解包</td></tr>
+    <tr><td>CI-3</td><td><code>NOTIFYICONDATAW.szTip</code> 是 128-WCHAR tuple，不能作 KeyPath</td><td>按 x64 C 布局固定偏移 40 手写字节写入</td></tr>
+    <tr><td>CI-4</td><td><code>CreateIconIndirect</code> 要求 hbmMask 非 NULL</td><td><code>CreateBitmap</code> 1bpp 单色掩码 + 32bpp BI_RGB DIB 颜色位图</td></tr>
+    <tr><td>CI-5</td><td>SDK 把 BOOL 返回盲桥接为 Swift <code>Bool</code>（Shell_NotifyIconW / TrackPopupMenuEx / EnumDisplayMonitors 回调）</td><td>去掉 <code>!= 0</code> 与 TPM_RETURNCMD 依赖；托盘菜单改自然 WM_COMMAND 路由 + WM_NULL 唤醒模态循环</td></tr>
+    <tr><td>CI-6</td><td><code>MAKEINTRESOURCEW</code> 是 C 宏，Swift 无符号</td><td>等价展开 (LPWSTR)(INT_PTR)id → <code>UnsafePointer&lt;WCHAR&gt;(bitPattern: 32512)</code></td></tr>
+    <tr><td>CI-7</td><td>Swift 6.0.3 ASan 编译瞬时崩溃（LLVM RegisterBankInfo 断言 signal 6，run 33319202276）</td><td>确认为编译器自身 bug：Unit tests 步骤同轮已绿、diff 不含 macOS 路径、30 分钟前同源码刚绿。空提交重触发后通过（run 33319540394）</td></tr>
+  </table>
+
+  <h2>④ 架构：纯逻辑跨平台自检模式</h2>
+  <div class="arch">
+    <div class="box core">
+      <b>DesktopPetsCore（跨平台）</b>
+      <span>PetWorld / PetCanvas / 交互语义 / 名册持久化。纯 Foundation，双端编译。CoreProbe 无头自检：确定性 + 2h 长时 + 交互 + 持久化。</span>
+    </div>
+    <div class="box">
+      <b>WindowsShell 新增纯逻辑层</b>
+      <span>MonitorLayout（多显示器布局）/ PointerModel（手势状态机）/ ScreenBridge（坐标互转）/ AutostartPolicy（自启命令与注册表分离）。全部纯 Foundation，可本地断言、CI 复跑。</span>
+    </div>
+    <div class="box">
+      <b>Main.swift（Win32 粘合）</b>
+      <span>消息循环 / wndProc 路由 / 托盘 / 菜单 / 注册表 / DIB→HICON。仅薄薄一层 API 调用，全部决策逻辑下沉纯逻辑层。</span>
+    </div>
+  </div>
+  <p class="muted">WindowsShell 自检（<code>--self-test</code>）7 组断言：渲染、坐标桥、600 帧长时、渲染确定性、hex 配色解析、PointerModel 手势、交互语义 + 多显示器 —— 在 macOS 上即可验证 Windows 壳的业务逻辑，Windows CI 只需验证「编译 + 平台 API 正确性」。</p>
+
+  <h2>⑤ 用户可见行为（Windows 版）</h2>
+  <ul>
+    <li>解压 zip 双击 <code>DesktopPets.exe</code> 即用；首次启动 SmartScreen 提示「更多信息 → 仍要运行」</li>
+    <li>宠物行走在任务栏上方地面；点击宠物有反应（单击问候），拖拽可搬运，松手下落</li>
+    <li>透明像素区域点击穿透到下层窗口，只有宠物本体可交互</li>
+    <li>托盘右键：开机自启（勾选开关）/ 退出桌面伙伴</li>
+    <li>显示器热插拔 / 分辨率变化（WM_DISPLAYCHANGE）自动把宠物召回有效屏幕</li>
+  </ul>
+
+  <h2>⑥ 遗留事项（P3，不阻塞验收）</h2>
+  <ul>
+    <li>macOS 侧尚未提供 code signing / notarization（Gatekeeper 右键打开可用，README 已说明）；Windows 侧无 Authenticode 签名（SmartScreen 提示同理）</li>
+    <li>Windows CI 的 Swift 6.0.3 ASan 瞬时崩溃为上游工具链问题，若复发可考虑固定 setup-swift 到 6.1+ 或在 CI 加一次自动重试</li>
+    <li>托盘图标当前为静态头像，未随宠物动作帧更新（可作后续小特性）</li>
+  </ul>
+
+  <h2>⑦ 复现与验证命令</h2>
+  <pre>swift build --product WindowsShell --disable-sandbox
+./.build/debug/WindowsShell --self-test        # ok（7 组断言）
+./.build/debug/CoreProbe                       # ok
+swift test --disable-sandbox                   # 132/132
+swift test -c release --disable-sandbox        # 132/132（严格并发）
+swift test --sanitize=address --disable-sandbox # 132/132
+
+# 发布
+git tag v0.3.0 && git push origin v0.3.0        # Release 双资产自动上线</pre>
+
+  <p class="muted" style="margin-top:26px">
+    关键 commit：<code>b914a28</code>（第 5 轮 CI 修复）·
+    Release：<a href="https://github.com/Leon-Algo/mac-desktop-pets/releases/tag/v0.3.0">v0.3.0</a> ·
+    前序报告：<a href="windows-release-acceptance.html">v0.2.0 双平台发布</a>
+  </p>
+
+</div>
+</body>
+</html>
