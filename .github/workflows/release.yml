@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  macos:
     name: Build DMG and publish to GitHub Releases
     runs-on: macos-14
     steps:
@@ -19,7 +19,76 @@ jobs:
           swift-version: "6.0"
       - name: Build app and DMG
         run: bash Scripts/package-app.sh
-      - name: Create GitHub Release
+      - name: Create GitHub Release with DMG
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "${{ github.ref_name }}" build/DesktopPets.dmg --title "DesktopPets ${{ github.ref_name }}" --notes "macOS desktop pet ${{ github.ref_name }} - unsigned free distribution (see README to bypass Gatekeeper on first launch)"
+
+  windows:
+    name: Build Windows zip and attach to Release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Swift on Windows
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.3.1"
+
+      - name: Run WindowsShell self-test
+        run: |
+          swift build --product WindowsShell
+          $exe = Get-ChildItem -Path .build -Recurse -Filter "WindowsShell.exe" | Select-Object -First 1
+          if (-not $exe) { Write-Error "WindowsShell.exe not found"; exit 1 }
+          & $exe.FullName --self-test
+          exit $LASTEXITCODE
+
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path .build -Recurse -Filter "WindowsShell.exe" | Select-Object -First 1
+          $stage = "stage/DesktopPets"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item $exe.FullName "$stage/DesktopPets.exe"
+
+          $dlls = @("SwiftCore.dll","SwiftRuntime.dll","Foundation.dll","dispatch.dll","Block.dll","MSVCP140.dll","VCRUNTIME140.dll","VCRUNTIME140_1.dll","ucrtbase.dll")
+          $exeDir = Split-Path $exe.FullName
+          foreach ($dll in $dlls) {
+            $src = Join-Path $exeDir $dll
+            if (Test-Path $src) { Copy-Item $src $stage }
+          }
+
+          # Swift runtime DLLs also live in the toolchain's runtime dir
+          $runtimeDirs = @(
+            (Join-Path $env:SDKROOT "usr\bin"),
+            (Join-Path $env:SDKROOT "usr\lib\swift\windows")
+          )
+          foreach ($dir in $runtimeDirs) {
+            if (Test-Path $dir) {
+              foreach ($dll in @("SwiftCore.dll","Foundation.dll","dispatch.dll","Block.dll")) {
+                $src = Join-Path $dir $dll
+                if (Test-Path $src) { Copy-Item $src $stage -Force }
+              }
+            }
+          }
+
+          Compress-Archive -Path $stage -DestinationPath "DesktopPets-windows-x64.zip" -Force
+          Write-Host "Zip contents:"
+          Get-ChildItem $stage | Format-Table Name, Length
+
+      - name: Upload zip to Release
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Wait for the macOS job to create the release; if it exists, append, else create with zip only.
+          $tag = "${{ github.ref_name }}"
+          $existing = gh release view $tag --json assets 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag "DesktopPets-windows-x64.zip" --clobber
+          } else {
+            gh release create $tag "DesktopPets-windows-x64.zip" --title "DesktopPets $tag" --notes "Windows desktop pet $tag - portable zip, run DesktopPets.exe"
+          }
