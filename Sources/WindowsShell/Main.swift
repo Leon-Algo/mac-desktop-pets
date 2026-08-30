@@ -3,8 +3,13 @@
 // - Windows 上无参数：进入 Win32 消息循环，4 个分层透明窗口跑共享核心模拟。
 // - macOS 上无参数：打印提示后退出（macOS 用户运行 DesktopPets 主程序）。
 //
-// Windows 侧类型注意：Swift on Windows 的 WinSDK 模块里 BOOL = Int32 别名
-// WindowsBool；宽字符串用 Array<UInt16>（无 NSString）；API 多要求 UINT(Int32)。
+// Windows 侧类型注意（swift-win-sdk 实际约定，CI 验证过）：
+// - HWND/HICON/HMENU 等句柄别名 = 非可选指针；但 API 输入参数与回调参数
+//   多声明为 Optional（允许 NULL）。
+// - BOOL = Int32、UINT = UInt32、WPARAM = UInt、LPARAM/LRESULT = Int64/Int。
+// - 宽字符串用 Array<UInt16> + withUnsafeBufferPointer 传参。
+// - C 函数指针回调不能捕获上下文：用文件级 nonisolated(unsafe) 暂存
+//   （进程为单线程消息循环）。
 
 import Foundation
 import DesktopPetsCore
@@ -35,15 +40,13 @@ struct WindowsShell {
 #if os(Windows)
 import WinSDK
 
-/// 全局回跳指针：WndProc 是 C 函数指针，无法捕获 self。
+/// WndProc 回跳指针：C 函数指针无法捕获 self。
 /// 进程单线程消息循环内初始化一次、只读使用；
 /// Swift 6 严格并发不识别该模式，故显式标注 unsafe。
 private nonisolated(unsafe) var g_delegate: ShellAppDelegate?
 
 /// EnumDisplayMonitors 回调暂存（同 g_delegate 的单线程 unsafe 模式）。
-private nonisolated(unsafe) enum MonitorEnumScratch {
-    static var results: [WorldRect] = []
-}
+private nonisolated(unsafe) var g_monitorRects: [WorldRect] = []
 
 /// Win32 壳：
 /// - 每宠物一个 WS_EX_LAYERED 顶层窗口，每 tick UpdateLayeredWindow 提交画布。
@@ -56,20 +59,14 @@ final class ShellAppDelegate {
     private var monitors: [WorldRect] = []
     private var pointers: [String: PointerModel] = [:]
     private var alphaBuffers: [String: [UInt8]] = [:]
+    private var lastTapTime: [String: Double] = [:]
     private var trayCreated = false
-    private var currentExecutablePath: String {
-        // GetModuleFileNameW 拿 exe 绝对路径（不依赖进程启动方式）。
-        var buffer = [WCHAR](repeating: 0, count: 1024)
-        let length = GetModuleFileNameW(nil, &buffer, UINT(buffer.count))
-        guard length > 0 else { return "" }
-        return String(decoding: buffer.prefix(Int(length)), as: UTF16.self)
-    }
+    private var trayData = NOTIFYICONDATAW()
 
     struct PetWindowEntry {
         let id: String
         let hwnd: HWND
         let memory: HDC
-        let title: [WCHAR]
     }
 
     // MARK: - 生命周期
@@ -81,11 +78,13 @@ final class ShellAppDelegate {
 
         registerWindowClass()
         for character in model.characters {
-            guard let entry = createPetWindow(id: character.id) else { continue }
-            let memoryDC = CreateCompatibleDC(nil)!
-            windows.append(entry)
-            pointers[character.id] = PointerModel()
-            alphaBuffers[character.id] = PointerModel.alphaBuffer(of: PetCanvas.render(character: character, pose: model.world.poses[0]))
+            if let entry = createPetWindow(id: character.id) {
+                windows.append(entry)
+                pointers[character.id] = PointerModel()
+                alphaBuffers[character.id] = PointerModel.alphaBuffer(
+                    of: PetCanvas.render(character: character, pose: model.world.poses[0])
+                )
+            }
         }
         present(frames: model.tick(deltaTime: 0))
         createTrayIcon()
@@ -95,21 +94,20 @@ final class ShellAppDelegate {
     // MARK: - 多显示器
 
     private func enumerateMonitors() -> [WorldRect] {
-        // MONITORENUMPROC 是 C 函数指针不能捕获 self；lparam 只是 Int64 也塞不下
-        // 指针携带的上下文。进程单线程内同步枚举，用全局暂存最直接。
-        MonitorEnumScratch.results.removeAll(keepingCapacity: true)
+        g_monitorRects.removeAll(keepingCapacity: true)
         _ = EnumDisplayMonitors(nil, nil, { _, _, rawRect, _ in
+            guard let rawRect else { return 0 }
             let rect = rawRect.pointee
             if let world = WorldRect(
                 x: Double(rect.left), y: Double(rect.top),
                 width: Double(rect.right - rect.left),
                 height: Double(rect.bottom - rect.top)
             ) {
-                MonitorEnumScratch.results.append(world)
+                g_monitorRects.append(world)
             }
             return 1
         }, 0)
-        return MonitorEnumScratch.results
+        return MonitorLayout.resolve(g_monitorRects)
     }
 
     /// WM_DISPLAYCHANGE 后重新枚举显示器；主屏变化时召回全部宠物到新主屏。
@@ -142,8 +140,8 @@ final class ShellAppDelegate {
         _ = className.withUnsafeBufferPointer { _ in RegisterClassExW(&wc) }
     }
 
-    /// 统一消息分发：托盘/命令消息送 delegate，宠物窗口消息按标题路由。
-    private static func wndProc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    /// 统一消息分发（WndProc 回调参数句柄是 Optional，统一在此解包）。
+    private static func wndProc(hwnd: HWND?, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         guard let delegate = g_delegate else { return DefWindowProcW(hwnd, msg, wparam, lparam) }
         return delegate.handleMessage(hwnd: hwnd, msg: msg, wparam: wparam, lparam: lparam)
     }
@@ -163,13 +161,13 @@ final class ShellAppDelegate {
                 )
             }
         }
-        guard let hwnd else { return nil }
-        return PetWindowEntry(id: id, hwnd: hwnd, memory: CreateCompatibleDC(nil)!, title: title)
+        guard let hwnd, let memory = CreateCompatibleDC(nil) else { return nil }
+        return PetWindowEntry(id: id, hwnd: hwnd, memory: memory)
     }
 
     // MARK: - 消息处理
 
-    private func handleMessage(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    private func handleMessage(hwnd: HWND?, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         switch msg {
         case UINT(WM_NCHITTEST):
             return hitTest(hwnd: hwnd, lparam: lparam)
@@ -183,10 +181,10 @@ final class ShellAppDelegate {
             handleRelease(hwnd: hwnd, lparam: lparam)
             return 0
         case UINT(WM_COMMAND):
-            handleCommand(id: INT(wparam.lowWord))
+            handleCommand(id: INT(wparam & 0xFFFF))
             return 0
         case UINT(WM_APP_TRAY):
-            handleTrayCallback(lparam: lparam, screenX: Double(INT16(lparam.lowWord)), screenY: Double(INT16(lparam.highWord)))
+            handleTrayCallback(lparam: lparam)
             return 0
         case UINT(WM_DISPLAYCHANGE):
             refreshMonitors()
@@ -201,26 +199,27 @@ final class ShellAppDelegate {
     }
 
     /// 逐像素命中：点在不透明像素 → HTCLIENT（收点击）；否则 HTTRANSPARENT（穿透）。
-    private func hitTest(hwnd: HWND, lparam: LPARAM) -> LRESULT {
+    private func hitTest(hwnd: HWND?, lparam: LPARAM) -> LRESULT {
         guard let entry = windows.first(where: { $0.hwnd == hwnd }),
               let alpha = alphaBuffers[entry.id] else { return LRESULT(HTTRANSPARENT) }
-        let localX = Double(INT16(lparam.lowWord))
-        let localY = Double(INT16(lparam.highWord))
+        let localX = Double(INT16(truncatingIfNeeded: lparam & 0xFFFF))
+        let localY = Double(INT16(truncatingIfNeeded: (lparam >> 16) & 0xFFFF))
         let normalizedX = localX / Double(ShellModel.windowWidth)
         let normalizedY = localY / Double(ShellModel.windowHeight)
-        return LRESULT(PointerModel.isOpaque(
+        let opaque = PointerModel.isOpaque(
             normalizedX: normalizedX, normalizedY: normalizedY,
             alpha: alpha, width: ShellModel.windowWidth, height: ShellModel.windowHeight
-        ) ? HTCLIENT : HTTRANSPARENT)
+        )
+        return LRESULT(opaque ? HTCLIENT : HTTRANSPARENT)
     }
 
-    private func handlePress(hwnd: HWND, lparam: LPARAM) {
+    private func handlePress(hwnd: HWND?, lparam: LPARAM) {
         guard let entry = windows.first(where: { $0.hwnd == hwnd }) else { return }
         let screen = screenPoint(from: lparam)
         pointers[entry.id]?.press(atX: screen.x, atY: screen.y)
     }
 
-    private func handleMove(hwnd: HWND, lparam: LPARAM) {
+    private func handleMove(hwnd: HWND?, lparam: LPARAM) {
         guard let entry = windows.first(where: { $0.hwnd == hwnd }) else { return }
         let screen = screenPoint(from: lparam)
         guard let event = pointers[entry.id]?.move(toX: screen.x, toY: screen.y), event != .none else { return }
@@ -236,15 +235,14 @@ final class ShellAppDelegate {
         }
     }
 
-    private func handleRelease(hwnd: HWND, lparam: LPARAM) {
-        guard let entry = windows.first(where: { $0.hwnd == hwnd }) else { return }
+    private func handleRelease(hwnd: HWND?, lparam: LPARAM) {
+        guard let entry = windows.first(where: { $0.hwnd == hwnd }),
+              let pointer = pointers[entry.id] else { return }
         let screen = screenPoint(from: lparam)
-        // 双击：系统 GetDoubleClickTime 窗口内的第二次按下；这里用 PointerModel
-        // 的 tap 判定 + 手动计时近似（WM_LBUTTONUP 之间隔 < 双击时长即双击）。
-        let isDoubleClick = lastTapTime[entry.id].map { elapsed in
-            (Double(Date().timeIntervalSince1970) - elapsed) * 1000 < Double(GetDoubleClickTime())
-        } ?? false
-        lastTapTime[entry.id] = Double(Date().timeIntervalSince1970)
+        // 双击判定：两次释放间隔 < 系统双击时长即双击。
+        let now = Double(Date().timeIntervalSince1970)
+        let isDoubleClick = lastTapTime[entry.id].map { (now - $0) * 1000 < Double(GetDoubleClickTime()) } ?? false
+        lastTapTime[entry.id] = now
         guard let event = pointers[entry.id]?.release(isDoubleClick: isDoubleClick) else { return }
         switch event {
         case .drag:
@@ -260,38 +258,43 @@ final class ShellAppDelegate {
         default:
             break
         }
+        _ = pointer
     }
-
-    private var lastTapTime: [String: Double] = [:]
 
     /// LPARAM（屏幕坐标，多显示器可为负）→ (x, y)。
     private func screenPoint(from lparam: LPARAM) -> (x: Double, y: Double) {
-        (Double(INT16(lparam.lowWord)), Double(INT16(lparam.highWord)))
+        (Double(INT16(truncatingIfNeeded: lparam & 0xFFFF)),
+         Double(INT16(truncatingIfNeeded: (lparam >> 16) & 0xFFFF)))
     }
 
     // MARK: - 托盘
 
-    private var trayData: NOTIFYICONDATAW = NOTIFYICONDATAW()
-
     private func createTrayIcon() {
-        guard !trayCreated else { return }
+        guard !trayCreated, let anchor = windows.first?.hwnd else { return }
         trayData = NOTIFYICONDATAW()
         trayData.cbSize = UINT(MemoryLayout<NOTIFYICONDATAW>.size)
-        trayData.hWnd = windows.first?.hwnd
+        trayData.hWnd = anchor
         trayData.uID = 1
         trayData.uFlags = UINT(NIF_MESSAGE | NIF_ICON | NIF_TIP)
         trayData.uCallbackMessage = UINT(WM_APP_TRAY)
         trayData.hIcon = makeTrayIcon()
-        // 提示文字：桌面伙伴
-        var tip = wide("桌面伙伴 DesktopPets")
-        let maxTip = MemoryLayout<NOTIFYICONDATAW>.offset(of: NOTIFYICONDATAW.szTip)! / MemoryLayout<WCHAR>.size
-        tip = Array(tip.prefix(maxTip - 1))
-        withUnsafeMutableBytes(of: &trayData.szTip) { destination in
-            tip.withUnsafeBytes { source in
-                memcpy(destination.baseAddress, source.baseAddress, source.count)
+        writeTooltip("桌面伙伴 DesktopPets")
+        trayCreated = Shell_NotifyIconW(UINT(NIM_ADD), &trayData) != 0
+    }
+
+    /// 写入悬停提示文字。szTip 位于 NOTIFYICONDATAW 偏移 40
+    /// （x64 C 布局：cbSize 0, hWnd 8, uID 16, uFlags 20, uCallbackMessage 24,
+    /// hIcon 32, szTip 128 个 WCHAR 从 40 起）。结构体零初始化保证 NUL 结尾。
+    private func writeTooltip(_ text: String) {
+        let codeUnits = Array(text.utf16.prefix(126))
+        withUnsafeMutableBytes(of: &trayData) { raw in
+            guard let base = raw.baseAddress else { return }
+            let bytes = base.assumingMemoryBound(to: UInt8.self)
+            for (index, unit) in codeUnits.enumerated() {
+                bytes[40 + index * 2] = UInt8(unit & 0xFF)
+                bytes[40 + index * 2 + 1] = UInt8((unit >> 8) & 0xFF)
             }
         }
-        trayCreated = Shell_NotifyIconW(UINT(NIM_ADD), &trayData)
     }
 
     private func removeTrayIcon() {
@@ -301,78 +304,84 @@ final class ShellAppDelegate {
     }
 
     /// 用 PetCanvas 软件光栅器渲染第一个宠物头像为 32×32 托盘图标。
-    private func makeTrayIcon() -> HICON {
+    private func makeTrayIcon() -> HICON? {
         guard let character = model.characters.first,
-              let pose = model.world.poses.first else { return LoadIconW(nil, IDC_APPLICATION) }
+              let pose = model.world.poses.first else { return LoadIconW(nil, IDI_APPLICATION) }
         let canvas = PetCanvas.render(character: character, pose: pose, width: 32, height: 32)
         return hicon(from: canvas)
     }
 
-    private func hicon(from canvas: PetCanvas) -> HICON {
-        var info = BITMAPV5HEADER()
-        info.bV5Size = UINT32(MemoryLayout<BITMAPV5HEADER>.size)
-        info.bV5Width = INT32(canvas.width)
-        info.bV5Height = INT32(canvas.height)
-        info.bV5Planes = 1
-        info.bV5BitCount = 32
-        info.bV5Compression = DWORD(BI_BITFIELDS)
-        info.bV5RedMask = 0x00FF0000
-        info.bV5GreenMask = 0x0000FF00
-        info.bV5BlueMask = 0x000000FF
-        info.bV5AlphaMask = 0xFF000000
+    private func hicon(from canvas: PetCanvas) -> HICON? {
+        // 32bpp BI_RGB DIB：每像素 BGRA，第 4 字节 alpha，CreateIconIndirect 直接支持。
+        var info = BITMAPINFO()
+        info.bmiHeader.biSize = UINT(MemoryLayout<BITMAPINFOHEADER>.size)
+        info.bmiHeader.biWidth = INT32(canvas.width)
+        info.bmiHeader.biHeight = INT32(canvas.height)
+        info.bmiHeader.biPlanes = 1
+        info.bmiHeader.biBitCount = 32
+        info.bmiHeader.biCompression = DWORD(BI_RGB)
 
         let screenDC = GetDC(nil)
         defer { ReleaseDC(nil, screenDC) }
         var bits: UnsafeMutableRawPointer?
         guard let dib = CreateDIBSection(screenDC, &info, UINT(DIB_RGB_COLORS), &bits, nil, 0),
               let bits else {
-            return LoadIconW(nil, IDC_APPLICATION)
+            return LoadIconW(nil, IDI_APPLICATION)
         }
         defer { DeleteObject(dib) }
         var pixels = canvas.pixels
         pixels.withUnsafeBytes { raw in
             memcpy(bits, raw.baseAddress, raw.count)
         }
+        // CreateIconIndirect 要求 hbmMask 非 NULL（1bpp 单色掩码）。
+        guard let mask = CreateBitmap(INT32(canvas.width), INT32(canvas.height), UINT32(1), UINT32(1), nil) else {
+            return LoadIconW(nil, IDI_APPLICATION)
+        }
+        defer { DeleteObject(mask) }
         var iconInfo = ICONINFO()
         iconInfo.fIcon = true
+        iconInfo.hbmMask = mask
         iconInfo.hbmColor = dib
-        iconInfo.hbmMask = nil
-        guard let icon = CreateIconIndirect(&iconInfo) else {
-            return LoadIconW(nil, IDC_APPLICATION)
-        }
-        return icon
+        return CreateIconIndirect(&iconInfo)
     }
 
     // MARK: - 菜单与命令
 
     /// 托盘右键 → 弹出菜单。TrackPopupMenu 需要窗口先 SetForegroundWindow，
     /// 否则菜单不响应外部点击（Win32 经典坑）。
-    private func handleTrayCallback(lparam: LPARAM, screenX: Double, screenY: Double) {
-        guard INT(lparam.lowWord) == WM_RBUTTONUP else { return }
-        let menu = buildTrayMenu()
-        guard let menu else { return }
+    private func handleTrayCallback(lparam: LPARAM) {
+        guard INT(truncatingIfNeeded: lparam & 0xFFFF) == WM_RBUTTONUP,
+              let anchor = windows.first?.hwnd else { return }
+        guard let menu = buildTrayMenu() else { return }
         defer { DestroyMenu(menu) }
-        guard let anchorWindow = windows.first?.hwnd else { return }
-        SetForegroundWindow(anchorWindow)
+        SetForegroundWindow(anchor)
         var point = POINT()
-        GetCursorPos(&point)
-        var command = UINT32(0)
-        command = UINT32(TrackPopupMenuEx(
+        _ = GetCursorPos(&point)
+        // TPM_RETURNCMD：返回值为选中项 ID（Int32 通道）。
+        let selection = TrackPopupMenuEx(
             menu,
             UINT(TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON),
-            point.x, point.y, anchorWindow, nil
-        ))
-        PostMessageW(anchorWindow, UINT(WM_COMMAND), WPARAM(UINT(command)), 0)
+            point.x, point.y, anchor, nil
+        )
+        if selection != 0 {
+            PostMessageW(anchor, UINT(WM_COMMAND), WPARAM(UInt(UInt32(bitPattern: selection))), 0)
+        }
     }
 
     private func buildTrayMenu() -> HMENU? {
-        let menu = CreatePopupMenu()
-        guard let menu else { return nil }
+        guard let menu = CreatePopupMenu() else { return nil }
         let autostart = RegistryAutostart.isEnabled()
-        _ = AppendMenuW(menu, UINT(MF_STRING | (autostart ? MF_CHECKED : MF_UNCHECKED)), UINT_PTR(ID_AUTOSTART), wide("开机自启"))
+        appendMenuItem(menu, flags: UINT(MF_STRING | (autostart ? MF_CHECKED : MF_UNCHECKED)), id: ID_AUTOSTART, title: "开机自启")
         _ = AppendMenuW(menu, UINT(MF_SEPARATOR), 0, nil)
-        _ = AppendMenuW(menu, UINT(MF_STRING), UINT_PTR(ID_QUIT), wide("退出桌面伙伴"))
+        appendMenuItem(menu, flags: UINT(MF_STRING), id: ID_QUIT, title: "退出桌面伙伴")
         return menu
+    }
+
+    private func appendMenuItem(_ menu: HMENU, flags: UINT, id: Int, title: String) {
+        var text = wide(title)
+        _ = text.withUnsafeBufferPointer { buffer in
+            AppendMenuW(menu, flags, UINT_PTR(id), buffer.baseAddress)
+        }
     }
 
     private func handleCommand(id: INT) {
@@ -387,6 +396,14 @@ final class ShellAppDelegate {
         default:
             break
         }
+    }
+
+    /// GetModuleFileNameW 拿 exe 绝对路径（不依赖进程启动方式）。
+    private var currentExecutablePath: String {
+        var buffer = [WCHAR](repeating: 0, count: 1024)
+        let length = GetModuleFileNameW(nil, &buffer, UINT(buffer.count))
+        guard length > 0 else { return "" }
+        return String(decoding: buffer.prefix(Int(length)), as: UTF16.self)
     }
 
     // MARK: - 渲染与消息循环
@@ -466,19 +483,9 @@ final class ShellAppDelegate {
     }
 }
 
-// MARK: - 常量与小工具
+// MARK: - 常量
 
 private let WM_APP_TRAY = WM_APP + 1
 private let ID_AUTOSTART = 2001
 private let ID_QUIT = 2002
-
-extension WPARAM {
-    var lowWord: UINT { UINT(self & 0xFFFF) }
-    var highWord: UINT { UINT((self >> 16) & 0xFFFF) }
-}
-
-extension LPARAM {
-    var lowWord: INT16 { INT16(truncatingIfNeeded: self & 0xFFFF) }
-    var highWord: INT16 { INT16(truncatingIfNeeded: (self >> 16) & 0xFFFF) }
-}
 #endif

@@ -53,12 +53,17 @@ enum RegistryAutostart {
             let value = wideString(AutostartPolicy.command(executablePath: executablePath))
             return name.withUnsafeBufferPointer { nameBuffer in
                 value.withUnsafeBufferPointer { valueBuffer in
-                    RegSetValueExW(
+                    // RegSetValueExW 的 lpData 是 UnsafeRawPointer?；
+                    // [WCHAR] 缓冲按字节 reinterpret 传入。
+                    let bytes = valueBuffer.baseAddress.map {
+                        UnsafeRawPointer($0).assumingMemoryBound(to: BYTE.self)
+                    }
+                    return RegSetValueExW(
                         opened,
                         nameBuffer.baseAddress,
                         0,
                         UINT(REG_SZ),
-                        valueBuffer.baseAddress?.assumingMemoryBound(to: BYTE.self),
+                        bytes,
                         DWORD(valueBuffer.count * MemoryLayout<WCHAR>.size)
                     ) == ERROR_SUCCESS
                 }
