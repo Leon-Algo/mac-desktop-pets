@@ -34,12 +34,16 @@ jobs:
         run: swift --version
 
       - name: Build all Windows targets
-        run: swift build --product CoreProbe --product WindowsShell
+        run: |
+          swift build --product CoreProbe
+          swift build --product WindowsShell
 
       - name: Run CoreProbe self-check
         run: |
+          swift build --product CoreProbe > $null
           $exe = Get-ChildItem -Path .build -Recurse -Filter "CoreProbe.exe" | Select-Object -First 1
           if (-not $exe) { Write-Error "CoreProbe.exe not found"; exit 1 }
+          Write-Host "Found: $($exe.FullName)"
           & $exe.FullName
           exit $LASTEXITCODE
 
@@ -47,5 +51,6 @@ jobs:
         run: |
           $exe = Get-ChildItem -Path .build -Recurse -Filter "WindowsShell.exe" | Select-Object -First 1
           if (-not $exe) { Write-Error "WindowsShell.exe not found"; exit 1 }
+          Write-Host "Found: $($exe.FullName)"
           & $exe.FullName --self-test
           exit $LASTEXITCODE
