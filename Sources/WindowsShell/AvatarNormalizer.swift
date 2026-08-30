@@ -102,9 +102,10 @@ private struct IUnknownVtbl {
     var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
 }
 
-/// IWICImagingFactory 前缀（槽位 0–14）。实际调用：
-/// CreateDecoderFromStream(4)、CreateEncoder(8)、CreateFormatConverter(9)、
-/// CreateBitmapFromMemory(14)。
+/// IWICImagingFactory 前缀（槽位 0–20，wincodec.idl 声明序 —— 注意不是 MSDN
+/// 页面的字母序！实际顺序经 winapi 绑定交叉核对）。实际调用：
+/// CreateDecoderFromStream(4)、CreateEncoder(8)、CreateFormatConverter(10)、
+/// CreateBitmapFromMemory(20)。
 private struct IWICImagingFactoryVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
     var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
@@ -115,7 +116,13 @@ private struct IWICImagingFactoryVtbl {
     var CreateComponentInfo: UnusedComSlot
     var CreateDecoder: UnusedComSlot
     var CreateEncoder: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var CreatePalette: UnusedComSlot
     var CreateFormatConverter: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var CreateBitmapScaler: UnusedComSlot
+    var CreateBitmapClipper: UnusedComSlot
+    var CreateBitmapFlipRotator: UnusedComSlot
+    var CreateStream: UnusedComSlot
+    var CreateColorContext: UnusedComSlot
     var CreateColorTransformer: UnusedComSlot
     var CreateBitmap: UnusedComSlot
     var CreateBitmapFromSource: UnusedComSlot
@@ -205,7 +212,7 @@ private struct IWICBitmapEncoderVtbl {
     var CreateNewFrame: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
 }
 
-/// IWICBitmapFrameEncode 前缀（槽位 0–15）。实际调用：
+/// IWICBitmapFrameEncode 前缀（槽位 0–14，wincodec.idl 声明序）。实际调用：
 /// Initialize(3)、SetSize(4)、WriteSource(11)、Commit(14)。
 private struct IWICBitmapFrameEncodeVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
@@ -218,7 +225,6 @@ private struct IWICBitmapFrameEncodeVtbl {
     var SetColorContexts: UnusedComSlot
     var SetPalette: UnusedComSlot
     var SetThumbnail: UnusedComSlot
-    var SetPreview: UnusedComSlot
     var WritePixels: UnusedComSlot
     var WriteSource: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> HRESULT
     var WriteMetadata: UnusedComSlot
