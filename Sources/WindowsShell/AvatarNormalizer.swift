@@ -464,6 +464,14 @@ enum WICSupport {
     /// PNG 无损，BGRA 32bpp 全程直通，解码结果必须逐字节一致。
     /// 这是手写 COM vtable 绑定的运行期正确性验证（槽位错位/GUID 错误在此暴露）。
     static func roundTripSelfTest() -> Bool {
+        var trace: [String] = []
+        let ok = roundTripSelfTest(trace: &trace)
+        for line in trace { print("  WIC: \(line)") }
+        return ok
+    }
+
+    /// 带步骤追踪的版本：CI 日志可定位首个失败环节。
+    static func roundTripSelfTest(trace: inout [String]) -> Bool {
         let side = 8
         var bgra = [UInt8](repeating: 0, count: side * side * 4)
         for y in 0..<side {
@@ -475,17 +483,111 @@ enum WICSupport {
                 bgra[i + 3] = 255
             }
         }
-        guard let png = encodePNG(bgra: bgra, width: side, height: side), png.count > 8,
-              let (pixels, width, height) = decodeBGRA(data: png),
-              width == side, height == side, pixels.count == side * side * 4 else {
+        guard let factory = createFactory() else {
+            trace.append("FAIL createFactory")
             return false
         }
-        let probes = [(0, 0), (side - 1, 0), (0, side - 1), (side - 1, side - 1), (3, 5)]
-        for (x, y) in probes {
+        trace.append("ok createFactory")
+        guard let stream = memoryStream() else {
+            trace.append("FAIL memoryStream")
+            return false
+        }
+        guard let encoder = factory.createEncoder(containerFormat: wicPNGContainerGUID) else {
+            trace.append("FAIL createEncoder")
+            return false
+        }
+        trace.append("ok createEncoder")
+        guard encoder.initialize(stream: stream, cacheOption: UINT(WICBitmapEncoderNoCache.rawValue)) else {
+            trace.append("FAIL encoder.initialize")
+            return false
+        }
+        guard let frame = encoder.createNewFrame() else {
+            trace.append("FAIL createNewFrame")
+            return false
+        }
+        trace.append("ok createNewFrame")
+        guard frame.initialize() else {
+            trace.append("FAIL frame.initialize")
+            return false
+        }
+        guard frame.setSize(width: UINT32(side), height: UINT32(side)) else {
+            trace.append("FAIL frame.setSize")
+            return false
+        }
+        guard frame.setPixelFormat(wicBGRAFormatGUID) else {
+            trace.append("FAIL frame.setPixelFormat")
+            return false
+        }
+        trace.append("ok frame setup (initialize/setSize/setPixelFormat)")
+        let stride = side * 4
+        let hr = bgra.withUnsafeBytes { raw -> HRESULT in
+            guard let base = raw.baseAddress else { return comEFail }
+            return frame.writePixels(
+                lineCount: UINT(side), stride: UINT32(stride),
+                bufferSize: UINT32(raw.count), buffer: UnsafeMutableRawPointer(mutating: base)
+            )
+        }
+        guard comOK(hr) else {
+            trace.append("FAIL writePixels hr=0x\(String(UInt32(bitPattern: hr), radix: 16))")
+            return false
+        }
+        guard frame.commit() else {
+            trace.append("FAIL frame.commit")
+            return false
+        }
+        guard encoder.commit() else {
+            trace.append("FAIL encoder.commit")
+            return false
+        }
+        let size = stream.streamSize()
+        guard size > 8, let png = stream.readAll(size) else {
+            trace.append("FAIL stream readback size=\(size)")
+            return false
+        }
+        trace.append("ok encode (\(png.count) bytes)")
+
+        guard let decodedStream = memoryStream(containing: png) else {
+            trace.append("FAIL decode memoryStream")
+            return false
+        }
+        guard let decoder = factory.createDecoderFromStream(
+            decodedStream, metadataOptions: UINT(WICDecodeMetadataCacheOnDemand.rawValue)) else {
+            trace.append("FAIL createDecoderFromStream")
+            return false
+        }
+        trace.append("ok createDecoderFromStream")
+        guard let decodedFrame = decoder.frame(at: 0) else {
+            trace.append("FAIL decoder.frame(0)")
+            return false
+        }
+        guard let (w, h) = decodedFrame.getSize() else {
+            trace.append("FAIL frame.getSize")
+            return false
+        }
+        trace.append("ok frame size \(w)x\(h)")
+        guard w == UINT(side), h == UINT(side) else {
+            trace.append("FAIL size mismatch \(w)x\(h)")
+            return false
+        }
+        guard let converter = factory.createFormatConverter() else {
+            trace.append("FAIL createFormatConverter")
+            return false
+        }
+        guard converter.initializeToBGRA(from: decodedFrame, pixelFormat: wicBGRAFormatGUID) else {
+            trace.append("FAIL converter.initialize")
+            return false
+        }
+        guard let pixels = converter.copyPixelsAsBGRA(width: w, height: h) else {
+            trace.append("FAIL converter.copyPixels")
+            return false
+        }
+        trace.append("ok decode + convert")
+        for (x, y) in [(0, 0), (side - 1, 0), (0, side - 1), (side - 1, side - 1), (3, 5)] {
             let i = (y * side + x) * 4
-            guard pixels[i] == UInt8(truncatingIfNeeded: x * 30),
-                  pixels[i + 1] == UInt8(truncatingIfNeeded: y * 30),
-                  pixels[i + 2] == 0x40, pixels[i + 3] == 255 else {
+            let expected = (UInt8(truncatingIfNeeded: x * 30), UInt8(truncatingIfNeeded: y * 30), UInt8(0x40), UInt8(255))
+            let actual = (pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3])
+            guard actual == expected else {
+                trace.append("FAIL pixel(\(x),\(y)) got \(actual) want \(expected)")
                 return false
             }
         }
