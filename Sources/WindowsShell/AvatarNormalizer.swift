@@ -382,12 +382,23 @@ extension ComObject {
         comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Initialize(raw, stream.raw, cacheOption))
     }
 
-    func createNewFrame() -> ComObject? {
-        var out: UnsafeMutableRawPointer? = nil
-        // 属性袋（编码器选项）传 nil：WIC 文档允许，免去 IPropertyBag2 绑定。
-        let hr = vtbl(IWICBitmapEncoderVtbl.self).pointee.CreateNewFrame(raw, &out, nil)
-        guard comOK(hr), let p = out else { return nil }
-        return ComObject(p)
+    func createNewFrame() -> (frame: ComObject, options: ComObject?)? {
+        var frameOut: UnsafeMutableRawPointer? = nil
+        var bagOut: UnsafeMutableRawPointer? = nil
+        // 标准顺序：CreateNewFrame 必须取回属性袋（可为 nil，但 PNG 编码器
+        // 的 WRONGSTATE 问题多源于跳过属性袋初始化），随后 frame.Initialize(bag)。
+        let hr = vtbl(IWICBitmapEncoderVtbl.self).pointee.CreateNewFrame(raw, &frameOut, &bagOut)
+        guard comOK(hr), let p = frameOut else { return nil }
+        let bag = bagOut.map { ComObject($0) }
+        return (ComObject(p), bag)
+    }
+
+    /// Commit 后从内存流读回全部字节。
+    /// WINCODEC_ERR_WRONGSTATE (0x88982f04) 常见根因：frame.Initialize 之前
+    /// 未走「CreateNewFrame 取回属性袋 → frame.Initialize(属性袋)」的标准
+    /// 顺序（PNG 编码器要求属性袋初始化路径）。
+    func readAllAfterCommit() -> Data? {
+        streamSize() > 0 ? readAll(streamSize()) : nil
     }
 
     /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 13）。
@@ -398,8 +409,10 @@ extension ComObject {
 }
 
 extension ComObject {
-    fileprivate func initialize() -> Bool {
-        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Initialize(raw, nil))
+    /// FrameEncode 初始化：bag 为属性袋对象（IPropertyBag2），可为 nil。
+    /// WIC 标准顺序 = CreateNewFrame 取袋 → Initialize(袋)。
+    fileprivate func initialize(options bag: ComObject?) -> Bool {
+        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Initialize(raw, bag?.raw))
     }
 
     func setSize(width: UINT32, height: UINT32) -> Bool {
@@ -480,8 +493,12 @@ enum WICSupport {
               let stream = memoryStream(),
               let encoder = factory.createEncoder(containerFormat: wicPNGContainerGUID),
               encoder.initialize(stream: stream, cacheOption: UINT(WICBitmapEncoderNoCache.rawValue)),
-              let frame = encoder.createNewFrame(),
-              frame.initialize(),
+              let created = encoder.createNewFrame() else {
+            return nil
+        }
+        let frame = created.frame
+        // WIC 标准顺序：CreateNewFrame 取属性袋 → frame.Initialize(袋)。
+        guard frame.initialize(options: created.options),
               frame.setSize(width: UINT32(width), height: UINT32(height)),
               frame.writeSource(bitmap) else {
             return nil
@@ -557,26 +574,26 @@ enum WICSupport {
             step("FAIL encoder.initialize")
             return false
         }
-        guard let frame = encoder.createNewFrame() else {
+        guard let created = encoder.createNewFrame() else {
             step("FAIL createNewFrame")
             return false
         }
         step("ok createNewFrame")
-        guard frame.initialize() else {
+        guard created.frame.initialize(options: created.options) else {
             step("FAIL frame.initialize")
             return false
         }
-        guard frame.setSize(width: UINT32(side), height: UINT32(side)) else {
+        guard created.frame.setSize(width: UINT32(side), height: UINT32(side)) else {
             step("FAIL frame.setSize")
             return false
         }
         step("ok frame init + size")
-        guard frame.writeSource(bitmap) else {
+        guard created.frame.writeSource(bitmap) else {
             step("FAIL writeSource")
             return false
         }
         step("ok writeSource")
-        guard frame.commit() else {
+        guard created.frame.commit() else {
             step("FAIL frame.commit")
             return false
         }
