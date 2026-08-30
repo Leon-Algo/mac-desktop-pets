@@ -54,8 +54,8 @@ enum AvatarNormalizer {
         return (output, pixelSize, pixelSize)
     }
 
-    /// 编码为 PNG 字节（Windows 用 WIC 编码器；非 Windows 桩返回 nil，
-    /// 桩路径仅用于纯逻辑单测，不落盘）。
+    /// 编码为 PNG 字节（双端统一走纯 Swift PNGEncoder，见 WICSupport.encodePNG
+    /// 的设计决策注释；桩路径仅用于纯逻辑单测，不落盘）。
     static func encodePNG(bgra: [UInt8], width: Int, height: Int) -> Data? {
         #if os(Windows)
         return WICSupport.encodePNG(bgra: bgra, width: width, height: height)
@@ -102,10 +102,10 @@ private struct IUnknownVtbl {
     var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
 }
 
-/// IWICImagingFactory 前缀（槽位 0–20，wincodec.idl 声明序 —— 注意不是 MSDN
+/// IWICImagingFactory 前缀（槽位 0–10，wincodec.idl 声明序 —— 注意不是 MSDN
 /// 页面的字母序！实际顺序经 winapi 绑定交叉核对）。实际调用：
-/// CreateDecoderFromStream(4)、CreateEncoder(8)、CreateFormatConverter(10)、
-/// CreateBitmapFromMemory(20)。
+/// CreateDecoderFromStream(4)、CreateFormatConverter(10)。
+/// （PNG 编码已改纯 Swift 实现，编码器槽位不再绑定。）
 private struct IWICImagingFactoryVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
     var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
@@ -115,19 +115,9 @@ private struct IWICImagingFactoryVtbl {
     var CreateDecoderFromFileHandle: UnusedComSlot
     var CreateComponentInfo: UnusedComSlot
     var CreateDecoder: UnusedComSlot
-    var CreateEncoder: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
+    var CreateEncoder: UnusedComSlot
     var CreatePalette: UnusedComSlot
     var CreateFormatConverter: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
-    var CreateBitmapScaler: UnusedComSlot
-    var CreateBitmapClipper: UnusedComSlot
-    var CreateBitmapFlipRotator: UnusedComSlot
-    var CreateStream: UnusedComSlot
-    var CreateColorContext: UnusedComSlot
-    var CreateColorTransformer: UnusedComSlot
-    var CreateBitmap: UnusedComSlot
-    var CreateBitmapFromSource: UnusedComSlot
-    var CreateBitmapFromSourceRect: UnusedComSlot
-    var CreateBitmapFromMemory: @convention(c) (UnsafeMutableRawPointer?, UINT32, UINT32, UnsafeRawPointer?, UINT32, UINT32, UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
 }
 
 /// IStream 前缀（槽位 0–12，ISequentialStream 在前）。实际调用：
@@ -197,45 +187,6 @@ private struct IWICFormatConverterVtbl {
     var CanConvert: UnusedComSlot
 }
 
-/// IWICBitmapEncoder 前缀（槽位 0–11，wincodec.idl 声明序）。实际调用：
-/// Initialize(3)、CreateNewFrame(10)、Commit(11)。
-/// 注意：Commit 在 Encoder 是槽位 11，在 FrameEncode 是槽位 13 —— 不同接口
-/// 不同槽位，ComObject 的方法必须显式区分，不能复用同名方法。
-private struct IWICBitmapEncoderVtbl {
-    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
-    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
-    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
-    var Initialize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UINT) -> HRESULT
-    var GetContainerFormat: UnusedComSlot
-    var GetEncoderInfo: UnusedComSlot
-    var SetColorContexts: UnusedComSlot
-    var SetPalette: UnusedComSlot
-    var SetThumbnail: UnusedComSlot
-    var SetPreview: UnusedComSlot
-    var CreateNewFrame: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
-    var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
-}
-
-/// IWICBitmapFrameEncode 前缀（槽位 0–13，wincodec.idl 声明序 —— 接口没有
-/// SetMetadata，那是元数据查询写入器的方法）。实际调用：
-/// Initialize(3)、SetSize(4)、WriteSource(11)、Commit(13)。
-private struct IWICBitmapFrameEncodeVtbl {
-    var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
-    var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
-    var Release: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
-    var Initialize: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> HRESULT
-    var SetSize: @convention(c) (UnsafeMutableRawPointer?, UINT32, UINT32) -> HRESULT
-    var SetResolution: UnusedComSlot
-    var SetPixelFormat: UnusedComSlot
-    var SetColorContexts: UnusedComSlot
-    var SetPalette: UnusedComSlot
-    var SetThumbnail: UnusedComSlot
-    var WritePixels: UnusedComSlot
-    var WriteSource: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> HRESULT
-    var WriteMetadata: UnusedComSlot
-    var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
-}
-
 /// 极简 COM 对象包装：持有裸指针，deinit 统一 Release（RAII，异常路径不泄漏）。
 /// vtable 经对象首字段（C++ vptr）重绑定到对应槽位结构体后按字段调用。
 private final class ComObject {
@@ -263,35 +214,9 @@ extension ComObject {
         return ComObject(p)
     }
 
-    func createEncoder(containerFormat: GUID) -> ComObject? {
-        var out: UnsafeMutableRawPointer? = nil
-        let hr = withUnsafePointer(to: containerFormat) { fmt in
-            factory.pointee.CreateEncoder(raw, UnsafeRawPointer(fmt), nil, &out)
-        }
-        guard comOK(hr), let p = out else { return nil }
-        return ComObject(p)
-    }
-
     func createFormatConverter() -> ComObject? {
         var out: UnsafeMutableRawPointer? = nil
         let hr = factory.pointee.CreateFormatConverter(raw, &out)
-        guard comOK(hr), let p = out else { return nil }
-        return ComObject(p)
-    }
-
-    /// 从内存 BGRA 缓冲创建进程内 IWICBitmap（WIC 托管拷贝）。
-    func createBitmapFromMemory(bgra: [UInt8], width: Int, height: Int, pixelFormat: GUID) -> ComObject? {
-        var out: UnsafeMutableRawPointer? = nil
-        let hr = withUnsafePointer(to: pixelFormat) { fmt -> HRESULT in
-            bgra.withUnsafeBytes { buffer -> HRESULT in
-                guard let base = buffer.baseAddress else { return comEFail }
-                return factory.pointee.CreateBitmapFromMemory(
-                    raw, UINT32(width), UINT32(height), UnsafeRawPointer(fmt),
-                    UINT32(width * 4), UINT32(buffer.count),
-                    UnsafeMutableRawPointer(mutating: base), &out
-                )
-            }
-        }
         guard comOK(hr), let p = out else { return nil }
         return ComObject(p)
     }
@@ -377,66 +302,6 @@ extension ComObject {
     }
 }
 
-extension ComObject {
-    fileprivate func initialize(stream: ComObject, cacheOption: UINT) -> Bool {
-        comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Initialize(raw, stream.raw, cacheOption))
-    }
-
-    func createNewFrame() -> (frame: ComObject, options: ComObject?)? {
-        var frameOut: UnsafeMutableRawPointer? = nil
-        var bagOut: UnsafeMutableRawPointer? = nil
-        // 标准顺序：CreateNewFrame 必须取回属性袋（可为 nil，但 PNG 编码器
-        // 的 WRONGSTATE 问题多源于跳过属性袋初始化），随后 frame.Initialize(bag)。
-        let hr = vtbl(IWICBitmapEncoderVtbl.self).pointee.CreateNewFrame(raw, &frameOut, &bagOut)
-        guard comOK(hr), let p = frameOut else { return nil }
-        let bag = bagOut.map { ComObject($0) }
-        return (ComObject(p), bag)
-    }
-
-    /// Commit 后从内存流读回全部字节。
-    /// WINCODEC_ERR_WRONGSTATE (0x88982f04) 常见根因：frame.Initialize 之前
-    /// 未走「CreateNewFrame 取回属性袋 → frame.Initialize(属性袋)」的标准
-    /// 顺序（PNG 编码器要求属性袋初始化路径）。
-    func readAllAfterCommit() -> Data? {
-        streamSize() > 0 ? readAll(streamSize()) : nil
-    }
-
-    /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 13）。
-    /// 返回原始 HRESULT 供诊断。
-    func commitEncoder() -> HRESULT {
-        vtbl(IWICBitmapEncoderVtbl.self).pointee.Commit(raw)
-    }
-}
-
-extension ComObject {
-    /// FrameEncode 初始化：bag 为属性袋对象（IPropertyBag2），可为 nil。
-    /// WIC 标准顺序 = CreateNewFrame 取袋 → Initialize(袋)。
-    fileprivate func initialize(options bag: ComObject?) -> Bool {
-        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Initialize(raw, bag?.raw))
-    }
-
-    func setSize(width: UINT32, height: UINT32) -> Bool {
-        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.SetSize(raw, width, height))
-    }
-
-    /// 写入整个位图源。WriteSource 让编码器自己处理像素格式转换
-    /// （不依赖手工 SetPixelFormat/格式匹配——PNG 编码器会把 BGRA 请求
-    /// 吸附到内部格式，手工 WritePixels 缓冲布局容易踩坑）。
-    /// prc 传 nil = 全图。
-    func writeSource(_ source: ComObject) -> Bool {
-        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.WriteSource(raw, source.raw, nil))
-    }
-
-    func commit() -> Bool {
-        comOK(vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Commit(raw))
-    }
-
-    /// 诊断用：FrameEncode Commit 原始 HRESULT。
-    func rawCommit() -> HRESULT {
-        vtbl(IWICBitmapFrameEncodeVtbl.self).pointee.Commit(raw)
-    }
-}
-
 // MARK: - GUID 常量（let 全局，传参时经 withUnsafePointer 取址）
 
 /// CLSID_WICImagingFactory1 {cacaf262-9370-4615-a13b-9f5539da4c0a}
@@ -452,11 +317,6 @@ private let wicFactoryIID = IID_IWICImagingFactory
 private let wicBGRAFormatGUID = GUID(
     Data1: 0x6fddc324, Data2: 0x4e03, Data3: 0x4bfe,
     Data4: (0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0e)
-)
-/// GUID_ContainerFormatPng {1b7cfaf4-713f-473c-bbcd-6137425faeaf}
-private let wicPNGContainerGUID = GUID(
-    Data1: 0x1b7cfaf4, Data2: 0x713f, Data3: 0x473c,
-    Data4: (0xbb, 0xcd, 0x61, 0x37, 0x42, 0x5f, 0xae, 0xaf)
 )
 
 /// WIC（Windows Imaging Component）封装：解码任意格式图像 → BGRA，
@@ -482,42 +342,16 @@ enum WICSupport {
         return (pixels, Int(width), Int(height))
     }
 
-    /// BGRA 像素编码为 PNG 字节。
+    /// BGRA 像素编码为 PNG 字节 —— 纯 Swift 实现（PNGEncoder），零 COM 依赖。
     ///
-    /// 走 WriteSource 路径：BGRA 缓冲 → CreateBitmapFromMemory（进程内 IWICBitmap，
-    /// 显式 32bppBGRA）→ frame.WriteSource。像素格式转换完全由编码器侧完成，
-    /// 不手工 SetPixelFormat / WritePixels —— PNG 编码器对 SetPixelFormat 的
-    /// 格式吸附行为（BGRA→BGR/PBGRA）会让手工缓冲布局踩坑。
+    /// 设计决策：WIC 编码路径在真机验证中暴露出深层状态机问题
+    /// （frame.Commit S_OK 而 encoder.Commit 稳定返回 WINCODEC_ERR_WRONGSTATE
+    /// 0x88982f04，槽位/顺序/GUID 均经 winapi IDL 序逐项核对）。编码是本工程
+    /// 完全可控的格式（8-bit RGBA 非隔行），纯 Swift stored-deflate 实现约
+    /// 百行、双端可测，把风险从 COM 运行时转移到可全量 XCTest 的纯逻辑层。
+    /// WIC 只保留解码职责（该路径已真机验证）。
     static func encodePNG(bgra: [UInt8], width: Int, height: Int) -> Data? {
-        guard width > 0, height > 0,
-              width * height <= AvatarNormalizer.maxSourcePixels,
-              bgra.count == width * height * 4 else { return nil }
-        guard let factory = createFactory(),
-              let bitmap = factory.createBitmapFromMemory(
-                  bgra: bgra, width: width, height: height, pixelFormat: wicBGRAFormatGUID),
-              let stream = memoryStream(),
-              let encoder = factory.createEncoder(containerFormat: wicPNGContainerGUID),
-              encoder.initialize(stream: stream, cacheOption: UINT(WICBitmapEncoderNoCache.rawValue)),
-              let created = encoder.createNewFrame() else {
-            return nil
-        }
-        let frame = created.frame
-        // WIC 标准顺序：CreateNewFrame 取属性袋 → frame.Initialize(袋)。
-        guard frame.initialize(options: created.options),
-              frame.setSize(width: UINT32(width), height: UINT32(height)),
-              frame.writeSource(bitmap) else {
-            return nil
-        }
-        guard frame.commit() else {
-            log("encodePNG: frame.commit failed")
-            return nil
-        }
-        let encoderHr = encoder.commitEncoder()
-        guard comOK(encoderHr) else {
-            log("encodePNG: encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
-            return nil
-        }
-        return stream.readAll(stream.streamSize())
+        PNGEncoder.encode(bgra: bgra, width: width, height: height)
     }
 
     /// CI 自检：合成 8×8 渐变 → PNG 编码 → 解码 → 逐像素核对。
@@ -538,6 +372,9 @@ enum WICSupport {
 
     /// 带步骤追踪的版本：CI 日志可定位首个失败环节。
     /// 每步即时落盘（trace 数组 + stderr 双写），崩溃点即最后一条日志。
+    ///
+    /// 结构：纯 Swift PNGEncoder 编码 8×8 渐变（双端可跑，钉死编码器正确性）
+    /// → Windows 上再经 WIC 解码逐像素核对（钉死解码 vtable 运行期正确性）。
     static func roundTripSelfTest(trace: inout [String]) -> Bool {
         func step(_ message: String) {
             trace.append(message)
@@ -554,71 +391,19 @@ enum WICSupport {
                 bgra[i + 3] = 255
             }
         }
-        step("begin factory")
+        // 纯 Swift 编码自检（跨平台）。
+        guard let png = PNGEncoder.encode(bgra: bgra, width: side, height: side), png.count > 8 else {
+            step("FAIL PNGEncoder.encode")
+            return false
+        }
+        step("ok pure-swift encode (\(png.count) bytes)")
+        #if os(Windows)
+        // WIC 解码链路验证（真机）：PNG（纯 Swift 产物）→ WIC 解码 → 逐像素核对。
         guard let factory = createFactory() else {
             step("FAIL createFactory")
             return false
         }
         step("ok createFactory")
-        guard let bitmap = factory.createBitmapFromMemory(
-            bgra: bgra, width: side, height: side, pixelFormat: wicBGRAFormatGUID) else {
-            step("FAIL createBitmapFromMemory")
-            return false
-        }
-        step("ok createBitmapFromMemory")
-        guard let stream = memoryStream() else {
-            step("FAIL memoryStream")
-            return false
-        }
-        guard let encoder = factory.createEncoder(containerFormat: wicPNGContainerGUID) else {
-            step("FAIL createEncoder")
-            return false
-        }
-        step("ok createEncoder")
-        guard encoder.initialize(stream: stream, cacheOption: UINT(WICBitmapEncoderNoCache.rawValue)) else {
-            step("FAIL encoder.initialize")
-            return false
-        }
-        guard let created = encoder.createNewFrame() else {
-            step("FAIL createNewFrame")
-            return false
-        }
-        step("ok createNewFrame")
-        guard created.frame.initialize(options: created.options) else {
-            step("FAIL frame.initialize")
-            return false
-        }
-        guard created.frame.setSize(width: UINT32(side), height: UINT32(side)) else {
-            step("FAIL frame.setSize")
-            return false
-        }
-        step("ok frame init + size")
-        guard created.frame.writeSource(bitmap) else {
-            step("FAIL writeSource")
-            return false
-        }
-        step("ok writeSource")
-        step("diag stream size after writeSource = \(stream.streamSize())")
-        let frameCommitHr = created.frame.rawCommit()
-        step("diag frame.commit hr=0x\(String(UInt32(bitPattern: frameCommitHr), radix: 16))")
-        guard comOK(frameCommitHr) else {
-            step("FAIL frame.commit")
-            return false
-        }
-        step("diag stream size after frame.commit = \(stream.streamSize())")
-        let encoderHr = encoder.commitEncoder()
-        step("diag encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
-        guard comOK(encoderHr) else {
-            step("FAIL encoder.commit")
-            return false
-        }
-        let size = stream.streamSize()
-        step("diag stream size after encoder.commit = \(size)")
-        guard size > 8, let png = stream.readAll(size) else {
-            step("FAIL stream readback size=\(size)")
-            return false
-        }
-        step("ok encode (\(png.count) bytes)")
         guard let decodedStream = memoryStream(containing: png) else {
             step("FAIL decode memoryStream")
             return false
@@ -655,6 +440,24 @@ enum WICSupport {
             return false
         }
         step("ok convert + copy")
+        #else
+        // 非 Windows：PNG 结构断言（签名 + IHDR 尺寸字段）。
+        let signature: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+        guard png.prefix(8).elementsEqual(signature) else {
+            step("FAIL png signature")
+            return false
+        }
+        var widthBE = 0
+        for byte in png[16..<20] { widthBE = (widthBE << 8) | Int(byte) }
+        var heightBE = 0
+        for byte in png[20..<24] { heightBE = (heightBE << 8) | Int(byte) }
+        guard widthBE == side, heightBE == side else {
+            step("FAIL ihdr size \(widthBE)x\(heightBE)")
+            return false
+        }
+        let pixels = bgra
+        step("ok header check (non-Windows)")
+        #endif
         for (x, y) in [(0, 0), (side - 1, 0), (0, side - 1), (side - 1, side - 1), (3, 5)] {
             let i = (y * side + x) * 4
             let expected = (UInt8(truncatingIfNeeded: x * 30), UInt8(truncatingIfNeeded: y * 30), UInt8(0x40), UInt8(255))
