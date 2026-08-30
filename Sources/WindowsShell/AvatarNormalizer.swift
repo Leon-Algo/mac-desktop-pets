@@ -593,16 +593,22 @@ enum WICSupport {
             return false
         }
         step("ok writeSource")
-        guard created.frame.commit() else {
+        step("diag stream size after writeSource = \(stream.streamSize())")
+        let frameCommitHr = created.frame.commit()
+        step("diag frame.commit hr=0x\(String(UInt32(bitPattern: frameCommitHr), radix: 16))")
+        guard comOK(frameCommitHr) else {
             step("FAIL frame.commit")
             return false
         }
+        step("diag stream size after frame.commit = \(stream.streamSize())")
         let encoderHr = encoder.commitEncoder()
+        step("diag encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
         guard comOK(encoderHr) else {
-            step("FAIL encoder.commit hr=0x\(String(UInt32(bitPattern: encoderHr), radix: 16))")
+            step("FAIL encoder.commit")
             return false
         }
         let size = stream.streamSize()
+        step("diag stream size after encoder.commit = \(size)")
         guard size > 8, let png = stream.readAll(size) else {
             step("FAIL stream readback size=\(size)")
             return false
