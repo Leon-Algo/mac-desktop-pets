@@ -453,7 +453,7 @@ enum WICSupport {
             guard let base = raw.baseAddress else { return comEFail }
             return frame.writePixels(
                 lineCount: UINT(height), stride: UINT32(stride),
-                bufferSize: UINT32(raw.count), buffer: base
+                bufferSize: UINT32(raw.count), buffer: UnsafeMutableRawPointer(mutating: base)
             )
         }
         guard comOK(hr), frame.commit(), encoder.commit() else { return nil }

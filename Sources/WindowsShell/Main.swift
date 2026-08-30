@@ -19,7 +19,7 @@ struct WindowsShell {
     static func main() {
         let arguments = CommandLine.arguments
         if arguments.contains("--self-test") {
-            let failures = ShellModel.runSelfCheck()
+            var failures = ShellModel.runSelfCheck()
             #if os(Windows)
             // WIC 手写 COM vtable 绑定的运行期验证：PNG 编解码往返逐像素核对。
             // 槽位错位 / GUID 传参错误在此崩溃或数据不符（真机 CI 上才有意义）。
@@ -423,21 +423,13 @@ final class ShellAppDelegate {
         fallbackIcon()
     }
 
-    /// 用 PetCanvas 软件光栅器渲染第一个宠物头像为 32×32 托盘图标。
-    private func makeTrayIcon() -> HICON? {
-        guard let character = model.characters.first,
-              let pose = model.world.poses.first else { return fallbackIcon() }
-        let canvas = PetCanvas.render(character: character, pose: pose, avatar: avatars[character.id], width: 32, height: 32)
-        return hicon(from: canvas)
-    }
-
     /// 托盘动态图标：按当前帧重建并 NIM_MODIFY。失败静默保持旧图标。
     /// 动感来源：直接用 world 当前 pose（phase 随模拟 tick 自然推进），
     /// PetPose.phase 是 let 不可外部变异。旧图标轮换 DestroyIcon 防 GDI 泄漏。
     private func refreshTrayIcon() {
         guard trayCreated, let character = model.characters.first,
               let pose = model.world.poses.first else { return }
-        let canvas = PetCanvas.render(character: character, pose: pose, avatar: avatars[character.id], width: 32, height: 32)
+        let canvas = PetCanvas.render(character: character, pose: pose, width: 32, height: 32, avatar: avatars[character.id])
         guard let icon = hicon(from: canvas) else { return }
         trayData.hIcon = icon
         guard Shell_NotifyIconW(UINT(NIM_MODIFY), &trayData) else {
