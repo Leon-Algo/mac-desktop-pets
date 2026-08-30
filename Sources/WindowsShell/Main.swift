@@ -52,8 +52,8 @@ final class ShellAppDelegate {
         registerWindowClass()
         for character in model.characters {
             guard let hwnd = createPetWindow(id: character.id) else { continue }
-            let memory = CreateCompatibleDC(nil)
-            windows.append((character.id, hwnd, memory))
+            let memoryDC = CreateCompatibleDC(nil)
+            windows.append((id: character.id, hwnd: hwnd, memory: memoryDC!))
         }
         present(frames: model.tick(deltaTime: 0))
         messageLoop()
@@ -78,20 +78,29 @@ final class ShellAppDelegate {
             return DefWindowProcW(hwnd, msg, wparam, lparam)
         }
         wc.hInstance = GetModuleHandleW(nil)
-        wc.lpszClassName = wide("DesktopPetShell")
-        _ = RegisterClassExW(&wc)
+        var className = wide("DesktopPetShell")
+        className.withUnsafeBufferPointer { buffer in
+            wc.lpszClassName = buffer.baseAddress
+        }
+        // 类名缓冲必须在 RegisterClassExW 调用期间存活——上面 closure 内
+        // 赋值即可；RegisterClassExW 在同一作用域调用。
+        _ = className.withUnsafeBufferPointer { _ in RegisterClassExW(&wc) }
     }
 
     private func createPetWindow(id: String) -> HWND? {
         let exStyle = DWORD(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_TOPMOST)
         let style = DWORD(WS_POPUP)
-        let className = wide("DesktopPetShell")
-        let title = wide(id)
-        return CreateWindowExW(
-            exStyle, className, title, UINT(style),
-            100, 100, INT32(ShellModel.windowWidth), INT32(ShellModel.windowHeight),
-            nil, nil, GetModuleHandleW(nil), nil
-        )
+        var className = wide("DesktopPetShell")
+        var title = wide(id)
+        return className.withUnsafeBufferPointer { classBuffer in
+            title.withUnsafeBufferPointer { titleBuffer in
+                CreateWindowExW(
+                    exStyle, classBuffer.baseAddress, titleBuffer.baseAddress, UINT(style),
+                    100, 100, INT32(ShellModel.windowWidth), INT32(ShellModel.windowHeight),
+                    nil, nil, GetModuleHandleW(nil), nil
+                )
+            }
+        }
     }
 
     private func present(frames: [(id: String, x: Int, y: Int, pose: PetPose, canvas: PetCanvas)]) {
@@ -125,8 +134,8 @@ final class ShellAppDelegate {
             memcpy(bits, raw.baseAddress, raw.count)
         }
 
-        let screenSize = SIZE(cx: INT32(canvas.width), cy: INT32(canvas.height))
-        let zero = POINT(x: 0, y: 0)
+        var screenSize = SIZE(cx: INT32(canvas.width), cy: INT32(canvas.height))
+        var zero = POINT(x: 0, y: 0)
         var blend = BLENDFUNCTION()
         blend.BlendOp = BYTE(AC_SRC_OVER)
         blend.SourceConstantAlpha = 255
@@ -142,10 +151,12 @@ final class ShellAppDelegate {
         var last = Double(Date().timeIntervalSince1970)
         var running = true
         while running {
-            while PeekMessageW(&msg, nil, 0, 0, UINT(PM_REMOVE)) != 0 {
+            var hasMessage = PeekMessageW(&msg, nil, 0, 0, UINT(PM_REMOVE))
+            while hasMessage != 0 {
                 if msg.message == UINT(WM_QUIT) { running = false }
                 TranslateMessage(&msg)
                 DispatchMessageW(&msg)
+                hasMessage = PeekMessageW(&msg, nil, 0, 0, UINT(PM_REMOVE))
             }
             let now = Double(Date().timeIntervalSince1970)
             let delta = min(max(now - last, 0), 0.1)
