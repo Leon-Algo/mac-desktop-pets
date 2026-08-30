@@ -305,9 +305,11 @@ final class ShellAppDelegate {
     }
 
     /// 系统默认应用图标（LoadIconW 共享句柄，无需销毁）。
-    /// swift-win-sdk 无 IDI_APPLICATION 常量，MAKEINTRESOURCE(32512) 等价。
+    /// swift-win-sdk 无 IDI_APPLICATION 常量，MAKEINTRESOURCEW 是 C 宏在 Swift
+    /// 也无符号 —— 其展开就是 (LPWSTR)((INT_PTR)id)，故直接构造同位模式指针。
     private func fallbackIcon() -> HICON? {
-        LoadIconW(nil, MAKEINTRESOURCEW(32512))
+        guard let name = UnsafePointer<WCHAR>(bitPattern: 32512) else { return nil }
+        return LoadIconW(nil, name)
     }
 
     /// 用 PetCanvas 软件光栅器渲染第一个宠物头像为 32×32 托盘图标。
@@ -356,6 +358,10 @@ final class ShellAppDelegate {
 
     /// 托盘右键 → 弹出菜单。TrackPopupMenu 需要窗口先 SetForegroundWindow，
     /// 否则菜单不响应外部点击（Win32 经典坑）。
+    ///
+    /// 不用 TPM_RETURNCMD：swift-win-sdk 把该函数 BOOL 返回盲桥接为 Swift Bool，
+    /// 选中项 ID 无法通过返回值获取。改用默认模式 —— 菜单选中后向 anchor 窗口
+    /// 自然投递 WM_COMMAND，由 handleMessage 现有路由处理，语义完全等价。
     private func handleTrayCallback(lparam: LPARAM) {
         guard INT(truncatingIfNeeded: lparam & 0xFFFF) == WM_RBUTTONUP,
               let anchor = windows.first?.hwnd else { return }
@@ -364,16 +370,15 @@ final class ShellAppDelegate {
         SetForegroundWindow(anchor)
         var point = POINT()
         _ = GetCursorPos(&point)
-        // TPM_RETURNCMD：返回值为选中项 ID；swift-win-sdk 桥接为 Int32
-        //（未选择时 0，与 Win32 语义一致）。
-        let selection = TrackPopupMenuEx(
+        _ = TrackPopupMenuEx(
             menu,
-            UINT(TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON),
+            UINT(TPM_RIGHTBUTTON),
             point.x, point.y, anchor, nil
         )
-        if selection != 0 {
-            PostMessageW(anchor, UINT(WM_COMMAND), WPARAM(UInt(UInt32(bitPattern: Int(selection)))), 0)
-        }
+        // 菜单选中项以 WM_COMMAND 形式到达 anchor 的 wndProc（已有路由）。
+        // 补一次 PostMessageW(WM_NULL)：TrackPopupMenu 内部进入模态循环，
+        // 若无后续消息，anchor 的 wndProc 在菜单关闭前收不到 WM_COMMAND。
+        PostMessageW(anchor, UINT(WM_NULL), 0, 0)
     }
 
     private func buildTrayMenu() -> HMENU? {
