@@ -199,7 +199,7 @@ private struct IWICFormatConverterVtbl {
 
 /// IWICBitmapEncoder 前缀（槽位 0–11，wincodec.idl 声明序）。实际调用：
 /// Initialize(3)、CreateNewFrame(10)、Commit(11)。
-/// 注意：Commit 在 Encoder 是槽位 11，在 FrameEncode 是槽位 14 —— 不同接口
+/// 注意：Commit 在 Encoder 是槽位 11，在 FrameEncode 是槽位 13 —— 不同接口
 /// 不同槽位，ComObject 的方法必须显式区分，不能复用同名方法。
 private struct IWICBitmapEncoderVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
@@ -216,8 +216,9 @@ private struct IWICBitmapEncoderVtbl {
     var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
 }
 
-/// IWICBitmapFrameEncode 前缀（槽位 0–14，wincodec.idl 声明序）。实际调用：
-/// Initialize(3)、SetSize(4)、WriteSource(11)、Commit(14)。
+/// IWICBitmapFrameEncode 前缀（槽位 0–13，wincodec.idl 声明序 —— 接口没有
+/// SetMetadata，那是元数据查询写入器的方法）。实际调用：
+/// Initialize(3)、SetSize(4)、WriteSource(11)、Commit(13)。
 private struct IWICBitmapFrameEncodeVtbl {
     var QueryInterface: @convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, UnsafeMutablePointer<UnsafeMutableRawPointer?>?) -> HRESULT
     var AddRef: @convention(c) (UnsafeMutableRawPointer?) -> ULONG
@@ -232,7 +233,6 @@ private struct IWICBitmapFrameEncodeVtbl {
     var WritePixels: UnusedComSlot
     var WriteSource: @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> HRESULT
     var WriteMetadata: UnusedComSlot
-    var SetMetadata: UnusedComSlot
     var Commit: @convention(c) (UnsafeMutableRawPointer?) -> HRESULT
 }
 
@@ -390,7 +390,7 @@ extension ComObject {
         return ComObject(p)
     }
 
-    /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 14）。
+    /// 编码器级 Commit（槽位 11，区别于 FrameEncode 的 13）。
     func commitEncoder() -> Bool {
         comOK(vtbl(IWICBitmapEncoderVtbl.self).pointee.Commit(raw))
     }
