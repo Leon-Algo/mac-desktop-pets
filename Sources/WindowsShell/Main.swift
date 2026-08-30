@@ -21,7 +21,7 @@ struct WindowsShell {
         if arguments.contains("--self-test") {
             let failures = ShellModel.runSelfCheck()
             if failures.isEmpty {
-                print("WindowsShell self-test: ok (render + coords + hit-test + interactions + monitors + 600 frames + determinism)")
+                print("WindowsShell self-test: ok (render + coords + hit-test + interactions + monitors + 600 frames + determinism + avatar + session)")
             } else {
                 for failure in failures { print("WindowsShell self-test FAILURE: \(failure)") }
                 exit(1)
@@ -62,6 +62,18 @@ final class ShellAppDelegate {
     private var lastTapTime: [String: Double] = [:]
     private var trayCreated = false
     private var trayData = NOTIFYICONDATAW()
+    /// 已加载的 512×512 头像位图（id → 位图），无头像的角色不出现。
+    private var avatars: [String: PetCanvas.AvatarBitmap] = [:]
+    /// 角色名册存取（头像导入/持久化）。非 Windows 为 nil。
+    private var rosterStore: CharacterRosterStore? = nil
+    /// 当前名册（draft 源，头像导入后立即保存并重建）。
+    private var roster: CharacterRoster = .default
+    /// 托盘动态图标上次刷新时间（秒级时间戳）。
+    private var lastTrayRefresh: Double = 0
+    /// 托盘动态图标当前帧号（在姿态帧序列中轮转）。
+    private var trayFrameIndex: Int = 0
+    /// 托盘图标刷新间隔（秒）。过低无意义（托盘刷新有系统开销）。
+    private static let trayRefreshInterval: Double = 0.8
 
     struct PetWindowEntry {
         let id: String
@@ -73,7 +85,14 @@ final class ShellAppDelegate {
 
     func run() {
         monitors = enumerateMonitors()
-        model = ShellModel(characters: ShellModel.fallbackCharacters(), displays: monitors)
+        rosterStore = makeRosterStore()
+        if let store = rosterStore {
+            roster = store.load(fallback: .default)
+        }
+        let characters = roster.manifests
+        model = ShellModel(characters: characters, displays: monitors)
+        restoreSession()
+        loadAvatars(for: characters)
         g_delegate = self
 
         registerWindowClass()
@@ -82,13 +101,82 @@ final class ShellAppDelegate {
                 windows.append(entry)
                 pointers[character.id] = PointerModel()
                 alphaBuffers[character.id] = PointerModel.alphaBuffer(
-                    of: PetCanvas.render(character: character, pose: model.world.poses[0])
+                    of: renderFrame(character: character)
                 )
             }
         }
         present(frames: model.tick(deltaTime: 0))
         createTrayIcon()
         messageLoop()
+        persistSession()
+    }
+
+    /// Windows 数据目录：%APPDATA%\DesktopPets（SHGetKnownFolderPath FOLDERID_RoamingAppData）。
+    /// nil = 目录定位失败（理论罕见），名册功能整体回退默认。
+    private func makeRosterStore() -> CharacterRosterStore? {
+        var path: PWSTR? = nil
+        let status = SHGetKnownFolderPath(
+            &FOLDERID_RoamingAppData, DWORD(KF_FLAG_DEFAULT), nil, &path
+        )
+        guard status == S_OK, let path else { return nil }
+        defer { CoTaskMemFree(path) }
+        let root = String(decodingCString: path, as: UTF16.self)
+        return CharacterRosterStore(
+            rootDirectory: URL(fileURLWithPath: root, isDirectory: true)
+                .appendingPathComponent("DesktopPets", isDirectory: true),
+            normalizePNG: { data in
+                let decoded = WICSupport.decodeBGRA(data: data)
+                guard let (pixels, width, height) = decoded else {
+                    throw AvatarNormalizeRuntimeError.undecodable
+                }
+                let normalized = try AvatarNormalizer.normalizedBGRA(pixels: pixels, width: width, height: height)
+                guard let png = AvatarNormalizer.encodePNG(bgra: normalized.pixels, width: normalized.width, height: normalized.height) else {
+                    throw AvatarNormalizeRuntimeError.encodingFailed
+                }
+                return png
+            }
+        )
+    }
+
+    /// 按名册加载各角色头像位图。导入源读盘失败 → 回退内置渲染（不崩溃）。
+    private func loadAvatars(for characters: [CharacterManifest]) {
+        avatars.removeAll(keepingCapacity: true)
+        for character in characters {
+            guard case let .imported(filename) = character.avatarSource,
+                  let url = rosterStore?.importedAvatarURL(for: .imported(filename: filename)),
+                  let data = try? Data(contentsOf: url),
+                  let (pixels, width, height) = WICSupport.decodeBGRA(data: data),
+                  let normalized = try? AvatarNormalizer.normalizedBGRA(pixels: pixels, width: width, height: height) else {
+                continue
+            }
+            avatars[character.id] = PetCanvas.AvatarBitmap(pixels: normalized.pixels)
+        }
+    }
+
+    /// 单帧渲染：带角色头像（若有）。
+    private func renderFrame(character: CharacterManifest) -> PetCanvas {
+        PetCanvas.render(character: character, pose: model.world.poses.first { $0.id == character.id } ?? model.world.poses[0], avatar: avatars[character.id])
+    }
+
+    // MARK: - 会话位置持久化
+
+    /// 启动时恢复 leader 位置。解析失败/越界由 placeLeader 夹紧，静默回退默认。
+    private func restoreSession() {
+        guard let raw = RegistryStrings.get(
+            subKeyPath: SessionStatePolicy.subKeyPath, valueName: SessionStatePolicy.valueName
+        ), let state = SessionState.decode(raw) else { return }
+        model.placeLeader(atX: state.petX, atY: state.petY)
+    }
+
+    /// 退出前保存 leader 位置。失败静默（下次回默认位置，可接受）。
+    private func persistSession() {
+        guard let leader = model.world.agents.first else { return }
+        let state = SessionState(petX: leader.position.x, petY: leader.position.y)
+        _ = RegistryStrings.set(
+            subKeyPath: SessionStatePolicy.subKeyPath,
+            valueName: SessionStatePolicy.valueName,
+            string: state.encode()
+        )
     }
 
     // MARK: - 多显示器
@@ -316,8 +404,23 @@ final class ShellAppDelegate {
     private func makeTrayIcon() -> HICON? {
         guard let character = model.characters.first,
               let pose = model.world.poses.first else { return fallbackIcon() }
-        let canvas = PetCanvas.render(character: character, pose: pose, width: 32, height: 32)
+        let canvas = PetCanvas.render(character: character, pose: pose, avatar: avatars[character.id], width: 32, height: 32)
         return hicon(from: canvas)
+    }
+
+    /// 托盘动态图标：按当前帧重建并 NIM_MODIFY。失败静默保持旧图标。
+    private func refreshTrayIcon() {
+        guard trayCreated, let character = model.characters.first,
+              let pose = model.world.poses.first else { return }
+        // 32×32 下单帧图标已能辨识；这里做姿态相位驱动的轻微变化
+        //（bob 相位推进），产生「活着」的低频动感。
+        var animatedPose = pose
+        trayFrameIndex = (trayFrameIndex + 1) % 8
+        animatedPose.phase = Double(trayFrameIndex) / 8
+        let canvas = PetCanvas.render(character: character, pose: animatedPose, avatar: avatars[character.id], width: 32, height: 32)
+        guard let icon = hicon(from: canvas) else { return }
+        trayData.hIcon = icon
+        _ = Shell_NotifyIconW(UINT(NIM_MODIFY), &trayData)
     }
 
     private func hicon(from canvas: PetCanvas) -> HICON? {
@@ -384,6 +487,9 @@ final class ShellAppDelegate {
     private func buildTrayMenu() -> HMENU? {
         guard let menu = CreatePopupMenu() else { return nil }
         let autostart = RegistryAutostart.isEnabled()
+        appendMenuItem(menu, flags: UINT(MF_STRING), id: ID_IMPORT_AVATAR, title: "导入头像…")
+        appendMenuItem(menu, flags: UINT(MF_STRING), id: ID_RESET_ROSTER, title: "恢复默认角色")
+        _ = AppendMenuW(menu, UINT(MF_SEPARATOR), 0, nil)
         appendMenuItem(menu, flags: UINT(MF_STRING | (autostart ? MF_CHECKED : MF_UNCHECKED)), id: ID_AUTOSTART, title: "开机自启")
         _ = AppendMenuW(menu, UINT(MF_SEPARATOR), 0, nil)
         appendMenuItem(menu, flags: UINT(MF_STRING), id: ID_QUIT, title: "退出桌面伙伴")
@@ -402,6 +508,10 @@ final class ShellAppDelegate {
         case INT(ID_AUTOSTART):
             let enable = !RegistryAutostart.isEnabled()
             _ = RegistryAutostart.setEnabled(enable, executablePath: currentExecutablePath)
+        case INT(ID_IMPORT_AVATAR):
+            importAvatarFlow()
+        case INT(ID_RESET_ROSTER):
+            resetRoster()
         case INT(ID_QUIT):
             if let anchor = windows.first?.hwnd {
                 PostMessageW(anchor, UINT(WM_CLOSE), 0, 0)
@@ -409,6 +519,80 @@ final class ShellAppDelegate {
         default:
             break
         }
+    }
+
+    // MARK: - 头像导入（替换 leader 角色的头像）
+
+    /// 文件对话框选图 → WIC 解码 → 居中裁剪 512×512 → PNG 落盘 →
+    /// 更新名册 leader 的 avatarSource → 保存并热重建。
+    private func importAvatarFlow() {
+        guard let store = rosterStore else { return }
+        guard let data = pickImageFile() else { return }  // 用户取消，静默返回
+        guard let (pixels, width, height) = WICSupport.decodeBGRA(data: data),
+              let normalized = try? AvatarNormalizer.normalizedBGRA(pixels: pixels, width: width, height: height),
+              let png = AvatarNormalizer.encodePNG(bgra: normalized.pixels, width: normalized.width, height: normalized.height) else {
+            return  // 解码/编码失败：静默放弃本次导入，保持现状
+        }
+        guard let filename = try? store.importAvatar(data: png) else { return }
+        var draft = roster
+        guard !draft.profiles.isEmpty else { return }
+        draft.profiles[0].avatarSource = .imported(filename: filename)
+        guard let valid = try? draft.validated(),
+              (try? store.save(valid)) != nil else { return }
+        roster = valid
+        rebuild(with: roster.manifests)
+    }
+
+    /// 恢复默认角色：清名册 + 清导入头像 + 重建。
+    private func resetRoster() {
+        guard let store = rosterStore else { return }
+        try? store.removeUnreferencedAvatars(roster: .default)
+        try? FileManager.default.removeItem(at: store.rosterURL)
+        roster = .default
+        rebuild(with: roster.manifests)
+    }
+
+    /// 名册变化后的热重建：关窗 → 新角色重开窗（窗口数随之变化）。
+    private func rebuild(with characters: [CharacterManifest]) {
+        for entry in windows {
+            DestroyWindow(entry.hwnd)
+            DeleteDC(entry.memory)
+        }
+        windows.removeAll(keepingCapacity: true)
+        pointers.removeAll(keepingCapacity: true)
+        alphaBuffers.removeAll(keepingCapacity: true)
+        lastTapTime.removeAll(keepingCapacity: true)
+        model = ShellModel(characters: characters, displays: monitors)
+        loadAvatars(for: characters)
+        for character in characters {
+            if let entry = createPetWindow(id: character.id) {
+                windows.append(entry)
+                pointers[character.id] = PointerModel()
+                alphaBuffers[character.id] = PointerModel.alphaBuffer(of: renderFrame(character: character))
+            }
+        }
+        present(frames: model.tick(deltaTime: 0))
+        // anchor 窗口重建后托盘必须重挂（旧 hWnd 已失效）。
+        removeTrayIcon()
+        createTrayIcon()
+    }
+
+    /// GetOpenFileNameW 文件对话框（图片常见格式过滤）。取消返回 nil。
+    private func pickImageFile() -> Data? {
+        let filter = "图片\0*.png;*.jpg;*.jpeg;*.bmp;*.gif\0所有文件\0*.*\0\0"
+        var ofn = OPENFILENAMEW()
+        var fileBuffer = [WCHAR](repeating: 0, count: 1024)
+        var filterBuffer = wide(filter).dropLast() + [0, 0]  // 双 NUL 结尾
+        ofn.lStructSize = UINT32(MemoryLayout<OPENFILENAMEW>.size)
+        ofn.hwndOwner = windows.first?.hwnd
+        ofn.lpstrFilter = filterBuffer.withUnsafeBufferPointer { $0.baseAddress }
+        ofn.lpstrFile = UnsafeMutablePointer<WCHAR>(mutating: fileBuffer.withUnsafeBufferPointer { $0.baseAddress })
+        ofn.nMaxFile = UINT32(fileBuffer.count)
+        ofn.Flags = DWORD(OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR)
+        guard GetOpenFileNameW(&ofn) else { return nil }
+        let pathLength = fileBuffer.prefix(while: { $0 != 0 }).count
+        let path = String(decoding: fileBuffer.prefix(pathLength), as: UTF16.self)
+        return try? Data(contentsOf: URL(fileURLWithPath: path))
     }
 
     /// GetModuleFileNameW 拿 exe 绝对路径（不依赖进程启动方式）。
@@ -487,6 +671,11 @@ final class ShellAppDelegate {
                 last = now
                 present(frames: model.tick(deltaTime: delta))
             }
+            // 托盘动态图标：低频刷新（重建 HICON 有 GDI 开销，不能按帧刷）。
+            if now - lastTrayRefresh >= Self.trayRefreshInterval {
+                lastTrayRefresh = now
+                refreshTrayIcon()
+            }
             Sleep(10)
         }
     }
@@ -496,9 +685,17 @@ final class ShellAppDelegate {
     }
 }
 
-// MARK: - 常量
+    // MARK: - 常量
 
 private let WM_APP_TRAY = WM_APP + 1
 private let ID_AUTOSTART = 2001
 private let ID_QUIT = 2002
+private let ID_IMPORT_AVATAR = 2003
+private let ID_RESET_ROSTER = 2004
+
+/// normalizePNG 闭包内抛错的运行时错误类型（跨闭包边界）。
+enum AvatarNormalizeRuntimeError: Error {
+    case undecodable
+    case encodingFailed
+}
 #endif

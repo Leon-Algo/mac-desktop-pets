@@ -92,4 +92,91 @@ enum RegistryAutostart {
         }
     }
 }
+
+/// HKCU 下任意子键的 REG_SZ 读写（会话状态持久化用）。
+/// 与 RegistryAutostart 同模式：每次读写独立开闭键，无需常驻句柄。
+enum RegistryStrings {
+    /// 写入 REG_SZ 值（键不存在则创建）。失败返回 false。
+    static func set(subKeyPath: String, valueName: String, string: String) -> Bool {
+        let subKey = wideString(subKeyPath)
+        return subKey.withUnsafeBufferPointer { subKeyBuffer in
+            var key: HKEY? = nil
+            let status = RegCreateKeyExW(
+                HKEY_CURRENT_USER, subKeyBuffer.baseAddress, 0, nil,
+                DWORD(REG_OPTION_NON_VOLATILE),
+                DWORD(KEY_SET_VALUE), nil, &key, nil
+            )
+            guard status == ERROR_SUCCESS, let opened = key else { return false }
+            defer { RegCloseKey(opened) }
+            let name = wideString(valueName)
+            let value = wideString(string)
+            return name.withUnsafeBufferPointer { nameBuffer in
+                value.withUnsafeBufferPointer { valueBuffer in
+                    let bytes = valueBuffer.baseAddress.map {
+                        UnsafeRawPointer($0).assumingMemoryBound(to: BYTE.self)
+                    }
+                    return RegSetValueExW(
+                        opened, nameBuffer.baseAddress, 0, UINT(REG_SZ),
+                        bytes, DWORD(valueBuffer.count * MemoryLayout<WCHAR>.size)
+                    ) == ERROR_SUCCESS
+                }
+            }
+        }
+    }
+
+    /// 读取 REG_SZ 值。键/值不存在或非字符串返回 nil。
+    static func get(subKeyPath: String, valueName: String) -> String? {
+        let subKey = wideString(subKeyPath)
+        return subKey.withUnsafeBufferPointer { subKeyBuffer in
+            var key: HKEY? = nil
+            let status = RegOpenKeyExW(
+                HKEY_CURRENT_USER, subKeyBuffer.baseAddress, 0,
+                DWORD(KEY_QUERY_VALUE), &key
+            )
+            guard status == ERROR_SUCCESS, let opened = key else { return nil }
+            defer { RegCloseKey(opened) }
+            let name = wideString(valueName)
+            return name.withUnsafeBufferPointer { nameBuffer -> String? in
+                // 第一遍取类型与字节数。
+                var type: DWORD = 0
+                var bytes: DWORD = 0
+                let query = RegQueryValueExW(
+                    opened, nameBuffer.baseAddress, nil, &type, nil, &bytes
+                )
+                guard query == ERROR_SUCCESS, type == DWORD(REG_SZ), bytes > 0 else { return nil }
+                var buffer = [WCHAR](repeating: 0, count: Int(bytes) / MemoryLayout<WCHAR>.size + 1)
+                var actual = bytes
+                let read = RegQueryValueExW(
+                    opened, nameBuffer.baseAddress, nil, nil,
+                    &buffer, &actual
+                )
+                guard read == ERROR_SUCCESS else { return nil }
+                let units = buffer.prefix(Int(actual) / MemoryLayout<WCHAR>.size)
+                return String(decoding: units.prefix(while: { $0 != 0 }), as: UTF16.self)
+            }
+        }
+    }
+
+    /// 删除值（键不必预存在）。值不存在也返回 true（幂等）。
+    static func delete(subKeyPath: String, valueName: String) -> Bool {
+        let subKey = wideString(subKeyPath)
+        return subKey.withUnsafeBufferPointer { subKeyBuffer in
+            var key: HKEY? = nil
+            let status = RegOpenKeyExW(
+                HKEY_CURRENT_USER, subKeyBuffer.baseAddress, 0,
+                DWORD(KEY_SET_VALUE), &key
+            )
+            guard status == ERROR_SUCCESS, let opened = key else {
+                // 键不存在 = 无状态可删，视为成功。
+                return status == ERROR_FILE_NOT_FOUND
+            }
+            defer { RegCloseKey(opened) }
+            let name = wideString(valueName)
+            let result = name.withUnsafeBufferPointer { nameBuffer in
+                RegDeleteValueW(opened, nameBuffer.baseAddress)
+            }
+            return result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND
+        }
+    }
+}
 #endif

@@ -32,6 +32,6 @@ let package = Package(
                 .copy("Resources/Localization"),
             ]
         ),
-        .testTarget(name: "DesktopPetsTests", dependencies: ["DesktopPets", "DesktopPetsCore"]),
+        .testTarget(name: "DesktopPetsTests", dependencies: ["DesktopPets", "DesktopPetsCore", "WindowsShell"]),
     ]
 )

@@ -30,15 +30,26 @@ struct PetCanvas {
     }
 
     /// 主入口：按角色与当前姿态渲染整帧。
-    static func render(character: CharacterManifest, pose: PetPose, width: Int = 180, height: Int = 160) -> PetCanvas {
+    /// `avatarBGRA` 非空时（512×512 BGRA），脸部区域改画头像（椭圆裁剪 aspect-fill），
+    /// 布局与 macOS ProceduralPetRenderer 的 faceRect (103,81,58,62) 对齐。
+    static func render(
+        character: CharacterManifest, pose: PetPose, width: Int = 180, height: Int = 160,
+        avatar: AvatarBitmap? = nil
+    ) -> PetCanvas {
         var canvas = PetCanvas(width: width, height: height)
-        canvas.draw(character: character, pose: pose)
+        canvas.draw(character: character, pose: pose, avatar: avatar)
         return canvas
+    }
+
+    /// 512×512 归一化头像位图（BGRA，行序自上而下）。
+    struct AvatarBitmap {
+        let pixels: [UInt8]
+        static let size = 512
     }
 
     // MARK: - 绘制
 
-    private mutating func draw(character: CharacterManifest, pose: PetPose) {
+    private mutating func draw(character: CharacterManifest, pose: PetPose, avatar: AvatarBitmap?) {
         let skin = Self.parseHex(character.palette.skin)
         let hair = Self.parseHex(character.palette.hair)
         let shirt = Self.parseHex(character.palette.shirt)
@@ -73,16 +84,110 @@ struct PetCanvas {
             fillRoundRect(x: 84, y: 64 + bob, w: 18, h: 44, radius: 7, color: accent)
         }
 
-        // 脸（无头像资源，程序化：肤色椭圆 + 发际 + 双眼）。
-        fillEllipse(cx: 132, cy: 112 + bob, rx: 29, ry: 31, color: skin)
-        fillEllipse(cx: 132, cy: 129.5 + bob, rx: 27, ry: 13.5, color: hair)
-        let eye = Self.parseHex("#2A2220")
-        fillEllipse(cx: 122.5, cy: 111.5 + bob, rx: 2.5, ry: 2.5, color: eye)
-        fillEllipse(cx: 143.5, cy: 111.5 + bob, rx: 2.5, ry: 2.5, color: eye)
+        // 脸：有头像 → 椭圆裁剪 aspect-fill 合成；无 → 程序化（肤色 + 发际 + 双眼）。
+        let faceCenterX = 132.0
+        let faceCenterY = 112.0 + bob
+        let faceRX = 29.0
+        let faceRY = 31.0
+        if let avatar, drawAvatar(
+            avatar, cx: faceCenterX, cy: faceCenterY, rx: faceRX, ry: faceRY
+        ) {
+            // 白描边（近似 macOS 72% 白，无 AA 下用单像素环）。
+            strokeEllipseOutline(cx: faceCenterX, cy: faceCenterY, rx: faceRX, ry: faceRY, color: (240, 240, 240))
+        } else {
+            fillEllipse(cx: faceCenterX, cy: faceCenterY, rx: faceRX, ry: faceRY, color: skin)
+            fillEllipse(cx: 132, cy: 129.5 + bob, rx: 27, ry: 13.5, color: hair)
+            let eye = Self.parseHex("#2A2220")
+            fillEllipse(cx: 122.5, cy: 111.5 + bob, rx: 2.5, ry: 2.5, color: eye)
+            fillEllipse(cx: 143.5, cy: 111.5 + bob, rx: 2.5, ry: 2.5, color: eye)
+        }
 
         // 手脚。
         fillEllipse(cx: 29, cy: 22, rx: 9, ry: 5, color: skin)
         fillEllipse(cx: 155, cy: 22, rx: 10, ry: 5, color: skin)
+    }
+
+    /// 椭圆区域内 aspect-fill 合成头像（最近邻采样，确定性）。
+    /// 返回是否实际绘制（位图非法返回 false，调用方回退程序化脸）。
+    private mutating func drawAvatar(_ avatar: AvatarBitmap, cx: Double, cy: Double, rx: Double, ry: Double) -> Bool {
+        let size = AvatarBitmap.size
+        let count = size * size * 4
+        guard avatar.pixels.count == count else { return false }
+        let minX = max(0, Int((cx - rx).rounded(.down)))
+        let maxX = min(width - 1, Int((cx + rx).rounded(.up)))
+        let minY = max(0, Int((cy - ry).rounded(.down)))
+        let maxY = min(height - 1, Int((cy + ry).rounded(.up)))
+        guard minX <= maxX, minY <= maxY else { return false }
+
+        // aspect-fill：椭圆比 (rx/ry) 决定源裁剪带，短轴铺满、长轴居中裁。
+        let destAspect = rx / ry
+        let sourceAspect = 1.0
+        var cropW = Double(size)
+        var cropH = Double(size)
+        if sourceAspect > destAspect {
+            cropW = Double(size) * destAspect
+        } else {
+            cropH = Double(size) / destAspect
+        }
+        let cropX = (Double(size) - cropW) / 2
+        let cropY = (Double(size) - cropH) / 2
+
+        for py in minY...maxY {
+            for px in minX...maxX {
+                // 像素中心相对椭圆归一化半径，椭圆内才绘制。
+                let dx = (Double(px) + 0.5 - cx) / rx
+                let dy = (Double(py) + 0.5 - cy) / ry
+                guard dx * dx + dy * dy <= 1 else { continue }
+                // 目标位置 → 源裁剪带内最近邻采样。
+                let u = (Double(px) + 0.5 - (cx - rx)) / (2 * rx)
+                let v = (Double(py) + 0.5 - (cy - ry)) / (2 * ry)
+                let sx = min(size - 1, max(0, Int((cropX + u * cropW).rounded(.down))))
+                let sy = min(size - 1, max(0, Int((cropY + v * cropH).rounded(.down))))
+                let src = (sy * size + sx) * 4
+                let alpha = avatar.pixels[src + 3]
+                guard alpha >= 24 else { continue }
+                let row = height - 1 - py  // y 向上 → 自上而下位图
+                let base = (row * width + px) * 4
+                // 透明像素按 alpha 混合到现有内容（半透明边缘更柔和）。
+                if alpha == 255 || pixels[base + 3] == 0 {
+                    pixels[base] = avatar.pixels[src + 2]     // B
+                    pixels[base + 1] = avatar.pixels[src + 1] // G
+                    pixels[base + 2] = avatar.pixels[src]     // R
+                    pixels[base + 3] = 255
+                } else {
+                    let a = Double(alpha) / 255
+                    pixels[base] = UInt8(Double(pixels[base]) * (1 - a) + Double(avatar.pixels[src + 2]) * a)
+                    pixels[base + 1] = UInt8(Double(pixels[base + 1]) * (1 - a) + Double(avatar.pixels[src + 1]) * a)
+                    pixels[base + 2] = UInt8(Double(pixels[base + 2]) * (1 - a) + Double(avatar.pixels[src]) * a)
+                    pixels[base + 3] = 255
+                }
+            }
+        }
+        return true
+    }
+
+    /// 椭圆单像素描边环（|归一化半径 - 1| 在一个像素带内即描边）。
+    private mutating func strokeEllipseOutline(cx: Double, cy: Double, rx: Double, ry: Double, color: (UInt8, UInt8, UInt8)) {
+        let (r, g, b) = color
+        let minX = max(0, Int((cx - rx - 1).rounded(.down)))
+        let maxX = min(width - 1, Int((cx + rx + 1).rounded(.up)))
+        let minY = max(0, Int((cy - ry - 1).rounded(.down)))
+        let maxY = min(height - 1, Int((cy + ry + 1).rounded(.up)))
+        guard minX <= maxX, minY <= maxY else { return }
+        for py in minY...maxY {
+            for px in minX...maxX {
+                let dx = (Double(px) + 0.5 - cx) / rx
+                let dy = (Double(py) + 0.5 - cy) / ry
+                let radiusSquared = dx * dx + dy * dy
+                guard radiusSquared <= 1.15, radiusSquared >= 0.82 else { continue }
+                let row = height - 1 - py
+                let base = (row * width + px) * 4
+                guard pixels[base + 3] == 255 else { continue }  // 只描已有内容，不外溢
+                pixels[base] = b
+                pixels[base + 1] = g
+                pixels[base + 2] = r
+            }
+        }
     }
 
     /// y 向上坐标 → 自上而下位图。越界与 alpha 已写则跳过。

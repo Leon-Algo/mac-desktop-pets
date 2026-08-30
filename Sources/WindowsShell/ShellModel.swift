@@ -28,6 +28,18 @@ struct ShellModel {
         self.init(characters: characters, displays: [display], seed: seed)
     }
 
+    /// 把 leader 移动到指定锚点（会话恢复用；越界由 ObstacleMap 夹紧）。
+    /// 实现为对 world 的差量重建：PetWorld.init(agents:) 接受现成 agents，
+    /// 这里仅改首个 agent 的位置并保持其余不变。
+    mutating func placeLeader(atX x: Double, atY y: Double) {
+        var agents = world.agents
+        guard let first = agents.indices.first else { return }
+        agents[first].position = obstacleMap.clampedPetAnchor(
+            WorldPoint(x: x, y: y), halfWidth: 90, topClearance: 140
+        )
+        world = PetWorld(agents: agents, seed: 0xD35C70)
+    }
+
     /// 推进一帧并产出每个宠物的窗口位置（窗口左上角，虚拟屏幕坐标，y 向下）。
     /// 语义与 macOS PetWindowCoordinator.apply(poses:) 一致：
     /// 宠物锚点贴所在显示器底边 groundOffset 像素处。
@@ -270,6 +282,108 @@ struct ShellModel {
                 for frame in multi.tick(deltaTime: 1.0 / Self.simulationFPS) {
                     let insideAny = [primary, right].contains { $0.contains(frame.pose.position) }
                     if !insideAny { failures.append("multi-monitor pet escaped all displays"); break }
+                }
+            }
+        }
+
+        // 8) 头像归一化：尺寸/裁剪/采样正确性 + 上限防护 + 位图非法回退。
+        do {
+            // 8a) 2:1 宽图（800×400）→ 裁中 400×400 → 512×512；目标首像素应取源中心区。
+            let w = 800, h = 400
+            var source = [UInt8](repeating: 0, count: w * h * 4)
+            for y in 0..<h {
+                for x in 0..<w {
+                    let base = (y * w + x) * 4
+                    source[base] = UInt8((x / 8) % 256)       // B 随 x 变
+                    source[base + 1] = UInt8((y / 8) % 256)   // G 随 y 变
+                    source[base + 2] = 0
+                    source[base + 3] = 255
+                }
+            }
+            let normalized = try AvatarNormalizer.normalizedBGRA(pixels: source, width: w, height: h)
+            if normalized.width != 512 || normalized.height != 512 {
+                failures.append("avatar normalize output size mismatch: \(normalized.width)x\(normalized.height)")
+            }
+            if normalized.pixels.count != 512 * 512 * 4 {
+                failures.append("avatar normalize buffer size mismatch")
+            }
+            // 最近邻采样抽查（crop 边 400、cropX=200、scale=400/512）：
+            // 目标 (0,0) 中心 → 源 (200+0, 0)；目标 (511,511) 中心 → 源 (200+399, 399)。
+            func sample(_ pixels: [UInt8], x: Int, y: Int, width: Int) -> (UInt8, UInt8) {
+                let base = (y * width + x) * 4
+                return (pixels[base], pixels[base + 1])
+            }
+            let corner = sample(normalized.pixels, x: 0, y: 0, width: 512)
+            if corner.0 != UInt8((200 / 8) % 256) || corner.1 != 0 {
+                failures.append("avatar sample top-left mismatch: \(corner)")
+            }
+            let far = sample(normalized.pixels, x: 511, y: 511, width: 512)
+            if far.0 != UInt8((599 / 8) % 256) || far.1 != UInt8((399 / 8) % 256) {
+                failures.append("avatar sample bottom-right mismatch: \(far)")
+            }
+        } catch {
+            failures.append("avatar normalize threw unexpectedly: \(error)")
+        }
+
+        // 8b) 防护：缓冲长度与声明尺寸不符必须拒绝。
+        do {
+            _ = try AvatarNormalizer.normalizedBGRA(pixels: [0, 0, 0, 0], width: 2, height: 1)
+            failures.append("avatar normalize accepted mismatched buffer")
+        } catch { /* 期望路径 */ }
+        do {
+            _ = try AvatarNormalizer.normalizedBGRA(pixels: [UInt8](repeating: 0, count: 4), width: 1, height: 2)
+            failures.append("avatar normalize accepted mismatched buffer (1x2)")
+        } catch { /* 期望路径 */ }
+
+        // 8c) PetCanvas 头像合成：不透明头像脸区完全覆盖、程序化脸被替换。
+        do {
+            var character = fallbackCharacters()[0]
+            character.avatarSource = .imported(filename: "unit-test.png")
+            let solid = PetCanvas.AvatarBitmap(pixels: [UInt8](repeating: 0, count: 512 * 512 * 4).map { _ in UInt8(255) })
+            let withAvatar = PetCanvas.render(character: character, pose: pose, avatar: solid)
+            // 脸中心 (132,112) y 向上 → 位图行 160-1-112=47。该像素应为头像色 (255,255,255)。
+            let faceIndex = (47 * 180 + 132) * 4
+            if withAvatar.pixels[faceIndex + 3] != 255
+                || withAvatar.pixels[faceIndex] != 255 || withAvatar.pixels[faceIndex + 2] != 255 {
+                failures.append("avatar composite did not cover face center")
+            }
+            // 无头像回退：脸部应为肤色而非白。
+            let procedural = PetCanvas.render(character: character, pose: pose, avatar: nil)
+            if procedural.pixels[faceIndex] == 255 && procedural.pixels[faceIndex + 2] == 255 {
+                failures.append("procedural face unexpectedly white")
+            }
+            // 非法位图（长度不符）必须回退程序化脸，不崩溃。
+            let invalid = PetCanvas.AvatarBitmap(pixels: [UInt8](repeating: 9, count: 16))
+            let fallback = PetCanvas.render(character: character, pose: pose, avatar: invalid)
+            if fallback.pixels[faceIndex + 3] == 0 {
+                failures.append("invalid avatar should fall back to procedural face")
+            }
+        }
+
+        // 9) 会话状态编解码：往返一致 + 非法输入拒绝。
+        do {
+            let state = SessionState(petX: 1234.5, petY: 67.25)
+            if let decoded = SessionState.decode(state.encode()) {
+                if abs(decoded.petX - 1234.5) >= 0.01 || abs(decoded.petY - 67.25) >= 0.01 {
+                    failures.append("session state roundtrip mismatch: \(state.encode())")
+                }
+            } else {
+                failures.append("session state decode failed on own encoding: \(state.encode())")
+            }
+            for bad in ["", "abc", "1,2,3", "-5,10", "nan,10", "inf,2", "10,"] {
+                if SessionState.decode(bad) != nil {
+                    failures.append("session state accepted invalid input: \(bad)")
+                }
+            }
+            // placeLeader：越界请求被夹紧回屏内，600 帧不越界。
+            var placed = ShellModel(characters: fallbackCharacters(), display: display)
+            placed.placeLeader(atX: 99999, atY: -500)
+            for _ in 0..<600 {
+                for frame in placed.tick(deltaTime: 1.0 / Self.simulationFPS) {
+                    if !display.contains(frame.pose.position) {
+                        failures.append("placeLeader pet escaped display")
+                        break
+                    }
                 }
             }
         }
