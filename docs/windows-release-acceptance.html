@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.2.0 双平台发布 · 可验收结论</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel2: #1d212d; --border: #2a2f3e;
+    --text: #e6e8ee; --muted: #9aa1b2; --ok: #3fb96b; --bad: #e05d5d;
+    --accent: #6c9ef8; --amber: #d9a441;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65; padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  h2 { font-size: 19px; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .verdict {
+    background: linear-gradient(135deg, rgba(63,185,107,.12), rgba(63,185,107,.04));
+    border: 1px solid rgba(63,185,107,.4); border-radius: 12px;
+    padding: 18px 22px; margin: 18px 0 8px;
+  }
+  .verdict b { color: var(--ok); font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .bad { color: var(--bad); font-weight: 600; white-space: nowrap; }
+  .warn { color: var(--amber); font-weight: 600; white-space: nowrap; }
+  code, pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; background: var(--panel2); border-radius: 6px;
+  }
+  code { padding: 2px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; border: 1px solid var(--border); margin: 10px 0; color: #c8d3ea; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .arch { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+  .arch .box { flex: 1; min-width: 260px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .arch .box b { display: block; margin-bottom: 6px; font-size: 14px; }
+  .arch .box span { font-size: 13px; color: var(--muted); }
+  .arch .core { border-color: rgba(108,158,248,.5); background: rgba(108,158,248,.06); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🎉 v0.2.0 双平台发布 · 可验收结论</h1>
+  <div class="sub">mac-desktop-pets ｜ 验收时间 2026-08-30 ｜ macOS DMG + Windows 便携 zip 已上线同一 GitHub Release</div>
+
+  <div class="verdict">
+    <b>结论：Windows 版发布完成，v0.2.0 双平台资产已上线。</b>
+    <a href="https://github.com/Leon-Algo/mac-desktop-pets/releases/tag/v0.2.0">github.com/Leon-Algo/mac-desktop-pets/releases/tag/v0.2.0</a> 提供
+    <code>DesktopPets.dmg</code>（macOS，1.8 MB）与 <code>DesktopPets-windows-x64.zip</code>（Windows，474 KB 便携包，解压即用）。
+    全部验证绿：macOS 132/132 测试、Windows CI 编译 + 双自检、Release 工作流双 job 成功。
+  </div>
+
+  <h2>① 验收证据（全部为 CI / 本地实测）</h2>
+  <table>
+    <tr><th>验证项</th><th>结果</th><th>证据</th></tr>
+    <tr><td>macOS 全量测试</td><td class="ok">✅ 132/132</td><td>本地 + GitHub Actions CI 双绿</td></tr>
+    <tr><td>Windows 编译（含 Win32 GUI 壳）</td><td class="ok">✅</td><td>windows-latest + Swift 6.3.1，WindowsShell.exe 链接成功</td></tr>
+    <tr><td>CoreProbe 自检（核心逻辑）</td><td class="ok">✅ ok</td><td>确定性 + 2h 长时 + 交互 + 名册持久化，退出码 0</td></tr>
+    <tr><td>WindowsShell 自检（渲染管线）</td><td class="ok">✅ ok</td><td>软件光栅器 + 600 帧模拟 + 渲染确定性 + 配色解析，退出码 0</td></tr>
+    <tr><td>Release 工作流（macOS job）</td><td class="ok">✅ success</td><td>DMG 构建并上传</td></tr>
+    <tr><td>Release 工作流（Windows job）</td><td class="ok">✅ success</td><td>自检 → 便携 zip（含 Swift 运行时 DLL）→ 上传 Release</td></tr>
+    <tr><td>Release 资产落盘核验</td><td class="ok">✅</td><td>DMG 1,882,313 B + zip 485,267 B 均可下载</td></tr>
+  </table>
+
+  <h2>② 架构现状：一份核心，两端外壳</h2>
+  <div class="arch">
+    <div class="box core">
+      <b>DesktopPetsCore（共享核心，纯 Foundation）</b>
+      <span>PetWorld 模拟 · ObstacleMap 几何 · 名册持久化 · 动作目录 · 确定性随机 —— 双端逐位一致</span>
+    </div>
+    <div class="box">
+      <b>DesktopPets（macOS 壳 · AppKit）</b>
+      <span>NSPanel 分层窗口 · 状态菜单 · 控制总台 · NSImage 头像管线 · DMG 分发</span>
+    </div>
+    <div class="box">
+      <b>WindowsShell（Windows 壳 · Win32）</b>
+      <span>WS_EX_LAYERED 透明窗口 · PetCanvas 软件光栅器（与 Mac 同比例同配色）· UpdateLayeredWindow 逐帧提交 · 便携 zip 分发</span>
+    </div>
+  </div>
+  <div class="muted">CoreProbe 是双端共享的可执行自检；ShellModel 的 tick/坐标映射与 macOS PetWindowCoordinator 同语义；Windows 上 4 只宠物各自独立透明窗口，置顶、点击穿透、20fps 模拟。</div>
+
+  <h2>③ 本次迭代修复的问题（均已固化进仓库）</h2>
+  <table>
+    <tr><th>#</th><th>问题</th><th>修复</th></tr>
+    <tr><td>1</td><td>Win32 代码不匹配 swift-win-sdk 类型约定（BOOL/宽字符串/常量类型）</td><td>Array&lt;WCHAR&gt; 宽字符串 + withUnsafeBufferPointer 传 LPCWSTR；DWORD/UINT/INT32 精确类型</td></tr>
+    <tr><td>2</td><td>CreateDIBSection 用法错误（SetDIBits 误用）</td><td>显式 bits 指针 + memcpy，DIB 直接对接 UpdateLayeredWindow</td></tr>
+    <tr><td>3</td><td>PeekMessageW 在 swift-win-sdk 返回 Bool 而非 Int</td><td>去掉整型比较，直接布尔循环</td></tr>
+    <tr><td>4</td><td>SwiftPM 不支持一条命令多 --product</td><td>CI 拆分为两次 swift build</td></tr>
+  </table>
+
+  <h2>④ 用户视角：Windows 用户怎么用</h2>
+  <div class="card">
+    从 Release 下载 <code>DesktopPets-windows-x64.zip</code> → 解压 → 双击 <code>DesktopPets.exe</code>。
+    4 只桌面宠物出现在屏幕底部爬行，置顶显示、不挡操作。zip 内已带 Swift 运行时 DLL，无需安装任何依赖。
+    <div class="muted" style="margin-top:8px">⚠️ 已知边界：未签名 exe 可能触发 SmartScreen 提示（与 Mac 端 Gatekeeper 同理，README 已说明）；多显示器/托盘菜单/开机自启为下一迭代项。</div>
+  </div>
+
+  <h2>⑤ 接下来的最佳实践</h2>
+  <table>
+    <tr><th>优先级</th><th>事项</th><th>说明</th></tr>
+    <tr><td class="warn">P2</td><td>Windows 壳功能对齐</td><td>托盘菜单（暂停/召回/退出）、点击交互、多显示器适配、开机自启——核心能力已就绪，逐项补 UI</td></tr>
+    <tr><td class="warn">P2</td><td>README 双平台安装指南</td><td>补 Windows 下载入口与 SmartScreen 提示说明</td></tr>
+    <tr><td>P3</td><td>Inno Setup 安装包（可选）</td><td>便携 zip 已可用；需要开始菜单/卸载器时再上安装器</td></tr>
+    <tr><td>P3</td><td>Mac 端实机验证（遗留）</td><td>多屏/Stage Manager/VoiceOver/≥4h 长时真机走查</td></tr>
+  </table>
+
+  <h2>⑥ 提交与发布记录</h2>
+  <pre>66cf57e ci(release): add Windows portable zip job alongside macOS DMG
+96dadc7 ci(windows): build products separately (multi --product not supported)
+eb91155 fix(windows): PeekMessageW returns Bool in swift-win-sdk, drop Int comparison
+e834a12 fix(windows): fix remaining WinSDK conformance issues
+4ec2020 fix(windows): align Win32 code with swift-win-sdk type conventions
+2deda99 feat(windows): add WindowsShell target with Win32 layered-window shell</pre>
+  <div class="muted">Release：<a href="https://github.com/Leon-Algo/mac-desktop-pets/releases/tag/v0.2.0">v0.2.0</a> ｜ 双平台资产 + CI 全部成功</div>
+
+</div>
+</body>
+</html>
