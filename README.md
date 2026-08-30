@@ -11,7 +11,7 @@
 - **交互**：菜单栏/托盘总台 + 桌面独立面板双控制入口
 - **人物**：macOS 内置 12 个头像、支持导入照片自定义；Windows 内置 4 个程序化人物
 - **渲染**：透明无边框窗口、形状感知点击穿透、确定性固定步长世界模拟
-- **当前版本**：v0.3.0 —— Windows 壳功能对齐完成（点击交互/开机自启/托盘/多显示器）
+- **当前版本**：v0.3.x —— Windows 壳体验补齐：头像导入、托盘动态图标、退出后位置恢复
 
 ![DesktopPets 效果预览](docs/assets/deskpet.png)
 
@@ -70,6 +70,8 @@ swift run -c release
 
 #### 托盘菜单
 运行后宠物出现在桌面上，系统托盘（任务栏右下角，可能折叠在 `^` 里）有图标：
+- **导入头像…**：选一张图片替换首位角色的脸（自动居中裁剪为 512×512）
+- **恢复默认角色**：清除导入的头像，回到内置角色
 - **开机自启**：勾选后写入当前用户注册表 Run 键，取消勾选即移除
 - **退出桌面伙伴**：彻底退出
 
@@ -95,10 +97,11 @@ swift build --product WindowsShell
 |---|---|---|
 | 桌面宠物模拟（走动/跳跃/攀爬/睡觉） | ✅ | ✅ 同一核心 |
 | 单击打招呼 / 双击集合 / 拖拽 | ✅ | ✅ |
-| 托盘/菜单栏 | 菜单栏 🐾 总台 + 控制中心面板 | 托盘图标（自启/退出） |
-| 自定义头像/角色 | ✅ 照片导入裁剪 | ❌ 内置 4 个程序化人物 |
+| 托盘/菜单栏 | 菜单栏 🐾 总台 + 控制中心面板 | 托盘图标（动态帧 + 头像导入/自启/退出） |
+| 自定义头像/角色 | ✅ 照片导入裁剪 | ✅ 托盘导入（居中裁剪 512×512） |
 | 多显示器 | ✅ | ✅（显示变化自动召回） |
 | 开机自启 | 登录项（SMAppService） | 注册表 Run 键（HKCU） |
+| 退出后恢复宠物位置 | ✅ | ✅（重启回到退出时位置） |
 | 分发 | DMG（未签名，右键打开） | 便携 zip（未签名，仍要运行） |
 
 ## 目录结构
@@ -127,13 +130,14 @@ swift build --product WindowsShell
 
 | 报告 | 内容 |
 |---|---|
+| [P3 Windows 体验补齐](docs/p3-windows-experience-acceptance.html) | 头像导入 / 托盘动态图标 / 位置持久化 |
 | [P2 Windows 功能对齐](docs/p2-windows-parity-acceptance.html) | v0.3.0：点击交互/自启/托盘/多显示器 + Y 轴 bug 修复 |
 | [v0.2.0 双平台发布](docs/windows-release-acceptance.html) | DMG + 便携 zip 双资产首次同台发布 |
 | [Windows 可行性](docs/windows-feasibility-acceptance.html) | 路线 A（swift-win-sdk）在 CI 实证可行 |
 | [内存/性能审计](docs/perf-memory-acceptance.html) | Timer 强引用循环修复 + 2h 长时验证 |
 | [路线图](docs/roadmap.html) | 当前所处阶段与后续规划 |
 
-质量门槛：132/132 单元测试（debug / release 严格并发 / ASan 三配置）+ 双平台无头自检 + Windows CI。
+质量门槛：140/140 单元测试（debug / release 严格并发 / ASan 三配置）+ 双平台无头自检 + Windows CI。
 
 ## 贡献
 
