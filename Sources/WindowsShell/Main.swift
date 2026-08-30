@@ -96,7 +96,7 @@ final class ShellAppDelegate {
     private func enumerateMonitors() -> [WorldRect] {
         g_monitorRects.removeAll(keepingCapacity: true)
         _ = EnumDisplayMonitors(nil, nil, { _, _, rawRect, _ in
-            guard let rawRect else { return 0 }
+            guard let rawRect else { return false }
             let rect = rawRect.pointee
             if let world = WorldRect(
                 x: Double(rect.left), y: Double(rect.top),
@@ -105,7 +105,7 @@ final class ShellAppDelegate {
             ) {
                 g_monitorRects.append(world)
             }
-            return 1
+            return true
         }, 0)
         return MonitorLayout.resolve(g_monitorRects)
     }
@@ -279,7 +279,8 @@ final class ShellAppDelegate {
         trayData.uCallbackMessage = UINT(WM_APP_TRAY)
         trayData.hIcon = makeTrayIcon()
         writeTooltip("桌面伙伴 DesktopPets")
-        trayCreated = Shell_NotifyIconW(UINT(NIM_ADD), &trayData) != 0
+        // swift-win-sdk 把 BOOL 返回桥接为 Swift Bool。
+        trayCreated = Shell_NotifyIconW(UINT(NIM_ADD), &trayData)
     }
 
     /// 写入悬停提示文字。szTip 位于 NOTIFYICONDATAW 偏移 40
@@ -303,10 +304,16 @@ final class ShellAppDelegate {
         trayCreated = false
     }
 
+    /// 系统默认应用图标（LoadIconW 共享句柄，无需销毁）。
+    /// swift-win-sdk 无 IDI_APPLICATION 常量，MAKEINTRESOURCE(32512) 等价。
+    private func fallbackIcon() -> HICON? {
+        LoadIconW(nil, MAKEINTRESOURCEW(32512))
+    }
+
     /// 用 PetCanvas 软件光栅器渲染第一个宠物头像为 32×32 托盘图标。
     private func makeTrayIcon() -> HICON? {
         guard let character = model.characters.first,
-              let pose = model.world.poses.first else { return LoadIconW(nil, IDI_APPLICATION) }
+              let pose = model.world.poses.first else { return fallbackIcon() }
         let canvas = PetCanvas.render(character: character, pose: pose, width: 32, height: 32)
         return hicon(from: canvas)
     }
@@ -326,7 +333,7 @@ final class ShellAppDelegate {
         var bits: UnsafeMutableRawPointer?
         guard let dib = CreateDIBSection(screenDC, &info, UINT(DIB_RGB_COLORS), &bits, nil, 0),
               let bits else {
-            return LoadIconW(nil, IDI_APPLICATION)
+            return fallbackIcon()
         }
         defer { DeleteObject(dib) }
         var pixels = canvas.pixels
@@ -335,7 +342,7 @@ final class ShellAppDelegate {
         }
         // CreateIconIndirect 要求 hbmMask 非 NULL（1bpp 单色掩码）。
         guard let mask = CreateBitmap(INT32(canvas.width), INT32(canvas.height), UINT32(1), UINT32(1), nil) else {
-            return LoadIconW(nil, IDI_APPLICATION)
+            return fallbackIcon()
         }
         defer { DeleteObject(mask) }
         var iconInfo = ICONINFO()
@@ -357,14 +364,15 @@ final class ShellAppDelegate {
         SetForegroundWindow(anchor)
         var point = POINT()
         _ = GetCursorPos(&point)
-        // TPM_RETURNCMD：返回值为选中项 ID（Int32 通道）。
+        // TPM_RETURNCMD：返回值为选中项 ID；swift-win-sdk 桥接为 Int32
+        //（未选择时 0，与 Win32 语义一致）。
         let selection = TrackPopupMenuEx(
             menu,
             UINT(TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON),
             point.x, point.y, anchor, nil
         )
         if selection != 0 {
-            PostMessageW(anchor, UINT(WM_COMMAND), WPARAM(UInt(UInt32(bitPattern: selection))), 0)
+            PostMessageW(anchor, UINT(WM_COMMAND), WPARAM(UInt(UInt32(bitPattern: Int(selection)))), 0)
         }
     }
 
