@@ -1,11 +1,17 @@
 # DesktopPets
 
+[![CI](https://github.com/Leon-Algo/mac-desktop-pets/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Leon-Algo/mac-desktop-pets/actions/workflows/ci.yml)
+[![Windows](https://github.com/Leon-Algo/mac-desktop-pets/actions/workflows/windows-feasibility.yml/badge.svg?branch=main)](https://github.com/Leon-Algo/mac-desktop-pets/actions/workflows/windows-feasibility.yml)
+[![Release](https://img.shields.io/github/v/release/Leon-Algo/mac-desktop-pets?include_prereleases)](https://github.com/Leon-Algo/mac-desktop-pets/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 桌面宠物：一群会走动、会互动的桌面小精灵，常驻在托盘/菜单栏与桌面上。
 
 - **平台**：macOS 13+（AppKit）/ Windows 10+ x64（Win32，同一 Swift 核心）
 - **交互**：菜单栏/托盘总台 + 桌面独立面板双控制入口
 - **人物**：macOS 内置 12 个头像、支持导入照片自定义；Windows 内置 4 个程序化人物
 - **渲染**：透明无边框窗口、形状感知点击穿透、确定性固定步长世界模拟
+- **当前版本**：v0.3.0 —— Windows 壳功能对齐完成（点击交互/开机自启/托盘/多显示器）
 
 ![DesktopPets 效果预览](docs/assets/deskpet.png)
 
@@ -105,14 +111,29 @@ swift build --product WindowsShell
 
 ## 数据与隐私
 
-- 配置与头像持久化于 `~/Library/Application Support/DesktopPets/`
-- 窗口几何仅通过 `CGWindowListCopyWindowInfo` 只读枚举，**不依赖**屏幕录制/辅助功能权限
+- macOS：配置与头像持久化于 `~/Library/Application Support/DesktopPets/`
+- Windows：便携版无独立配置目录；开机自启仅写当前用户注册表 Run 键，卸载即删目录
+- 窗口几何仅通过只读枚举（macOS `CGWindowListCopyWindowInfo` / Windows `EnumDisplayMonitors`），**不依赖**屏幕录制/辅助功能权限
 - 头像导入本地标准化为 512×512 PNG，源文件受字节/像素上限约束
 
 ## 真人照片版权
 
 `Sources/DesktopPets/Resources/Characters/Faces/` 下的四张人物照片**不属 MIT 许可**
 范围，已获得照片本人的书面授权用于本应用，禁止在项目外复制/再分发。详见 `LICENSE`。
+
+## 验收与质量记录
+
+各里程碑的可验收结论（全部基于 CI / 本地实测证据）：
+
+| 报告 | 内容 |
+|---|---|
+| [P2 Windows 功能对齐](docs/p2-windows-parity-acceptance.html) | v0.3.0：点击交互/自启/托盘/多显示器 + Y 轴 bug 修复 |
+| [v0.2.0 双平台发布](docs/windows-release-acceptance.html) | DMG + 便携 zip 双资产首次同台发布 |
+| [Windows 可行性](docs/windows-feasibility-acceptance.html) | 路线 A（swift-win-sdk）在 CI 实证可行 |
+| [内存/性能审计](docs/perf-memory-acceptance.html) | Timer 强引用循环修复 + 2h 长时验证 |
+| [路线图](docs/roadmap.html) | 当前所处阶段与后续规划 |
+
+质量门槛：132/132 单元测试（debug / release 严格并发 / ASan 三配置）+ 双平台无头自检 + Windows CI。
 
 ## 贡献
 
