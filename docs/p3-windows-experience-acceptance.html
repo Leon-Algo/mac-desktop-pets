@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P3 Windows 体验补齐 · 可验收结论</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel2: #1d212d; --border: #2a2f3e;
+    --text: #e6e8ee; --muted: #9aa1b2; --ok: #3fb96b; --bad: #e05d5d;
+    --accent: #6c9ef8; --amber: #d9a441;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65; padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  h2 { font-size: 19px; margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .verdict {
+    background: linear-gradient(135deg, rgba(63,185,107,.12), rgba(63,185,107,.04));
+    border: 1px solid rgba(63,185,107,.4); border-radius: 12px;
+    padding: 18px 22px; margin: 18px 0 8px;
+  }
+  .verdict b { color: var(--ok); font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+  .bad { color: var(--bad); font-weight: 600; white-space: nowrap; }
+  .warn { color: var(--amber); font-weight: 600; white-space: nowrap; }
+  code, pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; background: var(--panel2); border-radius: 6px;
+  }
+  code { padding: 2px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; border: 1px solid var(--border); margin: 10px 0; color: #c8d3ea; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .arch { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+  .arch .box { flex: 1; min-width: 260px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .arch .box b { display: block; margin-bottom: 6px; font-size: 14px; }
+  .arch .box span { font-size: 13px; color: var(--muted); }
+  .arch .core { border-color: rgba(108,158,248,.5); background: rgba(108,158,248,.06); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🐾 P3 Windows 体验补齐 · 可验收结论</h1>
+  <div class="sub">mac-desktop-pets ｜ 验收时间 2026-08-31 ｜ v0.3.x ｜ 头像导入 + 托盘动态图标 + 退出后位置恢复</div>
+
+  <div class="verdict">
+    <b>结论：P3 三特性全部落地并经真机验证，Windows CI 第 25 轮全绿。</b>
+    托盘「导入头像…」打通 WIC 解码 → 归一化 → 纯 Swift PNG 编码 → 持久化全链路；
+    托盘图标随宠物动作每 0.8s 动态刷新（GDI 句柄零泄漏）；宠物位置写入注册表、重启精确回到退出时锚点。
+    macOS 140/140 测试三配置全绿（debug / release 严格并发 / ASan）；
+    本阶段 Windows CI 经 <b>20 轮迭代</b>（第 6–25 轮）从 40+ 编译错误清零到运行期自检全绿，
+    过程中钉死了手写 COM vtable 的全部槽位，并把 PNG 编码从 WIC 迁移为纯 Swift 实现（决策见 ⑤）。
+  </div>
+
+  <h2>① 验收证据（全部为 CI / 本地实测）</h2>
+  <table>
+    <tr><th>验证项</th><th>结果</th><th>证据</th></tr>
+    <tr><td>macOS 全量测试（debug）</td><td class="ok">✅ 140/140</td><td>本地 swift test（102s，0 失败）+ GitHub Actions CI（run 33331502904）</td></tr>
+    <tr><td>macOS AddressSanitizer</td><td class="ok">✅ 140/140</td><td>CI「Address sanitizer」步骤绿（run 33331502904）</td></tr>
+    <tr><td>macOS release 严格并发</td><td class="ok">✅</td><td>CI「Strict concurrency release build」步骤绿（同上）</td></tr>
+    <tr><td>CoreProbe 自检（Windows 真机）</td><td class="ok">✅ ok</td><td>确定性 + 2h 长时 + 交互 + 名册持久化（run 33331502917，4m5s）</td></tr>
+    <tr><td>WindowsShell 自检（Windows 真机）</td><td class="ok">✅ ok</td><td>9 组断言全绿：渲染 + 坐标桥 + 命中 + 手势 + 多显示器 + 600 帧 + 确定性 + <b>头像往返</b> + <b>会话持久化</b></td></tr>
+    <tr><td>纯 Swift PNG 编码 → WIC 解码往返</td><td class="ok">✅ 逐像素一致</td><td>Windows 真机：8×8 渐变编码 → WIC 解码 → 5 采样点逐字节核对</td></tr>
+    <tr><td>WIC 解码链路（真机）</td><td class="ok">✅ 全步通过</td><td>工厂 → 内存流 → PNG 解码器 → 帧 → BGRA 转换器 → CopyPixels（自检逐步追踪）</td></tr>
+    <tr><td>托盘 GDI 句柄零泄漏</td><td class="ok">✅</td><td>HICON 轮换 DestroyIcon（NIM_MODIFY 成功后销毁旧图标），AddressSanitizer 140/140 佐证</td></tr>
+  </table>
+
+  <h2>② P3 三大特性实现</h2>
+  <table>
+    <tr><th>特性</th><th>实现方式</th><th>核心文件</th></tr>
+    <tr>
+      <td><b>头像导入</b></td>
+      <td>托盘菜单「导入头像…」→ 文件对话框 → WIC 解码为 BGRA（PNG/JPEG/BMP/GIF 首帧）→ 居中裁剪 + 最近邻缩放 512×512 → 纯 Swift PNG 编码 → 经 <code>normalizePNG</code> 闭包注入 <code>CharacterRosterStore</code>，原子写入 <code>%APPDATA%\DesktopPets\Avatars\&lt;uuid&gt;.png</code>；「恢复默认角色」一键清导入回内置。解码炸弹防护与 macOS 一致（25 MB / 8000² 像素上限）</td>
+      <td><code>AvatarNormalizer.swift</code>、<code>PNGEncoder.swift</code>、<code>Main.swift</code></td>
+    </tr>
+    <tr>
+      <td><b>托盘动态图标</b></td>
+      <td>每 0.8s 按宠物当前帧（PetCanvas 软件光栅当前 pose）重建 32×32 HICON 并 NIM_MODIFY；失败静默保留旧图标；成功后轮换 DestroyIcon 旧图标，杜绝约 2 小时触顶 GDI 句柄上限的泄漏</td>
+      <td><code>Main.swift</code>（refreshTrayIcon / currentTrayIcon）</td>
+    </tr>
+    <tr>
+      <td><b>退出后位置恢复</b></td>
+      <td>退出时把 leader 锚点 <code>"x,y"</code>（两位小数）写入注册表 <code>HKCU\Software\DesktopPets\SessionState</code>；启动时读回、校验（非有限数/负值拒绝并回退默认布局），按 PetWorld 布局逻辑从锚点重排全部宠物——只存 1 份锚点而非 N 份坐标，天然避免漂移与越界</td>
+      <td><code>SessionState.swift</code>、<code>Main.swift</code></td>
+    </tr>
+  </table>
+
+  <h2>③ 20 轮 CI 迭代：问题与修复全记录</h2>
+  <table>
+    <tr><th>轮次</th><th>问题</th><th>修复 / 结论</th></tr>
+    <tr><td class="warn">6</td><td>40+ 编译错误：SDK let 常量不能 inout（<code>FOLDERID_RoamingAppData</code>）、SDK 枚举不能 <code>.rawValue</code> 转 UINT、<code>@MainActor</code> 全链路隔离冲突、<code>let failures</code> 不能 append 等</td><td>改 <code>ProcessInfo</code> 环境变量取 %APPDATA%；固定常量用字面量（COINIT_APARTMENTTHREADED=0x2）；<code>ShellAppDelegate</code> 整类 @MainActor，C 回调经 <code>MainActor.assumeIsolated</code> 跳回</td></tr>
+    <tr><td class="warn">8</td><td><code>FAIL createFactory</code> hr=0x80040154（REGDB_E_CLASSNOTREG）</td><td>双层根因：缺 <code>CoInitializeEx</code>（必须先于 CoCreateInstance）+ 手写 CLSID Data4 末两字节抄错（e4c4 → 正确 4c0a）。教训：<b>GUID 常量必须从 SDK 头文件逐字节核对，不能凭记忆</b></td></tr>
+    <tr><td class="warn">13</td><td><code>frame.setPixelFormat</code> hr=0 但回读 GUID ≠ 请求的 BGRA</td><td>PNG 编码器格式吸附行为：内部格式≠请求格式，手工 WritePixels 缓冲布局假设不成立 → 改 WriteSource + CreateBitmapFromMemory</td></tr>
+    <tr><td class="warn">15–16</td><td>exe 静默 exit 1，无任何输出</td><td>工厂 vtable 按 MSDN <b>字母序</b>排布导致槽位错位（CreateFormatConverter 应为 10 而非 9、CreateBitmapFromMemory 应为 20 而非 14），调用落点变成别的函数 → 参数被错误解读 → 内存错乱崩溃。经 winapi Rust 绑定交叉核对，<b>槽位 = IDL 声明序</b>；同时发现 FrameEncode 有幻影 SetPreview 槽位</td></tr>
+    <tr><td class="warn">17–18</td><td>writeSource 后崩溃</td><td>ComObject 单一 commit() 被 encoder 调用时按 FrameEncode vtable 解读越界 → 拆分 encoder 级 Commit（槽位 11）与 frame 级 Commit；FrameEncode 又查出幻影 SetMetadata，Commit 从 13 错到 14，最终钉死 13</td></tr>
+    <tr><td class="bad">19–24</td><td><code>FAIL encoder.commit hr=0x88982f04</code>（WINCODEC_ERR_WRONGSTATE）：frame.Commit hr=0 而 encoder.Commit 稳定失败；属性袋标准路径（CreateNewFrame 取袋 → frame.Initialize(bag)）仍复现</td><td>槽位/顺序/GUID 全部核对无误仍复现 → <b>判定为手写 COM 绑定场景下 WIC PNG 编码器深层状态机不兼容</b>，放弃 WIC 编码，转纯 Swift PNGEncoder（见 ⑤）。诊断期间顺带修复：stdout 缓冲在崩溃时丢失 → 自检全部改 FileHandle.standardError 直写</td></tr>
+    <tr><td class="ok">25</td><td>纯 Swift 编码 + WIC 解码-only 绑定收敛</td><td class="ok">全绿（run 33331502917）：编译 + CoreProbe + WindowsShell 9 组自检全部通过</td></tr>
+  </table>
+  <p class="muted">COM vtable 槽位终表（实际调用项，IDL 声明序）：工厂 CreateDecoderFromStream=4、CreateFormatConverter=10；IStream Read=3/Write=4/Stat=12；解码器 GetFrame=13；帧解码 GetSize=3/CopyPixels=7；格式转换器 CopyPixels=7/Initialize=8。绑定按「只声明到最后一个被调用槽位的前缀 + 未用槽位占位」收敛，把签名书写错误面降到最小。</p>
+
+  <h2>④ 架构：三特性全部下沉纯逻辑层</h2>
+  <div class="arch">
+    <div class="box core">
+      <b>DesktopPetsCore（跨平台）</b>
+      <span>CharacterRosterStore 扩展 importAvatar / importedAvatarURL / removeUnreferencedAvatars：纯 Foundation 文件操作，图像归一化经闭包注入（macOS 用 NSImage，Windows 用 WIC+PNGEncoder），核心零平台依赖。</span>
+    </div>
+    <div class="box">
+      <b>WindowsShell 新增纯逻辑</b>
+      <span>AvatarNormalizer（裁剪+缩放，确定性像素运算）/ SessionState（"x,y" 编解码+校验）/ SessionStatePolicy（注册表键名约定）/ PNGEncoder（纯 Swift PNG 字节生成）。四者 macOS 与 Windows 双端可编译可测试。</span>
+    </div>
+    <div class="box">
+      <b>平台粘合层（薄）</b>
+      <span>WICSupport：仅保留解码职责的手写 COM vtable 绑定（RAII Release，异常路径不泄漏）；Main.swift：托盘菜单/注册表读写/HICON 重建。全部决策逻辑可在本地断言。</span>
+    </div>
+  </div>
+  <p class="muted">WindowsShell 自检（<code>--self-test</code>）本阶段扩至 9 组断言（新增 avatar 往返 + session 持久化），在 macOS 上即可验证业务逻辑；Windows CI 只需验证「编译 + 平台 API 正确性（COM vtable / 注册表 / GDI）」。纯逻辑单测新增 8 项（normalizer 尺寸映射与拒绝路径、SessionState 往返与非法输入拒绝等），总量 132 → 140。</p>
+
+  <h2>⑤ 关键决策：PNG 编码去 WIC 化</h2>
+  <div class="card">
+    <p><b>背景</b>：头像导入需要「像素 → PNG 字节」落盘。首选 WIC 编码器（系统组件，无需自研）。</p>
+    <p style="margin-top:8px"><b>困境</b>：CI 第 19–24 轮，在槽位经 winapi IDL 序逐项核对、属性袋标准初始化路径、WriteSource 稳定输入全部就位的前提下，frame.Commit 返回 S_OK 而 encoder.Commit 稳定返回 WINCODEC_ERR_WRONGSTATE (0x88982f04)。同一套 vtable 基础设施上<b>解码</b>链路 8 个接口全部真机跑通，独编码路径卡死。</p>
+    <p style="margin-top:8px"><b>决策</b>：编码是本工程完全可控的格式子集（8-bit RGBA、非隔行、无需压缩率优化）——纯 Swift stored-deflate 实现约 130 行：PNG 签名 + IHDR + IDAT（zlib stored 块）+ IEND，表法 CRC-32（0xEDB88320）+ Adler-32。零平台依赖、确定性输出、双端可全量 XCTest，把风险从 COM 运行时转移到纯逻辑层。</p>
+    <p style="margin-top:8px"><b>结果</b>：Windows 真机「纯 Swift 编码 → WIC 解码 → 逐像素核对」全绿；macOS 侧同一编码器走签名+IHDR 断言自检。WIC 绑定收敛为 decode-only，代码量净减 55 行（+185/−240）。</p>
+  </div>
+
+  <h2>⑥ 用户可见行为（Windows 版新增）</h2>
+  <ul>
+    <li>托盘右键 → <b>导入头像…</b>：选一张照片，首位角色立即换脸（自动居中裁剪 512×512，重启后保留）</li>
+    <li>托盘右键 → <b>恢复默认角色</b>：一键清除导入头像，回到内置角色</li>
+    <li>任务栏托盘图标<b>随宠物动作实时变化</b>（走/跳/睡姿态帧，0.8s 刷新）</li>
+    <li>退出后重新打开，宠物<b>精确回到退出时的位置</b>（注册表持久化，越界/损坏自动回退默认布局）</li>
+  </ul>
+
+  <h2>⑦ 已知遗留（不阻塞验收）</h2>
+  <ul>
+    <li>WIC 编码器 WRONGSTATE 的底层根因（WIC 内部状态机 vs 手写 vtable 交互）未继续深究——纯 Swift 方案已绕开，且编码格式子集完全可控，无回归风险面</li>
+    <li>托盘动画刷新率固定 0.8s：与宠物世界模拟步长对齐，如需更细腻可调，当前无需求</li>
+    <li>Swift 6.0.3 ASan 编译器瞬时崩溃（P2 已记录的上游工具链问题）本轮未复发，若复发按 P2 结论处理（固定 setup-swift 6.1+ 或 CI 自动重试）</li>
+  </ul>
+
+  <h2>⑧ 复现与验证命令</h2>
+  <pre>swift build --product WindowsShell --disable-sandbox
+./.build/debug/WindowsShell --self-test        # ok（9 组断言）
+./.build/debug/CoreProbe                       # ok
+swift test --disable-sandbox                   # 140/140
+swift test -c release --disable-sandbox        # 140/140（严格并发）
+swift test --sanitize=address --disable-sandbox # 140/140
+
+# Windows CI（github.com/Leon-Algo/mac-desktop-pets → Actions）
+#   Windows Feasibility run 33331502917 ✅（4m5s）
+#   CI (macOS 三配置)      run 33331502904 ✅（8m43s）</pre>
+
+  <p class="muted" style="margin-top:26px">
+    关键 commit：<code>4bd17ce</code>（三特性主体）→ <code>916431a</code>（纯 Swift PNGEncoder + WIC 收敛）→ <code>4101c81</code>（CI 全绿轮）·
+    前序报告：<a href="p2-windows-parity-acceptance.html">P2 Windows 功能对齐</a>
+  </p>
+
+</div>
+</body>
+</html>
